@@ -250,6 +250,11 @@ export const en = {
       windows: "Windows",
       linux: "Linux",
     },
+    platformNotes: {
+      macos: "First launch: if macOS says it cannot verify the app, open System Settings → Privacy & Security and click “Open Anyway”.",
+      windows: "If SmartScreen warns about an unknown publisher, click “More info” → “Run anyway”.",
+      linux: "AppImage: make it executable (chmod +x) and run it — or install the .deb or .rpm package.",
+    },
     arch: { universal: "Universal", arm64: "ARM64", x64: "x64", arm32: "ARM 32-bit", appleSilicon: "Apple Silicon", intel: "Intel" },
     kinds: {
       dmg: "Disk image",

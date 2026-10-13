@@ -117,6 +117,7 @@ export default async function DownloadPage({ params }: PageProps<"/[lang]/downlo
                           </li>
                         ))}
                       </ul>
+                      <p className="platform-note">{d.platformNotes[platform]}</p>
                     </article>
                   );
                 })}

@@ -249,6 +249,11 @@ export const es: Dictionary = {
       windows: "Windows",
       linux: "Linux",
     },
+    platformNotes: {
+      macos: "Primer inicio: si macOS indica que no puede verificar la app, abre Ajustes del Sistema → Privacidad y seguridad y pulsa «Abrir igualmente».",
+      windows: "Si SmartScreen avisa de un editor desconocido, pulsa «Más información» → «Ejecutar de todas formas».",
+      linux: "AppImage: hazlo ejecutable (chmod +x) y ábrelo, o instala el paquete .deb o .rpm.",
+    },
     arch: { universal: "Universal", arm64: "ARM64", x64: "x64", arm32: "ARM de 32 bits", appleSilicon: "Apple Silicon", intel: "Intel" },
     kinds: {
       dmg: "Imagen de disco",

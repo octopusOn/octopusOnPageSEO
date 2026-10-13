@@ -1347,6 +1347,12 @@ pre {
   color: var(--muted);
 }
 
+.platform-note {
+  margin: 14px 0 0;
+  font-size: 0.85rem;
+  color: var(--muted);
+}
+
 .markdown h3 {
   margin-top: 1.2em;
 }

@@ -249,6 +249,11 @@ export const de: Dictionary = {
       windows: "Windows",
       linux: "Linux",
     },
+    platformNotes: {
+      macos: "Erster Start: Meldet macOS, dass die App nicht überprüft werden kann, öffnen Sie Systemeinstellungen → Datenschutz & Sicherheit und klicken Sie auf „Dennoch öffnen“.",
+      windows: "Warnt SmartScreen vor einem unbekannten Herausgeber, klicken Sie auf „Weitere Informationen“ → „Trotzdem ausführen“.",
+      linux: "AppImage: ausführbar machen (chmod +x) und starten – oder das .deb- bzw. .rpm-Paket installieren.",
+    },
     arch: { universal: "Universal", arm64: "ARM64", x64: "x64", arm32: "ARM 32 Bit", appleSilicon: "Apple Silicon", intel: "Intel" },
     kinds: {
       dmg: "Disk-Image",

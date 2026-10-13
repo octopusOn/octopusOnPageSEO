@@ -249,6 +249,11 @@ export const tr: Dictionary = {
       windows: "Windows",
       linux: "Linux",
     },
+    platformNotes: {
+      macos: "İlk açılış: macOS uygulamayı doğrulayamadığını söylerse Sistem Ayarları → Gizlilik ve Güvenlik bölümünde “Yine de Aç”a tıklayın.",
+      windows: "SmartScreen bilinmeyen yayıncı uyarısı verirse “Ek bilgi” → “Yine de çalıştır”a tıklayın.",
+      linux: "AppImage: dosyayı çalıştırılabilir yapın (chmod +x) ve açın — ya da .deb veya .rpm paketini kurun.",
+    },
     arch: { universal: "Evrensel", arm64: "ARM64", x64: "x64", arm32: "ARM 32 bit", appleSilicon: "Apple Silicon", intel: "Intel" },
     kinds: {
       dmg: "Disk görüntüsü",
