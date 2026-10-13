@@ -5,7 +5,8 @@
 //   pnpm --filter @octopusseo/web downloads [--notes <file.md>]
 //
 // Build first: `pnpm desktop:build` (add `-- --target universal-apple-darwin` on a Mac for
-// both Apple Silicon and Intel) and `cargo build --release -p snx-log --target <triple>`.
+// both Apple Silicon and Intel) and `cargo build --release -p snx-log --target <triple>`;
+// CLI binaries are only taken from such explicit-target builds, whose triple names the archive.
 // Next.js only serves files that exist when the site is built, so collect before `next build`.
 
 import { execFileSync } from "node:child_process";
@@ -54,11 +55,6 @@ function sha256(file) {
 /** GitHub turns spaces in asset names into dots; do the same so URLs stay readable. */
 const publicName = (name) => name.replaceAll(" ", ".");
 
-function hostTriple() {
-  const info = execFileSync("rustc", ["-vV"], { encoding: "utf8" });
-  return /^host: (.+)$/m.exec(info)?.[1] ?? null;
-}
-
 function cliArchive(binary, triple) {
   const name = `snx-log-${tag}-${triple}`;
   const staging = fs.mkdtempSync(path.join(downloads, ".staging-"));
@@ -88,21 +84,18 @@ fs.rmSync(destination, { recursive: true, force: true });
 fs.mkdirSync(destination, { recursive: true });
 
 const collected = [];
-let host;
 for (const { dir, triple } of releaseDirs()) {
-  // Installers of this version only; older builds may still sit in the bundle folders.
+  // Installers of this product and version only; older builds may still sit in the bundle folders.
   for (const file of files(path.join(dir, "bundle"))) {
     const name = path.basename(file);
-    if (!INSTALLER.test(name) || !(name.includes(`_${version}_`) || name.includes(`-${version}-`))) continue;
+    const ours = name.startsWith(productName) || name.startsWith(productName.replaceAll(" ", "-"));
+    if (!INSTALLER.test(name) || !ours || !(name.includes(`_${version}_`) || name.includes(`-${version}-`))) continue;
     const copy = path.join(destination, publicName(name));
     fs.copyFileSync(file, copy);
     collected.push(copy);
   }
   const binary = ["snx-log", "snx-log.exe"].map((name) => path.join(dir, name)).find((file) => fs.existsSync(file));
-  const cliTriple = triple ?? (host ??= hostTriple());
-  if (binary && cliTriple && CLI_TARGET.test(cliTriple) && isCurrent(binary)) {
-    collected.push(cliArchive(binary, cliTriple));
-  }
+  if (binary && triple && CLI_TARGET.test(triple) && isCurrent(binary)) collected.push(cliArchive(binary, triple));
 }
 
 /** Whether `binary` reports this version; binaries this machine cannot run are trusted. */
