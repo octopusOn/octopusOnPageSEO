@@ -1,0 +1,68 @@
+[package]
+name = "seonexus-fuzz"
+version = "0.0.0"
+edition = "2024"
+publish = false
+license = "MIT OR Apache-2.0"
+
+[package.metadata]
+cargo-fuzz = true
+
+# Kept out of the main workspace: fuzzing needs nightly and libFuzzer.
+[workspace]
+
+[dependencies]
+libfuzzer-sys = "0.4"
+seonexus-botverify = { path = "../crates/seonexus-botverify" }
+seonexus-logparse = { path = "../crates/seonexus-logparse" }
+seonexus-query = { path = "../crates/seonexus-query" }
+seonexus-url = { path = "../crates/seonexus-url" }
+
+[[bin]]
+name = "parse_builtin"
+path = "fuzz_targets/parse_builtin.rs"
+test = false
+doc = false
+bench = false
+
+[[bin]]
+name = "custom_template"
+path = "fuzz_targets/custom_template.rs"
+test = false
+doc = false
+bench = false
+
+[[bin]]
+name = "chunk_reader"
+path = "fuzz_targets/chunk_reader.rs"
+test = false
+doc = false
+bench = false
+
+[[bin]]
+name = "query_dsl"
+path = "fuzz_targets/query_dsl.rs"
+test = false
+doc = false
+bench = false
+
+[[bin]]
+name = "url_normalize"
+path = "fuzz_targets/url_normalize.rs"
+test = false
+doc = false
+bench = false
+
+[[bin]]
+name = "ip_ranges"
+path = "fuzz_targets/ip_ranges.rs"
+test = false
+doc = false
+bench = false
+
+[[bin]]
+name = "header_formats"
+path = "fuzz_targets/header_formats.rs"
+test = false
+doc = false
+bench = false

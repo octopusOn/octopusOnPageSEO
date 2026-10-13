@@ -1,0 +1,17 @@
+/target
+**/node_modules
+**/dist
+/fuzz/target
+/fuzz/corpus
+/fuzz/artifacts
+*.duckdb
+*.duckdb.wal
+.DS_Store
+.idea/
+.vscode/*
+!.vscode/extensions.json
+*.log
+!**/fixtures/**/*.log
+# Tauri-generated capability schemas
+apps/desktop/src-tauri/gen/
+/.claude/

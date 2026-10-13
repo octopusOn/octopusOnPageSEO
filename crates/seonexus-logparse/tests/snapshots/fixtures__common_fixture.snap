@@ -1,0 +1,44 @@
+---
+source: crates/seonexus-logparse/tests/fixtures.rs
+expression: "parse_fixture(\"common.log\", \"common\").join(\"\\n\")"
+---
+LogRecord {
+    timestamp: Timestamp(
+        1791423593000000,
+    ),
+    client_ip: 192.0.2.10,
+    method: "GET",
+    target: "/apache_pb.gif",
+    protocol: "HTTP/1.0",
+    status: 200,
+    bytes: Some(
+        2326,
+    ),
+    referer: None,
+    user_agent: None,
+    duration_micros: None,
+    host: None,
+    router: None,
+    upstream: None,
+    request_seq: None,
+}
+LogRecord {
+    timestamp: Timestamp(
+        1791423594000000,
+    ),
+    client_ip: 192.0.2.11,
+    method: "POST",
+    target: "/wp-login.php",
+    protocol: "HTTP/1.1",
+    status: 403,
+    bytes: Some(
+        199,
+    ),
+    referer: None,
+    user_agent: None,
+    duration_micros: None,
+    host: None,
+    router: None,
+    upstream: None,
+    request_seq: None,
+}

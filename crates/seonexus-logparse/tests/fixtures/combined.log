@@ -1,0 +1,4 @@
+66.249.66.1 - - [07/Oct/2026:18:39:53 +0300] "GET /urun/kirmizi-ayakkabi?renk=kirmizi HTTP/1.1" 200 15342 "-" "Mozilla/5.0 (compatible; Googlebot/2.1; +http://www.google.com/bot.html)"
+40.77.167.5 - - [07/Oct/2026:18:39:54 +0300] "GET /blog/seo-ipuclari HTTP/1.1" 301 0 "-" "Mozilla/5.0 (compatible; bingbot/2.0; +http://www.bing.com/bingbot.htm)"
+2a03:2880:f003::1 - - [07/Oct/2026:18:39:55 +0300] "HEAD / HTTP/2.0" 404 - "https://www.google.com/" "facebookexternalhit/1.1"
+20.171.207.1 - - [07/Oct/2026:18:39:56 +0300] "GET /sitemap.xml HTTP/1.1" 500 162 "-" "Mozilla/5.0 AppleWebKit/537.36 (KHTML, like Gecko; compatible; GPTBot/1.2; +https://openai.com/gptbot)"

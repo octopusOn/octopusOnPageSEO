@@ -1,0 +1,14 @@
+{
+  "name": "seonexus",
+  "private": true,
+  "description": "Frontend workspace: desktop UI and the octopusSEO website.",
+  "packageManager": "pnpm@12.11.2",
+  "scripts": {
+    "desktop": "pnpm --filter @seonexus/desktop tauri dev",
+    "desktop:build": "pnpm --filter @seonexus/desktop tauri build",
+    "check": "pnpm --filter @seonexus/desktop check",
+    "web": "pnpm --filter @octopusseo/web dev",
+    "web:build": "pnpm --filter @octopusseo/web build",
+    "web:downloads": "pnpm --filter @octopusseo/web downloads"
+  }
+}

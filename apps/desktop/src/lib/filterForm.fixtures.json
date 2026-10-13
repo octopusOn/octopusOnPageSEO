@@ -1,0 +1,619 @@
+[
+  {
+    "name": "empty",
+    "text": "",
+    "form": {
+      "mode": "and",
+      "rows": [],
+      "group": [],
+      "metrics": [],
+      "sort": [],
+      "limit": ""
+    },
+    "query": {
+      "filter": null,
+      "group": [],
+      "metrics": [],
+      "sort": [],
+      "limit": null
+    }
+  },
+  {
+    "name": "text operators, ranges and directives",
+    "text": "url:*blog* -ua:\"Mozilla/5.0 (KHTML, like Gecko)\",curl/8.7 status:400..499 bytes:>=1000 response_ms:<=2000 group:url,status metric:hits,last_seen sort:hits:desc limit:500",
+    "form": {
+      "mode": "and",
+      "rows": [
+        {
+          "field": "url",
+          "op": "contains",
+          "value": "blog",
+          "values": [],
+          "min": "",
+          "max": ""
+        },
+        {
+          "field": "ua",
+          "op": "neq",
+          "value": "",
+          "values": [
+            "Mozilla/5.0 (KHTML, like Gecko)",
+            "curl/8.7"
+          ],
+          "min": "",
+          "max": ""
+        },
+        {
+          "field": "status",
+          "op": "range",
+          "value": "",
+          "values": [],
+          "min": "400",
+          "max": "499"
+        },
+        {
+          "field": "bytes",
+          "op": "range",
+          "value": "",
+          "values": [],
+          "min": "1000",
+          "max": ""
+        },
+        {
+          "field": "response_ms",
+          "op": "range",
+          "value": "",
+          "values": [],
+          "min": "",
+          "max": "2000"
+        }
+      ],
+      "group": [
+        "url",
+        "status"
+      ],
+      "metrics": [
+        "hits",
+        "last_seen"
+      ],
+      "sort": [
+        {
+          "column": "hits",
+          "direction": "desc"
+        }
+      ],
+      "limit": "500"
+    },
+    "query": {
+      "filter": {
+        "and": [
+          {
+            "condition": {
+              "field": "url",
+              "predicate": {
+                "glob": "*blog*"
+              }
+            }
+          },
+          {
+            "not": {
+              "condition": {
+                "field": "ua",
+                "predicate": {
+                  "one_of": [
+                    {
+                      "text": "Mozilla/5.0 (KHTML, like Gecko)"
+                    },
+                    {
+                      "text": "curl/8.7"
+                    }
+                  ]
+                }
+              }
+            }
+          },
+          {
+            "condition": {
+              "field": "status",
+              "predicate": {
+                "between": [
+                  {
+                    "integer": 400
+                  },
+                  {
+                    "integer": 499
+                  }
+                ]
+              }
+            }
+          },
+          {
+            "condition": {
+              "field": "bytes",
+              "predicate": {
+                "compare": [
+                  "ge",
+                  {
+                    "integer": 1000
+                  }
+                ]
+              }
+            }
+          },
+          {
+            "condition": {
+              "field": "response_ms",
+              "predicate": {
+                "compare": [
+                  "le",
+                  {
+                    "integer": 2000
+                  }
+                ]
+              }
+            }
+          }
+        ]
+      },
+      "group": [
+        "url",
+        "status"
+      ],
+      "metrics": [
+        "hits",
+        "last_seen"
+      ],
+      "sort": [
+        {
+          "column": "hits",
+          "direction": "desc"
+        }
+      ],
+      "limit": 500
+    }
+  },
+  {
+    "name": "any of, quoting, classes, dates, booleans and bots",
+    "text": "(path:\"/a b/*\" OR path:~\"\\\\.(css|js)$\" OR status:5xx OR date:2026-09-01..2026-09-30 OR date:last7d OR params:true OR bot:googlebot* OR -url:\"*\\\"quote*\")",
+    "form": {
+      "mode": "or",
+      "rows": [
+        {
+          "field": "path",
+          "op": "starts",
+          "value": "/a b/",
+          "values": [],
+          "min": "",
+          "max": ""
+        },
+        {
+          "field": "path",
+          "op": "regex",
+          "value": "\\.(css|js)$",
+          "values": [],
+          "min": "",
+          "max": ""
+        },
+        {
+          "field": "status",
+          "op": "class",
+          "value": "5",
+          "values": [],
+          "min": "",
+          "max": ""
+        },
+        {
+          "field": "date",
+          "op": "range",
+          "value": "",
+          "values": [],
+          "min": "2026-09-01",
+          "max": "2026-09-30"
+        },
+        {
+          "field": "date",
+          "op": "last_days",
+          "value": "7",
+          "values": [],
+          "min": "",
+          "max": ""
+        },
+        {
+          "field": "params",
+          "op": "is",
+          "value": "true",
+          "values": [],
+          "min": "",
+          "max": ""
+        },
+        {
+          "field": "bot",
+          "op": "starts",
+          "value": "googlebot",
+          "values": [],
+          "min": "",
+          "max": ""
+        },
+        {
+          "field": "url",
+          "op": "not_contains",
+          "value": "\"quote",
+          "values": [],
+          "min": "",
+          "max": ""
+        }
+      ],
+      "group": [],
+      "metrics": [],
+      "sort": [],
+      "limit": ""
+    },
+    "query": {
+      "filter": {
+        "or": [
+          {
+            "condition": {
+              "field": "path",
+              "predicate": {
+                "glob": "/a b/*"
+              }
+            }
+          },
+          {
+            "condition": {
+              "field": "path",
+              "predicate": {
+                "regex": "\\.(css|js)$"
+              }
+            }
+          },
+          {
+            "condition": {
+              "field": "status",
+              "predicate": {
+                "status_class": 5
+              }
+            }
+          },
+          {
+            "condition": {
+              "field": "date",
+              "predicate": {
+                "between": [
+                  {
+                    "date": "2026-09-01"
+                  },
+                  {
+                    "date": "2026-09-30"
+                  }
+                ]
+              }
+            }
+          },
+          {
+            "condition": {
+              "field": "date",
+              "predicate": {
+                "last_days": 7
+              }
+            }
+          },
+          {
+            "condition": {
+              "field": "params",
+              "predicate": {
+                "one_of": [
+                  {
+                    "boolean": true
+                  }
+                ]
+              }
+            }
+          },
+          {
+            "condition": {
+              "field": "bot",
+              "predicate": {
+                "glob": "googlebot*"
+              }
+            }
+          },
+          {
+            "not": {
+              "condition": {
+                "field": "url",
+                "predicate": {
+                  "glob": "*\"quote*"
+                }
+              }
+            }
+          }
+        ]
+      },
+      "group": [],
+      "metrics": [],
+      "sort": [],
+      "limit": null
+    }
+  },
+  {
+    "name": "single conditions with exact values",
+    "text": "verification:verified status:301,302 date:2026-10-07 method:\">GET\"",
+    "form": {
+      "mode": "and",
+      "rows": [
+        {
+          "field": "verification",
+          "op": "eq",
+          "value": "",
+          "values": [
+            "verified"
+          ],
+          "min": "",
+          "max": ""
+        },
+        {
+          "field": "status",
+          "op": "eq",
+          "value": "",
+          "values": [
+            "301",
+            "302"
+          ],
+          "min": "",
+          "max": ""
+        },
+        {
+          "field": "date",
+          "op": "eq",
+          "value": "",
+          "values": [
+            "2026-10-07"
+          ],
+          "min": "",
+          "max": ""
+        },
+        {
+          "field": "method",
+          "op": "eq",
+          "value": "",
+          "values": [
+            ">GET"
+          ],
+          "min": "",
+          "max": ""
+        }
+      ],
+      "group": [],
+      "metrics": [],
+      "sort": [],
+      "limit": ""
+    },
+    "query": {
+      "filter": {
+        "and": [
+          {
+            "condition": {
+              "field": "verification",
+              "predicate": {
+                "one_of": [
+                  {
+                    "text": "verified"
+                  }
+                ]
+              }
+            }
+          },
+          {
+            "condition": {
+              "field": "status",
+              "predicate": {
+                "one_of": [
+                  {
+                    "integer": 301
+                  },
+                  {
+                    "integer": 302
+                  }
+                ]
+              }
+            }
+          },
+          {
+            "condition": {
+              "field": "date",
+              "predicate": {
+                "one_of": [
+                  {
+                    "date": "2026-10-07"
+                  }
+                ]
+              }
+            }
+          },
+          {
+            "condition": {
+              "field": "method",
+              "predicate": {
+                "one_of": [
+                  {
+                    "text": ">GET"
+                  }
+                ]
+              }
+            }
+          }
+        ]
+      },
+      "group": [],
+      "metrics": [],
+      "sort": [],
+      "limit": null
+    }
+  },
+  {
+    "name": "typed values with * patterns",
+    "text": "(bot:googlebot* OR bot:bingbot) -(ua:*curl* OR ua:\"python requests\") bot_category:ai-*",
+    "form": {
+      "mode": "and",
+      "rows": [
+        {
+          "field": "bot",
+          "op": "eq",
+          "value": "",
+          "values": [
+            "googlebot*",
+            "bingbot"
+          ],
+          "min": "",
+          "max": ""
+        },
+        {
+          "field": "ua",
+          "op": "neq",
+          "value": "",
+          "values": [
+            "*curl*",
+            "python requests"
+          ],
+          "min": "",
+          "max": ""
+        },
+        {
+          "field": "bot_category",
+          "op": "starts",
+          "value": "ai-",
+          "values": [],
+          "min": "",
+          "max": ""
+        }
+      ],
+      "group": [],
+      "metrics": [],
+      "sort": [],
+      "limit": ""
+    },
+    "query": {
+      "filter": {
+        "and": [
+          {
+            "or": [
+              {
+                "condition": {
+                  "field": "bot",
+                  "predicate": {
+                    "glob": "googlebot*"
+                  }
+                }
+              },
+              {
+                "condition": {
+                  "field": "bot",
+                  "predicate": {
+                    "one_of": [
+                      {
+                        "text": "bingbot"
+                      }
+                    ]
+                  }
+                }
+              }
+            ]
+          },
+          {
+            "not": {
+              "or": [
+                {
+                  "condition": {
+                    "field": "ua",
+                    "predicate": {
+                      "glob": "*curl*"
+                    }
+                  }
+                },
+                {
+                  "condition": {
+                    "field": "ua",
+                    "predicate": {
+                      "one_of": [
+                        {
+                          "text": "python requests"
+                        }
+                      ]
+                    }
+                  }
+                }
+              ]
+            }
+          },
+          {
+            "condition": {
+              "field": "bot_category",
+              "predicate": {
+                "glob": "ai-*"
+              }
+            }
+          }
+        ]
+      },
+      "group": [],
+      "metrics": [],
+      "sort": [],
+      "limit": null
+    }
+  },
+  {
+    "name": "a value list with a pattern on its own",
+    "text": "(bot:googlebot* OR bot:bingbot)",
+    "form": {
+      "mode": "and",
+      "rows": [
+        {
+          "field": "bot",
+          "op": "eq",
+          "value": "",
+          "values": [
+            "googlebot*",
+            "bingbot"
+          ],
+          "min": "",
+          "max": ""
+        }
+      ],
+      "group": [],
+      "metrics": [],
+      "sort": [],
+      "limit": ""
+    },
+    "query": {
+      "filter": {
+        "or": [
+          {
+            "condition": {
+              "field": "bot",
+              "predicate": {
+                "glob": "googlebot*"
+              }
+            }
+          },
+          {
+            "condition": {
+              "field": "bot",
+              "predicate": {
+                "one_of": [
+                  {
+                    "text": "bingbot"
+                  }
+                ]
+              }
+            }
+          }
+        ]
+      },
+      "group": [],
+      "metrics": [],
+      "sort": [],
+      "limit": null
+    }
+  }
+]

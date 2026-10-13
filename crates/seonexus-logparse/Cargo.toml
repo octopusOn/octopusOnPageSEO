@@ -1,0 +1,34 @@
+[package]
+name = "seonexus-logparse"
+description = "Streaming access-log parsers (Traefik, Nginx, Apache, custom templates) with format detection."
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+repository.workspace = true
+authors.workspace = true
+publish.workspace = true
+
+[dependencies]
+bzip2.workspace = true
+flate2.workspace = true
+memchr.workspace = true
+seonexus-core.workspace = true
+serde.workspace = true
+serde_json.workspace = true
+thiserror.workspace = true
+zip.workspace = true
+zstd.workspace = true
+
+[dev-dependencies]
+criterion.workspace = true
+insta.workspace = true
+proptest.workspace = true
+tempfile.workspace = true
+
+[[bench]]
+name = "parse"
+harness = false
+
+[lints]
+workspace = true
