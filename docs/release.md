@@ -27,12 +27,26 @@ with `-- --target universal-apple-darwin`; `cargo build --release -p snx-log`), 
 
 ## Signing
 
-Unsigned builds work but trigger Gatekeeper / SmartScreen warnings. Add these repository
-secrets to sign:
+Unsigned builds work but trigger Gatekeeper / SmartScreen warnings ("Open Anyway" /
+"Run anyway"); the download page explains both.
 
-- macOS: `APPLE_CERTIFICATE`, `APPLE_CERTIFICATE_PASSWORD`, `APPLE_SIGNING_IDENTITY`,
-  `APPLE_ID`, `APPLE_PASSWORD`, `APPLE_TEAM_ID` (notarization),
-- Windows: a code-signing certificate configured in `tauri.conf.json` (`bundle.windows`),
-- updater (optional): `TAURI_SIGNING_PRIVATE_KEY`, `TAURI_SIGNING_PRIVATE_KEY_PASSWORD`.
+### macOS (Developer ID + notarization)
 
-See the Tauri distribution guides for details.
+1. Join the Apple Developer Program (individual or organization; the enrolled name is shown as
+   the developer).
+2. Create a **Developer ID Application** certificate (Xcode → Settings → Accounts → Manage
+   Certificates, or a CSR on developer.apple.com) and export it with its key as `.p12`.
+3. Create an app-specific password for the Apple ID (appleid.apple.com).
+4. Add the repository secrets `APPLE_CERTIFICATE` (`base64 -i cert.p12`),
+   `APPLE_CERTIFICATE_PASSWORD`, `APPLE_SIGNING_IDENTITY`
+   (`Developer ID Application: Name (TEAMID)`), `APPLE_ID`, `APPLE_PASSWORD` (the
+   app-specific password) and `APPLE_TEAM_ID`.
+
+The release workflow then signs, notarizes and staples the app; without the secrets it signs ad
+hoc. Locally, export the same variables before `pnpm desktop:build`.
+
+### Windows
+
+Configure a code-signing certificate in `tauri.conf.json` (`bundle.windows`), for example
+Azure Trusted Signing. Optional updater signing uses `TAURI_SIGNING_PRIVATE_KEY` and
+`TAURI_SIGNING_PRIVATE_KEY_PASSWORD`.
