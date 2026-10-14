@@ -1,0 +1,7 @@
+# LF on every platform: rustfmt (newline_style = "Unix"), test snapshots and log fixtures expect
+# it, and Windows checkouts would otherwise convert to CRLF.
+* text=auto eol=lf
+
+*.png binary
+*.ico binary
+*.icns binary
