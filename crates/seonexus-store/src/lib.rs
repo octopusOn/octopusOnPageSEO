@@ -27,6 +27,6 @@ pub use settings::StoreSettings;
 pub use site::{
     BotIpPair, BotIpVerdict, BotIpVerifier, BotTag, BotVerifyOutcome, GeoRefresh,
     ImportHistoryEntry, ImportOptions, ImportOutcome, ImportRecord, ImportSession, ImportedFile,
-    IpGeo, IpGeoLookup, NoBotVerification, ReclassifyOutcome, SiteReader, SiteStore, SiteTotals,
-    SkippedSample, UserAgentClassifier, VerifyScope,
+    IpGeo, IpGeoLookup, NoBotVerification, ReclassifyOutcome, SiteReader, SiteSnapshot, SiteStore,
+    SiteTotals, SkippedSample, UserAgentClassifier, VerifyScope,
 };

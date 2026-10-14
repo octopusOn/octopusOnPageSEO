@@ -90,8 +90,9 @@ pub fn export_site(
     path: &Path,
 ) -> Result<ArchiveReport, ArchiveError> {
     let record = Catalog::open(workspace.data_dir())?.site_by_name(site.trim())?;
-    let store = SiteStore::open(workspace.data_dir(), record.id, workspace.settings())?;
-    let files = store.archive_files()?;
+    let snapshot =
+        SiteStore::open(workspace.data_dir(), record.id, workspace.settings())?.into_snapshot()?;
+    let files = snapshot.files();
     let manifest = Manifest {
         format: FORMAT.to_owned(),
         version: VERSION,
@@ -122,7 +123,7 @@ pub fn export_site(
         let stored = SimpleFileOptions::default()
             .compression_method(zip::CompressionMethod::Stored)
             .large_file(true);
-        for (name, source) in &files {
+        for (name, source) in files {
             zip.start_file(name.as_str(), stored).map_err(zip_error)?;
             let mut input = File::open(source).map_err(io(source))?;
             io::copy(&mut input, &mut zip).map_err(io(source))?;
@@ -134,13 +135,14 @@ pub fn export_site(
         let _ = fs::remove_file(&partial);
         return Err(error);
     }
-    drop(store);
+    let files = files.len();
+    drop(snapshot);
     fs::rename(&partial, path).map_err(io(path))?;
     let bytes = fs::metadata(path).map_or(0, |m| m.len());
     Ok(ArchiveReport {
         site: record.name,
         path: path.display().to_string(),
-        files: files.len(),
+        files,
         bytes,
     })
 }

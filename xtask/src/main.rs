@@ -111,7 +111,14 @@ fn lint() -> Result<()> {
 }
 
 fn test() -> Result<()> {
-    cargo(&["test", "--workspace", "--all-targets", "--locked"])?;
+    // Report every failing test binary, not only the first.
+    cargo(&[
+        "test",
+        "--workspace",
+        "--all-targets",
+        "--locked",
+        "--no-fail-fast",
+    ])?;
     cargo(&["test", "--workspace", "--doc", "--locked"])
 }
 

@@ -33,6 +33,21 @@ use crate::paths::{DataDir, SitePaths};
 use crate::settings::StoreSettings;
 use crate::sql::path_literal;
 
+/// A site's files frozen for copying (see [`SiteStore::into_snapshot`]): the database is
+/// closed and the site lock keeps writers out until the snapshot is dropped.
+#[derive(Debug)]
+pub struct SiteSnapshot {
+    files: Vec<(String, std::path::PathBuf)>,
+    _lock: SiteLock,
+}
+
+impl SiteSnapshot {
+    /// `(path inside the archive, file)` pairs, `site.duckdb` first.
+    pub fn files(&self) -> &[(String, std::path::PathBuf)] {
+        &self.files
+    }
+}
+
 /// Exclusive handle to one site's data. Opening it acquires the site lock and finishes or
 /// rolls back imports interrupted by a crash.
 #[derive(Debug)]
@@ -70,13 +85,15 @@ impl SiteStore {
         data_dir.site(site).database().exists()
     }
 
-    /// Flushes the database and lists the site's files for an archive as
-    /// `(path inside the archive, file)`: `site.duckdb` and every published hit file. Keep the
-    /// store open while copying them; it holds the site lock.
+    /// Flushes and closes the database and lists the site's files for an archive as
+    /// `(path inside the archive, file)`: `site.duckdb` and every published hit file. The
+    /// snapshot keeps the site lock, so nothing changes the files until it is dropped. The
+    /// database is closed because Windows does not let other handles read a file DuckDB has
+    /// open.
     ///
     /// # Errors
     /// Database or filesystem errors.
-    pub fn archive_files(&self) -> Result<Vec<(String, std::path::PathBuf)>, StoreError> {
+    pub fn into_snapshot(self) -> Result<SiteSnapshot, StoreError> {
         self.connection.execute_batch("CHECKPOINT;")?;
         let mut files = vec![("site.duckdb".to_owned(), self.paths.database())];
         let hits = self.paths.hits();
@@ -101,7 +118,15 @@ impl SiteStore {
                 }
             }
         }
-        Ok(files)
+        let Self {
+            connection,
+            _lock: lock,
+            ..
+        } = self;
+        connection
+            .close()
+            .map_err(|(_, error)| StoreError::from(error))?;
+        Ok(SiteSnapshot { files, _lock: lock })
     }
 
     /// Whether a file with this fingerprint was already imported.

@@ -319,7 +319,7 @@ fn files_of_deleted_imports_are_removed_on_next_open() {
 }
 
 #[test]
-fn archive_files_list_database_and_hits_and_restore_paths_are_safe() {
+fn snapshot_lists_database_and_hits_and_restore_paths_are_safe() {
     let fixture = Fixture::new();
     let mut store = fixture.open();
     import(
@@ -328,8 +328,15 @@ fn archive_files_list_database_and_hits_and_restore_paths_are_safe() {
         &[&range(0, 10)],
         ImportOptions::default(),
     );
-    let files = store.archive_files().unwrap();
+    let snapshot = store.into_snapshot().unwrap();
+    let files = snapshot.files();
     assert_eq!(files[0].0, "site.duckdb");
+    // The database is closed (readable on Windows too) while the site stays locked.
+    assert!(std::fs::read(&files[0].1).is_ok_and(|bytes| !bytes.is_empty()));
+    assert!(matches!(
+        SiteStore::open(&fixture.data, SiteId::new(1), StoreSettings::default()),
+        Err(StoreError::SiteLocked(_))
+    ));
     assert!(files.len() > 1);
     assert!(
         files[1..]
