@@ -119,7 +119,16 @@ fn test() -> Result<()> {
         "--locked",
         "--no-fail-fast",
     ])?;
-    cargo(&["test", "--workspace", "--doc", "--locked"])
+    // The desktop shell has no doc tests; building it here would put tauri-build's empty
+    // `msvcrt.lib` (static VC runtime) on every doc test's linker path on Windows.
+    cargo(&[
+        "test",
+        "--workspace",
+        "--exclude",
+        "seonexus-desktop",
+        "--doc",
+        "--locked",
+    ])
 }
 
 fn deny() -> Result<()> {
