@@ -27,12 +27,16 @@ jobs:
           version="${GITHUB_REF_NAME#v}"
           notes="docs/releases/${version}.md"
           [ -f "$notes" ] || { echo "Release notes for ${version} are missing" > /tmp/notes.md; notes=/tmp/notes.md; }
-          if ! gh release view "$GITHUB_REF_NAME" > /dev/null 2>&1; then
-            gh release create "$GITHUB_REF_NAME" --draft --verify-tag \
-              --title "octopusSEO Log Analyser ${version}" --notes-file "$notes"
-          fi
+          # Reuse the release of a re-run; otherwise take the id from the create response (a
+          # listing right after creating a draft may not include it yet).
           id=$(gh api "repos/${GITHUB_REPOSITORY}/releases" --paginate \
             --jq ".[] | select(.tag_name == \"${GITHUB_REF_NAME}\") | .id" | head -n 1)
+          if [ -z "$id" ]; then
+            id=$(gh api -X POST "repos/${GITHUB_REPOSITORY}/releases" \
+              -f tag_name="$GITHUB_REF_NAME" -f name="octopusSEO Log Analyser ${version}" \
+              -F body=@"$notes" -F draft=true --jq .id)
+          fi
+          test -n "$id"
           echo "id=${id}" >> "$GITHUB_OUTPUT"
 
   desktop:
