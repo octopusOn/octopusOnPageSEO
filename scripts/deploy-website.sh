@@ -26,8 +26,10 @@ as_site corepack pnpm --filter @octopusseo/cms build
 cd "$ROOT/apps/cms"
 as_site "$PHP" artisan optimize
 
-# The website's build reads every page from the CMS (127.0.0.1:8095).
+# The website's build reads every page from the CMS (127.0.0.1:8095); drop the previous build's
+# cached API responses so it sees the current content and settings.
 cd "$ROOT"
+rm -rf "$ROOT/apps/web/.next/cache/fetch-cache"
 as_site corepack pnpm --filter @octopusseo/web build
 systemctl restart octopuson-web
 sleep 3
