@@ -81,7 +81,7 @@ export function SaveQueryDialog({
         <pre className="query-preview">{empty ? "–" : query}</pre>
       </Field>
       <p className="muted small">{empty ? t("saved.emptyQuery") : t("saved.presetsNote")}</p>
-      {confirmReplace && <div className="banner info">{t("saved.exists", { name: name.trim() })}</div>}
+      {confirmReplace && <div className="oc-banner info">{t("saved.exists", { name: name.trim() })}</div>}
       <ErrorBanner error={save.error?.kind === "duplicate" ? null : save.error} />
     </Modal>
   );

@@ -1,34 +1,20 @@
-import { useEffect } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Globe2 } from "lucide-react";
 
 import { api } from "../api/commands";
 import type { CommandError, GeoUpdateReport } from "../api/types";
+import { AccountCard } from "../components/AccountCard";
 import { useToast } from "../components/Toasts";
 import { Button, Card, ErrorBanner, Segmented } from "../components/ui";
 import { formatDateTime, formatNumber } from "../lib/format";
-import { useStored } from "../lib/storage";
 import { useI18n, type Language } from "../i18n";
 import { keys } from "../state";
 
-export type Theme = "system" | "light" | "dark";
-
-/** Applies the stored theme to the document. */
-export function useTheme(): [Theme, (theme: Theme) => void] {
-  const [theme, setTheme] = useStored<Theme>("theme", "system");
-  useEffect(() => {
-    if (theme === "system") document.documentElement.removeAttribute("data-theme");
-    else document.documentElement.setAttribute("data-theme", theme);
-  }, [theme]);
-  return [theme, setTheme];
-}
-
-export function SettingsPage({ theme, setTheme }: { theme: Theme; setTheme: (theme: Theme) => void }) {
+export function SettingsPage() {
   const { t, language, setLanguage } = useI18n();
   const info = useQuery({ queryKey: keys.appInfo, queryFn: api.appInfo });
   return (
     <div className="page">
-      <h1>{t("settings.title")}</h1>
       <Card>
         <div className="stack">
           <div className="row between">
@@ -42,24 +28,13 @@ export function SettingsPage({ theme, setTheme }: { theme: Theme; setTheme: (the
               ]}
             />
           </div>
-          <div className="row between">
-            <strong>{t("settings.theme")}</strong>
-            <Segmented<Theme>
-              value={theme}
-              onChange={setTheme}
-              options={[
-                { value: "system", label: t("settings.themeSystem") },
-                { value: "light", label: t("settings.themeLight") },
-                { value: "dark", label: t("settings.themeDark") },
-              ]}
-            />
-          </div>
         </div>
       </Card>
+      <AccountCard />
       <GeoCard />
       {info.data && (
         <Card>
-          <table className="table-simple">
+          <table className="oc-table">
             <tbody>
               <tr>
                 <td>{t("settings.version")}</td>

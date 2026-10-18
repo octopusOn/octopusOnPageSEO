@@ -80,7 +80,7 @@ function FormatPicker({ value, onChange }: { value: FormatInput; onChange: (valu
       {(value.kind === "nginx" || value.kind === "apache") && (
         <Field label={t("site.customFormat")}>
           <textarea
-            className="textarea"
+            className="oc-textarea"
             rows={3}
             value={value.format}
             placeholder={
@@ -181,7 +181,7 @@ export function SiteSettingsDialog({ site, onClose }: { site: SiteInfo; onClose:
   });
   const exporting = useMutation<ArchiveReport | null, CommandError>({
     mutationFn: async () => {
-      const path = await saveDialog({ defaultPath: `${site.name}.snxsite`, filters: [{ name: "octopusSEO site", extensions: ["snxsite"] }] });
+      const path = await saveDialog({ defaultPath: `${site.name}.snxsite`, filters: [{ name: "OctopusOn SEO site", extensions: ["snxsite"] }] });
       return path ? api.exportSite(site.name, path) : null;
     },
     onSuccess: (report) => {

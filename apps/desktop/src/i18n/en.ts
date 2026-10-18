@@ -1,7 +1,7 @@
 // English UI strings; the key set is the source of truth for every language.
 
 export const en = {
-  "app.title": "octopusSEO Log Analyser",
+  "app.title": "OctopusOn Log Analyser",
   "common.cancel": "Cancel",
   "common.close": "Close",
   "common.save": "Save",
@@ -30,6 +30,7 @@ export const en = {
   "nav.urls": "URL lists",
   "nav.periods": "Periods",
   "nav.settings": "Settings",
+  "nav.modules": "Modules",
 
   "sidebar.clients": "Clients",
   "sidebar.addClient": "New client",
@@ -37,6 +38,7 @@ export const en = {
   "sidebar.noClients": "Create a client to start, then add its sites.",
   "sidebar.noSites": "No sites",
   "sidebar.filter": "Filter sites…",
+  "sidebar.chooseSite": "Choose a site",
 
   "client.dialogTitle": "New client",
   "client.name": "Client name",
@@ -460,14 +462,21 @@ export const en = {
 
   "settings.title": "Settings",
   "settings.language": "Language",
-  "settings.theme": "Theme",
-  "settings.themeSystem": "System",
-  "settings.themeLight": "Light",
-  "settings.themeDark": "Dark",
   "settings.dataDir": "Data directory",
   "settings.version": "Version",
   "settings.memory": "Storage memory limit",
-  "settings.memoryHint": "Set OCTOPUSSEO_MEMORY_LIMIT_MB before starting the app to change it; the snx-log CLI shares this data directory.",
+  "account.title": "OctopusOn SEO account",
+  "account.intro": "The Log Analyser has no paid sources. Your OctopusOn SEO account is shared by every OctopusOn SEO program on this computer: connect it once and SERP Checker, SEO Keyword Research and Index Checker can use your credits.",
+  "account.connect": "Connect account",
+  "account.waiting": "Finish signing in on the page that opened in your browser…",
+  "account.cancel": "Cancel",
+  "account.signOut": "Disconnect",
+  "account.notConnected": "Not connected",
+  "account.balance": "{credits} credits",
+  "account.low": "Your balance is low.",
+  "account.buy": "Buy credits",
+  "account.devices": "Devices",
+  "settings.memoryHint": "Set OCTOPUSSEO_MEMORY_LIMIT_MB before starting the app to change it; the octopuson-log CLI shares this data directory.",
   "geo.title": "IP geolocation data",
   "geo.intro": "Adds the country and network (ASN, e.g. a cloud provider) of every client IP to reports: Countries and Networks reports, and country: / as_org: filters. The free DB-IP Lite databases (about 20 MB) are downloaded once a month on request; lookups run locally, no IP leaves your computer.",
   "geo.installed": "Data of {release} installed ({date}).",

@@ -64,7 +64,7 @@ export function FilterBuilder({ form, schema, kinds, onChange, onReset, directiv
   if (!form) {
     return (
       <div className="builder">
-        <div className="banner info">
+        <div className="oc-banner info">
           <div className="grow">{t("builder.textOnly")}</div>
           <Button small onClick={onReset}>
             {t("builder.reset")}
@@ -148,7 +148,7 @@ function ConditionRow({
   };
   return (
     <div className="builder-row">
-      <select className="select" value={row.field} onChange={(e) => changeField(e.target.value)}>
+      <select className="oc-select" value={row.field} onChange={(e) => changeField(e.target.value)}>
         {fields.map((field) => (
           <option key={field.name} value={field.name}>
             {label(t, "field", field.name)}
@@ -156,7 +156,7 @@ function ConditionRow({
         ))}
       </select>
       <select
-        className="select"
+        className="oc-select"
         value={row.op}
         onChange={(e) => onChange({ ...row, op: e.target.value as FilterOp, value: defaultValue(e.target.value as FilterOp, row.value) })}
       >
@@ -202,7 +202,7 @@ function ValueInput({
       return (
         <div className="builder-values">
           <input
-            className="input"
+            className="oc-input"
             type={type}
             min={0}
             value={row.min}
@@ -211,7 +211,7 @@ function ValueInput({
           />
           <span className="muted">–</span>
           <input
-            className="input"
+            className="oc-input"
             type={type}
             min={0}
             value={row.max}
@@ -223,7 +223,7 @@ function ValueInput({
     }
     case "class":
       return (
-        <select className="select" value={row.value} onChange={(e) => set({ value: e.target.value })}>
+        <select className="oc-select" value={row.value} onChange={(e) => set({ value: e.target.value })}>
           {["2", "3", "4", "5", "1"].map((c) => (
             <option key={c} value={c}>
               {c}xx
@@ -234,13 +234,13 @@ function ValueInput({
     case "last_days":
       return (
         <div className="builder-values">
-          <input className="input" type="number" min={1} value={row.value} onChange={(e) => set({ value: e.target.value })} />
+          <input className="oc-input" type="number" min={1} value={row.value} onChange={(e) => set({ value: e.target.value })} />
           <span className="muted">{t("builder.days")}</span>
         </div>
       );
     case "is":
       return (
-        <select className="select" value={row.value} onChange={(e) => set({ value: e.target.value })}>
+        <select className="oc-select" value={row.value} onChange={(e) => set({ value: e.target.value })}>
           <option value="true">{t("builder.yes")}</option>
           <option value="false">{t("builder.no")}</option>
         </select>
@@ -248,7 +248,7 @@ function ValueInput({
     case "regex":
       return (
         <input
-          className="input grow mono"
+          className="oc-input grow mono"
           value={row.value}
           placeholder="^/(en|de)/"
           onChange={(e) => set({ value: e.target.value })}
@@ -258,7 +258,7 @@ function ValueInput({
     case "neq":
       if (kind === "date") {
         return (
-          <input className="input" type="date" value={row.values[0] ?? ""} onChange={(e) => set({ values: [e.target.value] })} />
+          <input className="oc-input" type="date" value={row.values[0] ?? ""} onChange={(e) => set({ values: [e.target.value] })} />
         );
       }
       return (
@@ -383,7 +383,7 @@ function Directives({ form, schema, onChange }: { form: FilterForm; schema: Quer
       <div className="builder-option">
         <span>{t("builder.sort")}</span>
         <select
-          className="select"
+          className="oc-select"
           value={first?.column ?? ""}
           onChange={(e) =>
             onChange({
@@ -403,7 +403,7 @@ function Directives({ form, schema, onChange }: { form: FilterForm; schema: Quer
         </select>
         {first && (
           <select
-            className="select"
+            className="oc-select"
             value={first.direction}
             onChange={(e) =>
               onChange({ ...form, sort: [{ ...first, direction: e.target.value as "asc" | "desc" }, ...form.sort.slice(1)] })
@@ -417,7 +417,7 @@ function Directives({ form, schema, onChange }: { form: FilterForm; schema: Quer
       <div className="builder-option">
         <span>{t("builder.limit")}</span>
         <input
-          className="input"
+          className="oc-input"
           type="number"
           min={1}
           style={{ width: 110 }}
@@ -455,9 +455,9 @@ function MultiPick({
   return (
     <div className="builder-option">
       <span>{title}</span>
-      <div className="chips">
+      <div className="oc-chips">
         {selected.map((name) => (
-          <span className="chip" key={name}>
+          <span className="oc-chip" key={name}>
             <span>{label(name)}</span>
             <button type="button" onClick={() => onChange(selected.filter((s) => s !== name))}>
               <X size={12} />
@@ -466,7 +466,7 @@ function MultiPick({
         ))}
         {remaining.length > 0 && (
           <select
-            className="select small-select"
+            className="oc-select small-select"
             value=""
             onChange={(e) => e.target.value && onChange([...selected, e.target.value])}
           >

@@ -1,0 +1,229 @@
+/* octopusSEO Chromatophore — generated from tokens.json */
+/* Do not edit by hand: change tokens.json and run `pnpm --filter @octopusseo/design build`. */
+
+@font-face {
+  font-family: "Geist";
+  src: url("./fonts/geist-latin-wght-normal.woff2") format("woff2");
+  font-weight: 100 900;
+  font-style: normal;
+  font-display: swap;
+  unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
+}
+
+@font-face {
+  font-family: "Geist";
+  src: url("./fonts/geist-latin-ext-wght-normal.woff2") format("woff2");
+  font-weight: 100 900;
+  font-style: normal;
+  font-display: swap;
+  unicode-range: U+0100-02BA, U+02BD-02C5, U+02C7-02CC, U+02CE-02D7, U+02DD-02FF, U+0304, U+0308, U+0329, U+1D00-1DBF, U+1E00-1E9F, U+1EF2-1EFF, U+2020, U+20A0-20AB, U+20AD-20C0, U+2113, U+2C60-2C7F, U+A720-A7FF;
+}
+
+@font-face {
+  font-family: "Geist Mono";
+  src: url("./fonts/geist-mono-latin-wght-normal.woff2") format("woff2");
+  font-weight: 100 900;
+  font-style: normal;
+  font-display: swap;
+  unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
+}
+
+@font-face {
+  font-family: "Geist Mono";
+  src: url("./fonts/geist-mono-latin-ext-wght-normal.woff2") format("woff2");
+  font-weight: 100 900;
+  font-style: normal;
+  font-display: swap;
+  unicode-range: U+0100-02BA, U+02BD-02C5, U+02C7-02CC, U+02CE-02D7, U+02DD-02FF, U+0304, U+0308, U+0329, U+1D00-1DBF, U+1E00-1E9F, U+1EF2-1EFF, U+2020, U+20A0-20AB, U+20AD-20C0, U+2113, U+2C60-2C7F, U+A720-A7FF;
+}
+
+:root,
+[data-theme="deep-sea"] {
+  --ground-1: #462a7d;
+  --ground-2: #311f59;
+  --ground-3: #1d133b;
+  --bg: #1d133b;
+  --surface-1: rgba(255, 255, 255, 0.06);
+  --surface-2: rgba(255, 255, 255, 0.10);
+  --surface-3: rgba(255, 255, 255, 0.16);
+  --surface-raised: rgba(38, 25, 70, 0.94);
+  --line: rgba(255, 255, 255, 0.10);
+  --line-strong: rgba(255, 255, 255, 0.18);
+  --line-control: rgba(255, 255, 255, 0.46);
+  --rail: rgba(0, 0, 0, 0);
+  --rail-active: rgba(255, 255, 255, 0.16);
+  --rail-hover: rgba(255, 255, 255, 0.07);
+  --rail-field: rgba(255, 255, 255, 0.08);
+  --rail-line: rgba(255, 255, 255, 0.08);
+  --ink: #ffffff;
+  --ink-muted: #ddd4f5;
+  --ink-faint: #cbbfee;
+  --rail-ink: #ffffff;
+  --rail-ink-muted: #ddd4f5;
+  --rail-ink-strong: #ffffff;
+  --accent: #f2ddff;
+  --accent-fill: #ffffff;
+  --accent-fill-hover: #ece6ff;
+  --on-accent: #241544;
+  --accent-soft: rgba(255, 255, 255, 0.14);
+  --focus: #ffffff;
+  --focus-ring: rgba(255, 255, 255, 0.28);
+  --pop-fill: #c42d86;
+  --on-pop: #ffffff;
+  --product: #5fe0cc;
+  --product-soft: rgba(95, 224, 204, 0.16);
+  --good: #8ff2bf;
+  --good-soft: rgba(143, 242, 191, 0.14);
+  --warning: #ffd780;
+  --warning-soft: rgba(255, 215, 128, 0.14);
+  --critical: #ffb3c1;
+  --critical-soft: rgba(255, 179, 193, 0.14);
+  --critical-fill: #c8303b;
+  --info: #a8e0ff;
+  --info-soft: rgba(168, 224, 255, 0.14);
+  --tile-violet-1: #a78bfa;
+  --tile-violet-2: #6d3fe0;
+  --tile-blue-1: #60a5fa;
+  --tile-blue-2: #2563eb;
+  --tile-teal-1: #2dd4bf;
+  --tile-teal-2: #0d9488;
+  --tile-orange-1: #fb923c;
+  --tile-orange-2: #ea580c;
+  --tile-pink-1: #f472b6;
+  --tile-pink-2: #db2777;
+  --tile-cyan-1: #22d3ee;
+  --tile-cyan-2: #0891b2;
+  --tile-amber-1: #fbbf24;
+  --tile-amber-2: #d97706;
+  --tile-slate-1: #94a3b8;
+  --tile-slate-2: #475569;
+  --chart-1: #36ccb9;
+  --chart-2: #f29a67;
+  --chart-3: #2ac8de;
+  --chart-4: #f79099;
+  --chart-5: #69bafd;
+  --chart-6: #9cc268;
+  --chart-7: #f190b7;
+  --chart-8: #dca94c;
+  --chart-grid: rgba(255, 255, 255, 0.08);
+  --chart-axis: rgba(255, 255, 255, 0.18);
+  --scrim: rgba(10, 6, 24, 0.50);
+  --shadow-card: inset 0 1px 0 rgba(255, 255, 255, 0.06), 0 10px 30px rgba(10, 6, 30, 0.22);
+  --shadow-raised: 0 0 0 1px rgba(255, 255, 255, 0.08), 0 24px 64px rgba(8, 4, 24, 0.55);
+  --shadow-button: 0 1px 2px rgba(10, 6, 30, 0.30), 0 4px 12px rgba(10, 6, 30, 0.18);
+  --shadow-tile: inset 0 1px 0 rgba(255, 255, 255, 0.40), inset 0 -1px 0 rgba(0, 0, 0, 0.12), 0 4px 10px rgba(10, 6, 30, 0.30);
+  color-scheme: dark;
+}
+
+:root {
+  --space-1: 4px;
+  --space-2: 8px;
+  --space-3: 12px;
+  --space-4: 16px;
+  --space-5: 20px;
+  --space-6: 24px;
+  --space-8: 32px;
+  --space-10: 40px;
+  --space-12: 48px;
+  --radius-xs: 6px;
+  --radius-sm: 10px;
+  --radius-md: 14px;
+  --radius-lg: 22px;
+  --radius-xl: 28px;
+  --radius-pill: 999px;
+  --z-sticky: 2;
+  --z-menu: 30;
+  --z-modal: 50;
+  --z-toast: 60;
+  --font-sans: -apple-system, BlinkMacSystemFont, "SF Pro Text", "Segoe UI Variable Text", "Segoe UI", "Geist", system-ui, sans-serif;
+  --font-mono: ui-monospace, "SF Mono", "Geist Mono", Menlo, Consolas, monospace;
+}
+
+.type-display-xl {
+  font-family: var(--font-sans);
+  font-size: 48px;
+  line-height: 56px;
+  font-weight: 600;
+  letter-spacing: -0.025em;
+}
+
+.type-display-lg {
+  font-family: var(--font-sans);
+  font-size: 32px;
+  line-height: 38px;
+  font-weight: 600;
+  letter-spacing: -0.02em;
+}
+
+.type-metric {
+  font-family: var(--font-sans);
+  font-size: 34px;
+  line-height: 40px;
+  font-weight: 600;
+  letter-spacing: -0.02em;
+}
+
+.type-lead {
+  font-family: var(--font-sans);
+  font-size: 19px;
+  line-height: 27px;
+  font-weight: 400;
+}
+
+.type-card-title {
+  font-family: var(--font-sans);
+  font-size: 20px;
+  line-height: 26px;
+  font-weight: 600;
+  letter-spacing: -0.01em;
+}
+
+.type-title {
+  font-family: var(--font-sans);
+  font-size: 15px;
+  line-height: 22px;
+  font-weight: 600;
+}
+
+.type-body {
+  font-family: var(--font-sans);
+  font-size: 15px;
+  line-height: 22px;
+  font-weight: 400;
+}
+
+.type-body-sm {
+  font-family: var(--font-sans);
+  font-size: 13px;
+  line-height: 19px;
+  font-weight: 400;
+}
+
+.type-caption {
+  font-family: var(--font-sans);
+  font-size: 12px;
+  line-height: 16px;
+  font-weight: 500;
+}
+
+.type-label {
+  font-family: var(--font-sans);
+  font-size: 11px;
+  line-height: 14px;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+}
+
+.type-code {
+  font-family: var(--font-mono);
+  font-size: 13px;
+  line-height: 19px;
+  font-weight: 400;
+}
+
+.type-code-sm {
+  font-family: var(--font-mono);
+  font-size: 12px;
+  line-height: 17px;
+  font-weight: 400;
+}

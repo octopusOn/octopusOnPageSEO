@@ -177,12 +177,12 @@ export function ReportsPage({ site }: { site: string }) {
   return (
     <div className="page fill">
       <div className="reports">
-        <div className="card reports-side">
+        <div className="oc-panel reports-side">
           <div className="stack">
             <div className="row">
               <Search size={15} className="muted" />
               <input
-                className="input grow"
+                className="oc-input grow"
                 value={search}
                 placeholder={t("common.search")}
                 onChange={(e) => setSearch(e.target.value)}
@@ -246,7 +246,7 @@ export function ReportsPage({ site }: { site: string }) {
           </div>
         </div>
         <div className="reports-main">
-          <div className="card stack">
+          <div className="oc-panel stack">
             <div className="row">
               <Field label={t("reports.date")}>
                 <Select value={date.preset} onChange={(e) => setPreset(e.target.value as DatePreset)}>
@@ -296,11 +296,11 @@ export function ReportsPage({ site }: { site: string }) {
                 />
               </div>
             )}
-            <div className="field">
+            <div className="oc-field">
               <span>{t("builder.text")}</span>
               <div className="row">
                 <textarea
-                  className="textarea grow"
+                  className="oc-textarea grow"
                   rows={2}
                   value={text}
                   placeholder={t("reports.queryPlaceholder")}

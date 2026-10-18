@@ -30,18 +30,18 @@ export function ToastProvider({ children }: { children: ReactNode }) {
   return (
     <ToastContext.Provider value={value}>
       {children}
-      <div className="toasts">
+      <div className="oc-toasts">
         {toasts.map((toast) => (
-          <div key={toast.id} className={`toast ${toast.tone}`} role="status">
+          <div key={toast.id} className={`oc-toast ${toast.tone}`} role="status">
             {toast.tone === "success" ? (
-              <CheckCircle2 size={18} color="var(--success)" />
+              <CheckCircle2 size={18} color="var(--good)" />
             ) : toast.tone === "error" ? (
-              <XCircle size={18} color="var(--danger)" />
+              <XCircle size={18} color="var(--critical)" />
             ) : (
               <Info size={18} color="var(--accent)" />
             )}
             <div className="grow">{toast.text}</div>
-            <button className="btn ghost icon" type="button" onClick={() => dismiss(toast.id)}>
+            <button className="oc-btn ghost icon" type="button" onClick={() => dismiss(toast.id)}>
               <X size={14} />
             </button>
           </div>

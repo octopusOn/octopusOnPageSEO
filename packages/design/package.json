@@ -1,0 +1,28 @@
+{
+  "name": "@octopusseo/design",
+  "private": true,
+  "version": "0.1.0",
+  "description": "Chromatophore, the octopusSEO design language: tokens, fonts and component styles shared by every octopusSEO program.",
+  "license": "MIT OR Apache-2.0",
+  "type": "module",
+  "exports": {
+    ".": "./index.css",
+    "./index.css": "./index.css",
+    "./tokens.css": "./tokens.css",
+    "./base.css": "./base.css",
+    "./components.css": "./components.css",
+    "./tokens.json": "./tokens.json",
+    "./brand/*": "./brand/*"
+  },
+  "files": [
+    "*.css",
+    "README.md",
+    "brand",
+    "fonts",
+    "tokens.json"
+  ],
+  "scripts": {
+    "build": "node scripts/build-tokens.mjs",
+    "check": "node scripts/build-tokens.mjs --check"
+  }
+}

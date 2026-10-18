@@ -23,7 +23,7 @@ export function Button({
   busy?: boolean;
 }) {
   const classes = [
-    "btn",
+    "oc-btn",
     variant === "danger-solid" ? "danger solid" : variant === "default" ? "" : variant,
     small ? "small" : "",
     children ? "" : "icon",
@@ -33,7 +33,7 @@ export function Button({
     .join(" ");
   return (
     <button type="button" className={classes} disabled={busy || props.disabled} {...props}>
-      {busy ? <span className="spinner" /> : icon}
+      {busy ? <span className="oc-spinner" /> : icon}
       {children}
     </button>
   );
@@ -41,7 +41,7 @@ export function Button({
 
 export function Field({ label, children }: { label: string; children: ReactNode }) {
   return (
-    <label className="field">
+    <label className="oc-field">
       <span>{label}</span>
       {children}
     </label>
@@ -49,12 +49,12 @@ export function Field({ label, children }: { label: string; children: ReactNode 
 }
 
 export function TextInput(props: InputHTMLAttributes<HTMLInputElement>) {
-  return <input className="input" {...props} />;
+  return <input className="oc-input" {...props} />;
 }
 
 export function Select({ children, ...props }: SelectHTMLAttributes<HTMLSelectElement>) {
   return (
-    <select className="select" {...props}>
+    <select className="oc-select" {...props}>
       {children}
     </select>
   );
@@ -70,7 +70,7 @@ export function Checkbox({
   children: ReactNode;
 }) {
   return (
-    <label className="check">
+    <label className="oc-check">
       <input type="checkbox" checked={checked} onChange={(event) => onChange(event.target.checked)} />
       {children}
     </label>
@@ -87,7 +87,7 @@ export function Segmented<T extends string>({
   onChange: (value: T) => void;
 }) {
   return (
-    <div className="segmented">
+    <div className="oc-segmented">
       {options.map((option) => (
         <button
           key={option.value}
@@ -104,9 +104,9 @@ export function Segmented<T extends string>({
 
 export function Card({ title, actions, children }: { title?: ReactNode; actions?: ReactNode; children: ReactNode }) {
   return (
-    <section className="card">
+    <section className="oc-panel">
       {(title || actions) && (
-        <div className="card-title">
+        <div className="oc-panel-head">
           {typeof title === "string" ? <h2>{title}</h2> : <div className="grow">{title}</div>}
           {actions}
         </div>
@@ -128,28 +128,53 @@ export function Kpi({
   tone?: "danger" | "success";
 }) {
   return (
-    <div className={`kpi ${tone ?? ""}`}>
-      <div className="kpi-label">{label}</div>
-      <div className="kpi-value">{value}</div>
-      {hint && <div className="kpi-hint">{hint}</div>}
+    <div className={`oc-stat ${tone ? STAT_TONES[tone] : ""}`}>
+      <div className="oc-stat-label">{label}</div>
+      <div className="oc-stat-value">{value}</div>
+      {hint && <div className="oc-stat-hint">{hint}</div>}
     </div>
   );
 }
 
-export function Badge({ tone, children }: { tone?: "success" | "warning" | "danger" | "accent"; children: ReactNode }) {
-  return <span className={`badge ${tone ?? ""}`}>{children}</span>;
+const STAT_TONES = { danger: "critical", success: "good" } as const;
+
+const BADGE_TONES = { success: "good", warning: "warning", danger: "critical", accent: "accent", product: "product" } as const;
+
+export function Badge({ tone, children }: { tone?: keyof typeof BADGE_TONES; children: ReactNode }) {
+  return <span className={`oc-badge ${tone ? BADGE_TONES[tone] : ""}`}>{children}</span>;
 }
 
 export function Spinner() {
-  return <span className="spinner" />;
+  return <span className="oc-spinner" />;
 }
 
-export function Empty({ icon, title, children }: { icon?: ReactNode; title: string; children?: ReactNode }) {
+/** A centered empty state; the icon sits in the radar emblem, which sweeps while `scanning`. */
+export function Empty({
+  icon,
+  title,
+  scanning,
+  children,
+}: {
+  icon?: ReactNode;
+  title: string;
+  scanning?: boolean;
+  children?: ReactNode;
+}) {
   return (
-    <div className="empty">
-      {icon}
+    <div className="oc-empty">
+      {icon && <div className={`oc-radar ${scanning ? "scanning" : ""}`}>{icon}</div>}
       <h2>{title}</h2>
       {children}
+    </div>
+  );
+}
+
+/** Full-page loading state: the radar sweep. */
+export function PageLoader({ label }: { label?: string }) {
+  return (
+    <div className="oc-empty" role="status" aria-live="polite">
+      <div className="oc-radar scanning" />
+      {label && <p className="muted">{label}</p>}
     </div>
   );
 }
@@ -161,7 +186,7 @@ export function ErrorBanner({ error }: { error: CommandError | null | undefined 
   const title =
     error.kind === "syntax" ? t("error.syntax") : error.kind === "busy" ? t("error.busy") : t("error.generic");
   return (
-    <div className="banner error" role="alert">
+    <div className="oc-banner error" role="alert">
       <AlertTriangle size={18} />
       <div className="grow">
         <strong>{title}:</strong> {error.kind === "busy" ? t("site.busy") : error.message}

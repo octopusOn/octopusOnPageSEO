@@ -91,8 +91,8 @@ export function BotsPage({ site }: { site: string }) {
               </div>
             )}
             {crawl.isLoading && <Spinner />}
-            <div className="table-wrap">
-              <table className="table-simple">
+            <div className="oc-table-wrap">
+              <table className="oc-table">
                 <thead>
                   <tr>
                     <th>{t("bots.bot")}</th>
@@ -106,7 +106,7 @@ export function BotsPage({ site }: { site: string }) {
                     <tr key={line.bot}>
                       <td>{line.bot}</td>
                       <td className="num">{n(line.verified)}</td>
-                      <td className="num" style={{ color: line.spoofed ? "var(--danger)" : undefined }}>
+                      <td className="num" style={{ color: line.spoofed ? "var(--critical)" : undefined }}>
                         {n(line.spoofed)}
                       </td>
                       <td className="num muted">{n(line.unverified)}</td>
@@ -159,8 +159,8 @@ export function BotsPage({ site }: { site: string }) {
         }
       >
         <ErrorBanner error={update.error} />
-        <div className="table-wrap">
-          <table className="table-simple">
+        <div className="oc-table-wrap">
+          <table className="oc-table">
             <thead>
               <tr>
                 <th>{t("bots.list")}</th>
@@ -199,7 +199,7 @@ export function BotsPage({ site }: { site: string }) {
         title={t("bots.catalog")}
         actions={
           <div className="row">
-            <input className="input" value={search} placeholder={t("common.search")} onChange={(e) => setSearch(e.target.value)} />
+            <input className="oc-input" value={search} placeholder={t("common.search")} onChange={(e) => setSearch(e.target.value)} />
             <Select value={category} onChange={(e) => setCategory(e.target.value)}>
               <option value="">{t("common.all")}</option>
               {CATEGORIES.map((c) => (
@@ -212,8 +212,8 @@ export function BotsPage({ site }: { site: string }) {
           </div>
         }
       >
-        <div className="table-wrap" style={{ maxHeight: 420 }}>
-          <table className="table-simple">
+        <div className="oc-table-wrap" style={{ maxHeight: 420 }}>
+          <table className="oc-table">
             <thead>
               <tr>
                 <th>id</th>

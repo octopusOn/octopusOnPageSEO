@@ -408,3 +408,23 @@ export interface ValueSuggestion {
   value: string;
   hits: number;
 }
+
+/** The OctopusOn SEO account every program on this computer shares. */
+export interface CloudAccount {
+  email: string | null;
+  name: string | null;
+  balance_micros: number;
+  held_micros: number;
+  available_micros: number;
+  credit_unit_micros: number;
+  low_balance: boolean;
+  portal_url: string;
+}
+
+export interface AccountStatus {
+  signed_in: boolean;
+  account: CloudAccount | null;
+  error: string | null;
+  portal_url: string;
+  api: string;
+}

@@ -75,7 +75,7 @@ export function RobotsPage({ site }: { site: string }) {
           <div className="row">
             <Field label={t("robots.source")}>
               <TextInput
-                className="input mono"
+                className="oc-input mono"
                 style={{ minWidth: 320 }}
                 value={source}
                 placeholder={`https://${site}/robots.txt`}
@@ -108,15 +108,15 @@ export function RobotsPage({ site }: { site: string }) {
       </Card>
       {data && totals && (
         <>
-          <div className="grid-kpi">
+          <div className="oc-stats">
             <Kpi label={t("robots.bots")} value={n(data.report.bots.length)} />
             <Kpi label={t("robots.disallowedHits")} value={n(totals.disallowed)} tone={totals.disallowed > 0 ? "danger" : "success"} />
             <Kpi label={t("robots.verifiedDisallowed")} value={n(totals.verified)} tone={totals.verified > 0 ? "danger" : undefined} />
             <Kpi label={t("robots.blockedBots")} value={n(data.report.bots.filter((b) => b.blocked).length)} />
           </div>
           <Card title={t("robots.perBot")}>
-            <div className="table-wrap" style={{ maxHeight: 360 }}>
-              <table className="table-simple">
+            <div className="oc-table-wrap" style={{ maxHeight: 360 }}>
+              <table className="oc-table">
                 <thead>
                   <tr>
                     <th>{t("bots.name")}</th>

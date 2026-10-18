@@ -1,22 +1,33 @@
-// The octopusSEO octopus, as on the website and the app icon.
+// The OctopusOn SEO mark: three white glass blocks turning around a centre (packages/design/brand).
+
+/** The three blocks, in a 64-unit square. */
+const PIECES = [
+  "M31.95 3.93 L46.21 12.70 L46.21 28.72 L60.73 37.39 L49.34 43.59 L34.02 34.57 L34.07 18.85 L20.96 10.63 Z",
+  "M17.69 12.39 L29.83 19.80 L29.83 34.67 L13.65 44.25 L13.71 59.01 L1.81 51.66 L1.86 38.05 L17.69 28.47 Z",
+  "M31.95 38.10 L48.48 47.98 L62.19 40.27 L62.19 51.66 L48.08 60.07 L31.90 50.80 L16.28 59.62 L16.33 47.27 Z",
+];
 
 export function BrandMark() {
   return (
-    <svg className="brand-mark" viewBox="0 0 64 64" aria-hidden="true">
+    <svg className="oc-brand-mark" viewBox="0 0 64 64" aria-hidden="true">
       <defs>
-        <linearGradient id="brand-mark-body" x1="0" y1="0" x2="1" y2="1">
-          <stop offset="0" stopColor="#a78bfa" />
-          <stop offset="1" stopColor="#2dd4bf" />
+        <linearGradient id="oc-mark-fill" x1="0" y1="0" x2="1" y2="1">
+          <stop offset="0" stopColor="#ffffff" />
+          <stop offset="0.55" stopColor="#eef1f6" />
+          <stop offset="1" stopColor="#c3cad8" />
+        </linearGradient>
+        <linearGradient id="oc-mark-sheen" x1="0" y1="1" x2="1" y2="0">
+          <stop offset="0.3" stopColor="#ffffff" stopOpacity="0" />
+          <stop offset="0.5" stopColor="#ffffff" stopOpacity="0.55" />
+          <stop offset="0.7" stopColor="#ffffff" stopOpacity="0" />
         </linearGradient>
       </defs>
-      <path
-        d="M32 6c-12.2 0-21 8.6-21 20.2 0 6.4 2.7 11.3 6.6 14.6L13 52c-.7 1.6.9 3.2 2.5 2.4l5.9-3.1 2.4 6.3c.6 1.7 3 1.7 3.6 0L32 47l4.6 10.6c.6 1.7 3 1.7 3.6 0l2.4-6.3 5.9 3.1c1.6.8 3.2-.8 2.5-2.4l-4.6-11.2C50.3 37.5 53 32.6 53 26.2 53 14.6 44.2 6 32 6z"
-        fill="url(#brand-mark-body)"
-      />
-      <circle cx="24.5" cy="25" r="4.4" fill="#fff" />
-      <circle cx="39.5" cy="25" r="4.4" fill="#fff" />
-      <circle cx="25.4" cy="25.9" r="2.1" fill="#1e1b4b" />
-      <circle cx="40.4" cy="25.9" r="2.1" fill="#1e1b4b" />
+      {PIECES.map((d) => (
+        <g key={d}>
+          <path d={d} fill="url(#oc-mark-fill)" />
+          <path d={d} fill="url(#oc-mark-sheen)" />
+        </g>
+      ))}
     </svg>
   );
 }

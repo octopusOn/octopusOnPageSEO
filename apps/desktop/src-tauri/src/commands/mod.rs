@@ -1,6 +1,7 @@
 //! IPC commands. Each one runs a use-case on a blocking worker thread so the UI stays
 //! responsive during imports and large queries.
 
+pub(crate) mod account;
 pub(crate) mod analysis;
 pub(crate) mod app;
 pub(crate) mod archive;

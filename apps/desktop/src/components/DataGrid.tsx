@@ -159,7 +159,7 @@ export function DataGrid({ columns, rows, hasMore, loadingMore, onLoadMore, sort
             );
           })}
         </div>
-        {sortedRows.length === 0 && <div className="empty">{t("common.noRows")}</div>}
+        {sortedRows.length === 0 && <div className="oc-empty">{t("common.noRows")}</div>}
       </div>
       <div className="grid-foot">
         <span>
@@ -167,7 +167,7 @@ export function DataGrid({ columns, rows, hasMore, loadingMore, onLoadMore, sort
             ? t("common.moreRows", { count: sortedRows.length.toLocaleString(locale) })
             : t("common.rows", { count: sortedRows.length.toLocaleString(locale) })}
         </span>
-        {loadingMore && <span className="spinner" />}
+        {loadingMore && <span className="oc-spinner" />}
         <span className="grow" />
         {footer}
       </div>

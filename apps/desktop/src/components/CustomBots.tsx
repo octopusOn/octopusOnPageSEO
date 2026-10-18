@@ -1,5 +1,5 @@
 // User-defined bots (custom user agents with a category and verification), shared with the
-// CLI (`snx-log bots custom`). Saving re-classifies stored hits the next time a site is read.
+// CLI (`octopuson-log bots custom`). Saving re-classifies stored hits the next time a site is read.
 
 import { useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
@@ -107,8 +107,8 @@ export function CustomBotsCard() {
       {list.length === 0 ? (
         <p className="muted">{t("customBots.none")}</p>
       ) : (
-        <div className="table-wrap">
-          <table className="table-simple">
+        <div className="oc-table-wrap">
+          <table className="oc-table">
             <thead>
               <tr>
                 <th />
@@ -223,7 +223,7 @@ function CustomBotDialog({
       <div className="stack">
         <div className="grid-2">
           <Field label={t("customBots.id")}>
-            <TextInput className="input mono" value={id} placeholder="acme-monitor" onChange={(e) => setId(e.target.value)} />
+            <TextInput className="oc-input mono" value={id} placeholder="acme-monitor" onChange={(e) => setId(e.target.value)} />
           </Field>
           <Field label={t("bots.name")}>
             <TextInput value={name} placeholder="Acme Monitor" onChange={(e) => setName(e.target.value)} />
@@ -242,20 +242,20 @@ function CustomBotDialog({
           </Field>
         </div>
         <Field label={t("customBots.patterns")}>
-          <textarea className="input mono" rows={2} value={patterns} placeholder={"AcmeMonitor\nacme-crawler/"} onChange={(e) => setPatterns(e.target.value)} />
-          <small className="field-hint">{t("customBots.patternsHint")}</small>
+          <textarea className="oc-input mono" rows={2} value={patterns} placeholder={"AcmeMonitor\nacme-crawler/"} onChange={(e) => setPatterns(e.target.value)} />
+          <small className="oc-field-hint">{t("customBots.patternsHint")}</small>
         </Field>
         <div className="grid-2">
           <Field label={t("customBots.rangesLabel")}>
-            <textarea className="input mono" rows={3} value={ranges} placeholder={"203.0.113.0/24\n2001:db8::/32"} onChange={(e) => setRanges(e.target.value)} />
+            <textarea className="oc-input mono" rows={3} value={ranges} placeholder={"203.0.113.0/24\n2001:db8::/32"} onChange={(e) => setRanges(e.target.value)} />
           </Field>
           <Field label={t("customBots.suffixes")}>
-            <textarea className="input mono" rows={3} value={suffixes} placeholder="crawler.acme.com" onChange={(e) => setSuffixes(e.target.value)} />
+            <textarea className="oc-input mono" rows={3} value={suffixes} placeholder="crawler.acme.com" onChange={(e) => setSuffixes(e.target.value)} />
           </Field>
         </div>
         <Field label={t("customBots.url")}>
-          <TextInput className="input mono" value={url} placeholder="https://acme.com/crawler-ips.json" onChange={(e) => setUrl(e.target.value)} />
-          <small className="field-hint">{t("customBots.urlHint")}</small>
+          <TextInput className="oc-input mono" value={url} placeholder="https://acme.com/crawler-ips.json" onChange={(e) => setUrl(e.target.value)} />
+          <small className="oc-field-hint">{t("customBots.urlHint")}</small>
         </Field>
         <ErrorBanner error={error} />
       </div>

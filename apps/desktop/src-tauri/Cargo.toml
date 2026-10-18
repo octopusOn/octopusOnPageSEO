@@ -1,6 +1,6 @@
 [package]
 name = "seonexus-desktop"
-description = "octopusSEO Log Analyser desktop application (Tauri shell around the log-app use-cases)."
+description = "OctopusOn Log Analyser desktop application (Tauri shell around the log-app use-cases)."
 version.workspace = true
 edition.workspace = true
 rust-version.workspace = true
@@ -19,7 +19,9 @@ crate-type = ["rlib"]
 tauri-build.workspace = true
 
 [dependencies]
+seonexus-cloud.workspace = true
 seonexus-log-app.workspace = true
+seonexus-net.workspace = true
 serde.workspace = true
 serde_json.workspace = true
 tauri.workspace = true

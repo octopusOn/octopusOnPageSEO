@@ -1,5 +1,5 @@
 // What later imports of a site store: own host (internal referers), bots only, URL
-// include/exclude patterns and query parameters to strip. Mirrors `snx-log site settings`.
+// include/exclude patterns and query parameters to strip. Mirrors `octopuson-log site settings`.
 
 import { useEffect, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
@@ -91,7 +91,7 @@ export function SiteSettingsCard({ site }: { site: string }) {
           {open ? <ChevronDown size={16} /> : <ChevronRight size={16} />}
           <SlidersHorizontal size={15} />
           {t("settingsCard.title")}
-          {!open && active && <span className="badge">{t("settingsCard.active")}</span>}
+          {!open && active && <span className="oc-badge">{t("settingsCard.active")}</span>}
         </button>
       }
       actions={settings.isFetching ? <Spinner /> : undefined}
@@ -102,12 +102,12 @@ export function SiteSettingsCard({ site }: { site: string }) {
           <div className="grid-2">
             <Field label={t("settingsCard.host")}>
               <input
-                className="input mono"
+                className="oc-input mono"
                 value={draft.host}
                 placeholder={site}
                 onChange={(e) => set({ host: e.target.value })}
               />
-              <small className="field-hint">{t("settingsCard.hostHint")}</small>
+              <small className="oc-field-hint">{t("settingsCard.hostHint")}</small>
             </Field>
             <Field label={t("settingsCard.traffic")}>
               <Segmented
@@ -118,7 +118,7 @@ export function SiteSettingsCard({ site }: { site: string }) {
                   { value: "bots", label: t("settingsCard.trafficBots") },
                 ]}
               />
-              <small className="field-hint">{t("settingsCard.trafficHint")}</small>
+              <small className="oc-field-hint">{t("settingsCard.trafficHint")}</small>
             </Field>
           </div>
           {draft.traffic === "bots" && (
@@ -140,13 +140,13 @@ export function SiteSettingsCard({ site }: { site: string }) {
                   </Checkbox>
                 ))}
               </div>
-              <small className="field-hint">{t("settingsCard.categoriesHint")}</small>
+              <small className="oc-field-hint">{t("settingsCard.categoriesHint")}</small>
             </Field>
           )}
           <div className="grid-2">
             <Field label={t("settingsCard.include")}>
               <textarea
-                className="input mono"
+                className="oc-input mono"
                 rows={3}
                 value={draft.include}
                 placeholder={"^/blog/\n^/products/"}
@@ -155,7 +155,7 @@ export function SiteSettingsCard({ site }: { site: string }) {
             </Field>
             <Field label={t("settingsCard.exclude")}>
               <textarea
-                className="input mono"
+                className="oc-input mono"
                 rows={3}
                 value={draft.exclude}
                 placeholder={"^/wp-admin/\n\\.(css|js)$"}
@@ -163,11 +163,11 @@ export function SiteSettingsCard({ site }: { site: string }) {
               />
             </Field>
           </div>
-          <small className="field-hint">{t("settingsCard.patternsHint")}</small>
+          <small className="oc-field-hint">{t("settingsCard.patternsHint")}</small>
           <div className="grid-2">
             <Field label={t("settingsCard.strip")}>
               <textarea
-                className="input mono"
+                className="oc-input mono"
                 rows={2}
                 value={draft.strip}
                 placeholder={"sid\njsessionid"}

@@ -11,7 +11,7 @@ fn main() -> Result<(), Box<dyn Error>> {
         let _ = std::fs::create_dir_all(dist);
         let _ = std::fs::write(
             dist.join("index.html"),
-            "<!doctype html><title>octopusSEO</title><p>Frontend not built: run pnpm build.</p>",
+            "<!doctype html><title>OctopusOn SEO</title><p>Frontend not built: run pnpm build.</p>",
         );
     }
 

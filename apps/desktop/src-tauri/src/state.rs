@@ -6,7 +6,7 @@ use seonexus_log_app::{CancelToken, StoreError, Workspace};
 /// Shared application state.
 #[derive(Debug)]
 pub(crate) struct AppState {
-    /// Data directory shared with the `snx-log` CLI.
+    /// Data directory shared with the `octopuson-log` CLI.
     pub(crate) workspace: Workspace,
     /// Cancellation tokens of running imports by client-chosen id.
     imports: Mutex<HashMap<String, CancelToken>>,

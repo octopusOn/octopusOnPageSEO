@@ -93,7 +93,7 @@ export function UrlComparePage({ site }: { site: string }) {
               {t("urls.addFile")}
             </Button>
             <TextInput
-              className="input grow"
+              className="oc-input grow"
               value={url}
               placeholder={t("urls.urlPlaceholder")}
               onChange={(e) => setUrl(e.target.value)}
@@ -104,9 +104,9 @@ export function UrlComparePage({ site }: { site: string }) {
             </Button>
           </div>
           {sources.length > 0 && (
-            <div className="chips">
+            <div className="oc-chips">
               {sources.map((source) => (
-                <span className="chip" key={source} title={source}>
+                <span className="oc-chip" key={source} title={source}>
                   <span>{source}</span>
                   <button type="button" onClick={() => setSources(sources.filter((s) => s !== source))}>
                     <X size={12} />
@@ -161,7 +161,7 @@ export function UrlComparePage({ site }: { site: string }) {
       </Card>
       {data && (
         <>
-          <div className="grid-kpi">
+          <div className="oc-stats">
             <Kpi label={t("urls.listed")} value={n(data.report.summary.listed)} />
             <Kpi label={t("urls.logged")} value={n(data.report.summary.logged)} />
             <Kpi label={t("urls.both")} value={n(data.report.summary.both)} tone="success" />

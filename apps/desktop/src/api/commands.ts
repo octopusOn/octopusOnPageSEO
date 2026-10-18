@@ -3,6 +3,7 @@
 import { Channel, invoke } from "@tauri-apps/api/core";
 
 import type {
+  AccountStatus,
   AnalysisTable,
   AppInfo,
   ArchiveReport,
@@ -60,6 +61,11 @@ async function call<T>(command: string, args?: Record<string, unknown>): Promise
 
 export const api = {
   appInfo: () => call<AppInfo>("app_info"),
+  accountStatus: () => call<AccountStatus>("account_status"),
+  accountConnect: () => call<boolean>("account_connect"),
+  accountCancel: () => call<void>("account_cancel"),
+  accountLogout: () => call<void>("account_logout"),
+  accountOpen: (page: "credits" | "devices") => call<void>("account_open", { page }),
 
   listClients: () => call<ClientInfo[]>("list_clients"),
   addClient: (name: string) => call<ClientInfo>("add_client", { name }),

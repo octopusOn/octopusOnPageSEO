@@ -1,6 +1,6 @@
 {
   "$schema": "https://schema.tauri.app/config/2",
-  "productName": "octopusSEO Log Analyser",
+  "productName": "OctopusOn Log Analyser",
   "mainBinaryName": "octopusseo-log-analyser",
   "version": "0.1.0",
   "identifier": "com.octopusseo.log-analyser",
@@ -13,12 +13,20 @@
   "app": {
     "windows": [
       {
-        "title": "octopusSEO Log Analyser",
+        "title": "OctopusOn Log Analyser",
         "width": 1380,
         "height": 880,
         "minWidth": 1040,
         "minHeight": 660,
-        "dragDropEnabled": true
+        "dragDropEnabled": true,
+        "titleBarStyle": "Overlay",
+        "hiddenTitle": true,
+        "trafficLightPosition": {
+          "x": 20,
+          "y": 24
+        },
+        "backgroundColor": "#1d133b",
+        "theme": "Dark"
       }
     ],
     "security": {
@@ -30,7 +38,7 @@
     "targets": "all",
     "publisher": "octopusSEO",
     "copyright": "© 2026 octopusSEO",
-    "homepage": "https://octopusseo.com",
+    "homepage": "https://octopuson.com",
     "category": "DeveloperTool",
     "shortDescription": "SEO server log analysis",
     "longDescription": "Analyse server logs for SEO: verified search-engine and AI crawlers, crawl budget, status codes and orphan pages.",

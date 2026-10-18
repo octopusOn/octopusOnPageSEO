@@ -171,7 +171,7 @@ export function ValuePicker({
         {mode === "multi" &&
           values.filter((value) => value !== held).map((value) => (
             <span
-              className={`chip ${isValid && !isValid(value) ? "invalid" : ""}`}
+              className={`oc-chip ${isValid && !isValid(value) ? "invalid" : ""}`}
               key={value}
               title={isValid && !isValid(value) ? t("picker.invalid", { value }) : value}
             >

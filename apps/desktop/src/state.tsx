@@ -36,6 +36,7 @@ export const keys = {
   saved: ["saved-queries"] as const,
   formats: ["formats"] as const,
   appInfo: ["app-info"] as const,
+  account: ["account"] as const,
   bots: ["bots"] as const,
   customBots: ["custom-bots"] as const,
   geo: ["geo"] as const,

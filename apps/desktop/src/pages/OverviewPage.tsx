@@ -4,7 +4,7 @@ import { AlertTriangle, FileUp, LineChart } from "lucide-react";
 
 import { api } from "../api/commands";
 import type { CommandError, QueryPageResult, SiteOverview } from "../api/types";
-import { EChart, themeColors, type ChartOption } from "../components/EChart";
+import { axisStyle, EChart, useChartTokens, type ChartOption, type ChartTokens } from "../components/EChart";
 import { Button, Card, Empty, ErrorBanner, Kpi, Segmented, Spinner } from "../components/ui";
 import { formatBytes, formatNumber, formatPercent } from "../lib/format";
 import { joinQuery } from "../lib/queryBuilder";
@@ -78,65 +78,71 @@ export function OverviewPage({ site }: { site: string }) {
     enabled: (info.data?.hits ?? 0) > 0,
   });
 
-  const colors = themeColors();
-  const axis = {
-    axisLine: { lineStyle: { color: colors.border } },
-    axisLabel: { color: colors.text },
-    splitLine: { lineStyle: { color: colors.border } },
-  };
+  const colors = useChartTokens();
+  const axis = useMemo(() => axisStyle(colors), [colors]);
 
   const dailyOption = useMemo<ChartOption>(() => {
     const { days, series } = pivot(daily.data);
     return {
-      tooltip: { trigger: "axis" },
-      legend: { top: 0, left: "center", textStyle: { color: colors.text }, type: "scroll" },
+      tooltip: { trigger: "axis", axisPointer: { type: "shadow" } },
+      legend: { top: 0, left: "center", type: "scroll" },
       grid: { left: 56, right: 16, top: 40, bottom: 28 },
-      xAxis: { type: "category", data: days, ...axis },
+      xAxis: { type: "category", data: days, ...axis, splitLine: { show: false } },
       yAxis: { type: "value", ...axis },
       series: [...series.entries()].map(([name, values]) => ({
         name: categoryLabel(t, name),
         type: "bar",
         stack: "hits",
+        barMaxWidth: 18,
+        // A hairline of the panel surface between stacked segments.
+        itemStyle: { borderColor: colors.surface, borderWidth: 1 },
         data: days.map((day) => values.get(day) ?? 0),
       })),
     };
-  }, [daily.data, t, colors.text, colors.border]);
+  }, [daily.data, t, colors, axis]);
 
   const devicesOption = useMemo<ChartOption>(() => {
     const { days, series } = pivot(devices.data);
     return {
       tooltip: { trigger: "axis" },
-      legend: { top: 0, left: "center", textStyle: { color: colors.text } },
+      legend: { top: 0, left: "center" },
       grid: { left: 56, right: 16, top: 40, bottom: 28 },
-      xAxis: { type: "category", data: days, ...axis },
+      xAxis: { type: "category", data: days, boundaryGap: false, ...axis, splitLine: { show: false } },
       yAxis: { type: "value", ...axis },
       series: [...series.entries()].map(([name, values]) => ({
         name,
         type: "line",
         smooth: true,
         showSymbol: false,
-        areaStyle: { opacity: 0.08 },
+        lineStyle: { width: 2 },
+        areaStyle: { opacity: 0.1 },
         data: days.map((day) => values.get(day) ?? 0),
       })),
     };
-  }, [devices.data, colors.text, colors.border]);
+  }, [devices.data, axis]);
 
   const statusOption = useMemo<ChartOption>(
     () => ({
       tooltip: { trigger: "item" },
-      legend: { bottom: 0, textStyle: { color: colors.text } },
+      legend: { bottom: 0 },
       series: [
         {
           type: "pie",
-          radius: ["48%", "72%"],
+          radius: ["52%", "72%"],
           center: ["50%", "45%"],
+          padAngle: 1.5,
+          itemStyle: { borderColor: colors.surface, borderWidth: 2, borderRadius: 3 },
           label: { color: colors.text },
-          data: (crawl.data?.search.status_classes ?? []).map((share) => ({ name: share.name, value: share.value })),
-          color: ["#22b893", "#4f5bd5", "#f2a33a", "#e5566d", "#9aa5b8"],
+          // Status classes wear the status colors (with their names in the legend), never series colors.
+          data: (crawl.data?.search.status_classes ?? []).map((share) => ({
+            name: share.name,
+            value: share.value,
+            itemStyle: { color: statusColor(share.name, colors) },
+          })),
         },
       ],
     }),
-    [crawl.data, colors.text],
+    [crawl.data, colors],
   );
 
   if (info.isLoading) return <div className="page"><Spinner /></div>;
@@ -172,7 +178,7 @@ export function OverviewPage({ site }: { site: string }) {
       </div>
       <ErrorBanner error={crawl.error} />
       {overview && (
-        <div className="grid-kpi">
+        <div className="oc-stats">
           <Kpi label={t("overview.totalHits")} value={n(overview.total_hits)} />
           <Kpi label={t("overview.searchHits")} value={n(overview.search.hits)} tone="success" />
           <Kpi label={t("overview.urlsCrawled")} value={n(overview.search.unique_urls)} />
@@ -235,7 +241,7 @@ export function OverviewPage({ site }: { site: string }) {
       {overview && (
         <div className="grid-2">
           <Card title={t("overview.categories")}>
-            <table className="table-simple">
+            <table className="oc-table">
               <tbody>
                 {overview.categories.map((share) => (
                   <tr key={share.name}>
@@ -248,8 +254,8 @@ export function OverviewPage({ site }: { site: string }) {
             </table>
           </Card>
           <Card title={t("overview.bots")}>
-            <div className="table-wrap">
-              <table className="table-simple">
+            <div className="oc-table-wrap">
+              <table className="oc-table">
                 <thead>
                   <tr>
                     <th>{t("bots.bot")}</th>
@@ -263,7 +269,7 @@ export function OverviewPage({ site }: { site: string }) {
                     <tr key={bot.bot}>
                       <td>{bot.bot}</td>
                       <td className="num">{n(bot.verified)}</td>
-                      <td className="num" style={{ color: bot.spoofed ? "var(--danger)" : undefined }}>
+                      <td className="num" style={{ color: bot.spoofed ? "var(--critical)" : undefined }}>
                         {n(bot.spoofed)}
                       </td>
                       <td className="num muted">{n(bot.unverified)}</td>
@@ -277,4 +283,12 @@ export function OverviewPage({ site }: { site: string }) {
       )}
     </div>
   );
+}
+
+function statusColor(name: string, tokens: ChartTokens): string {
+  if (name.startsWith("2")) return tokens.good;
+  if (name.startsWith("3")) return tokens.info;
+  if (name.startsWith("4")) return tokens.warning;
+  if (name.startsWith("5")) return tokens.critical;
+  return tokens.text;
 }

@@ -132,7 +132,7 @@ export function PeriodsPage({ site }: { site: string }) {
               {t("periods.run")}
             </Button>
           </div>
-          <div className="field">
+          <div className="oc-field">
             <span>{t("periods.filter")}</span>
             <FilterBuilder
               form={form}
@@ -145,14 +145,14 @@ export function PeriodsPage({ site }: { site: string }) {
             />
           </div>
           <Field label={t("builder.text")}>
-            <TextInput className="input mono" value={filter} placeholder="status:4xx" onChange={(e) => setFilter(e.target.value)} />
+            <TextInput className="oc-input mono" value={filter} placeholder="status:4xx" onChange={(e) => setFilter(e.target.value)} />
           </Field>
           <ErrorBanner error={compare.error} />
         </div>
       </Card>
       {summary && compare.data && (
         <>
-          <div className="grid-kpi">
+          <div className="oc-stats">
             <Kpi label={t("periods.summary", { before: n(summary.before_hits), after: n(summary.after_hits) })} value={`${summary.after_hits >= summary.before_hits ? "+" : ""}${n(summary.after_hits - summary.before_hits)}`} />
             <Kpi label={t("periods.new")} value={n(summary.new)} tone="success" />
             <Kpi label={t("periods.lost")} value={n(summary.lost)} tone="danger" />

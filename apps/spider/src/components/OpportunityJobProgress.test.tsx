@@ -1,0 +1,7 @@
+import {renderToStaticMarkup} from "react-dom/server";
+import {expect,it} from "vitest";
+import {OpportunityJobProgress} from "./OpportunityJobProgress";
+import type {SyncJob} from "../api/opportunities";
+const job:SyncJob={id:"test",project_id:"fixture",kind:"sync",created_at_ms:0,status:"running",analysis_id:null,error:null,progress:{phase:"gsc-query-pages",rows:25000,requests:2,period:{start:"2026-09-18",end:"2026-10-15"},retry_after_seconds:null}};
+it("shows report type, period, received rows and actual requests",()=>{const html=renderToStaticMarkup(<OpportunityJobProgress job={job} onCancel={()=>{}}/>);expect(html).toContain("GSC sorgu–sayfa ilişkileri alınıyor");expect(html).toContain("2026-09-18 → 2026-10-15");expect(html).toContain("25.000");expect(html).toContain("alınan satır");expect(html).toContain("istek");expect(html).not.toContain("Google kota");});
+it("makes retry waits visible and disables repeated cancellation requests",()=>{const quota=renderToStaticMarkup(<OpportunityJobProgress job={{...job,progress:{...job.progress,retry_after_seconds:30}}} onCancel={()=>{}}/>);expect(quota).toContain("Google kota/geçici hatası, yeniden deneme: 30 sn");const cancel=renderToStaticMarkup(<OpportunityJobProgress job={{...job,progress:{...job.progress,phase:"cancelling"}}} onCancel={()=>{}}/>);expect(cancel).toContain("İşlem iptal ediliyor");expect(cancel).toContain('disabled=""');});

@@ -1,8 +1,8 @@
-//! Tauri shell of the octopusSEO Log Analyser.
+//! Tauri shell of the OctopusOn Log Analyser.
 //!
 //! Every command is a thin adapter: it deserializes the request, runs a `seonexus-log-app`
 //! use-case on a blocking worker thread and serializes the result. No analysis logic lives
-//! here, so the desktop app and the `snx-log` CLI always behave identically (ADR 0002/0004).
+//! here, so the desktop app and the `octopuson-log` CLI always behave identically (ADR 0002/0004).
 
 mod commands;
 mod error;
@@ -21,8 +21,14 @@ fn with_commands<R: tauri::Runtime>(
 ) -> tauri::Builder<R> {
     builder
         .manage(state)
+        .manage(commands::account::AccountState::new())
         .invoke_handler(tauri::generate_handler![
             commands::app::app_info,
+            commands::account::account_status,
+            commands::account::account_connect,
+            commands::account::account_cancel,
+            commands::account::account_logout,
+            commands::account::account_open,
             commands::catalog::list_clients,
             commands::catalog::add_client,
             commands::catalog::remove_client,

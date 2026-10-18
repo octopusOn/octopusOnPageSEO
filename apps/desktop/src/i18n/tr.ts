@@ -3,7 +3,7 @@
 import type { MessageKey } from "./en";
 
 export const tr: Record<MessageKey, string> = {
-  "app.title": "octopusSEO Log Analyser",
+  "app.title": "OctopusOn Log Analyser",
   "common.cancel": "Vazgeç",
   "common.close": "Kapat",
   "common.save": "Kaydet",
@@ -32,6 +32,7 @@ export const tr: Record<MessageKey, string> = {
   "nav.urls": "URL listeleri",
   "nav.periods": "Dönemler",
   "nav.settings": "Ayarlar",
+  "nav.modules": "Modüller",
 
   "sidebar.clients": "Müşteriler",
   "sidebar.addClient": "Yeni müşteri",
@@ -39,6 +40,7 @@ export const tr: Record<MessageKey, string> = {
   "sidebar.noClients": "Başlamak için bir müşteri, ardından sitelerini ekleyin.",
   "sidebar.noSites": "Site yok",
   "sidebar.filter": "Site ara…",
+  "sidebar.chooseSite": "Site seçin",
 
   "client.dialogTitle": "Yeni müşteri",
   "client.name": "Müşteri adı",
@@ -462,14 +464,21 @@ export const tr: Record<MessageKey, string> = {
 
   "settings.title": "Ayarlar",
   "settings.language": "Dil",
-  "settings.theme": "Tema",
-  "settings.themeSystem": "Sistem",
-  "settings.themeLight": "Açık",
-  "settings.themeDark": "Koyu",
   "settings.dataDir": "Veri klasörü",
   "settings.version": "Sürüm",
   "settings.memory": "Depolama bellek sınırı",
-  "settings.memoryHint": "Değiştirmek için uygulamayı başlatmadan önce OCTOPUSSEO_MEMORY_LIMIT_MB ortam değişkenini ayarlayın; snx-log CLI aynı veri klasörünü kullanır.",
+  "account.title": "OctopusOn SEO hesabı",
+  "account.intro": "Log Analyser'da ücretli kaynak yok. OctopusOn SEO hesabınız bu bilgisayardaki tüm OctopusOn SEO programlarınca paylaşılır: bir kez bağlayın, SERP Checker, SEO Keyword Research ve Index Checker kredinizi kullanabilsin.",
+  "account.connect": "Hesaba bağlan",
+  "account.waiting": "Tarayıcınızda açılan sayfada girişi tamamlayın…",
+  "account.cancel": "Vazgeç",
+  "account.signOut": "Bağlantıyı kes",
+  "account.notConnected": "Bağlı değil",
+  "account.balance": "{credits} kredi",
+  "account.low": "Bakiyeniz azaldı.",
+  "account.buy": "Kredi yükle",
+  "account.devices": "Cihazlar",
+  "settings.memoryHint": "Değiştirmek için uygulamayı başlatmadan önce OCTOPUSSEO_MEMORY_LIMIT_MB ortam değişkenini ayarlayın; octopuson-log CLI aynı veri klasörünü kullanır.",
   "geo.title": "IP konum verisi",
   "geo.intro": "Raporlara her istemci IP'sinin ülkesini ve ağını (ASN; ör. bir bulut sağlayıcı) ekler: Ülkeler ve Ağlar raporları, country: / as_org: filtreleri. Ücretsiz DB-IP Lite veritabanları (yaklaşık 20 MB) isteğinizle ayda bir indirilir; aramalar yerelde yapılır, hiçbir IP bilgisayarınızdan çıkmaz.",
   "geo.installed": "{release} verisi kurulu ({date}).",

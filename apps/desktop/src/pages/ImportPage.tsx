@@ -144,7 +144,7 @@ export function ImportPage({ site }: { site: string }) {
         }
       >
         <div className="stack">
-          <div className={`dropzone ${over ? "over" : ""}`}>
+          <div className={`oc-dropzone ${over ? "over" : ""}`}>
             <FileUp size={28} />
             <p>{t("import.drop")}</p>
             <div className="row" style={{ justifyContent: "center", marginTop: 10 }}>
@@ -164,9 +164,9 @@ export function ImportPage({ site }: { site: string }) {
                   {t("import.clear")}
                 </Button>
               </div>
-              <div className="chips">
+              <div className="oc-chips">
                 {paths.map((path) => (
-                  <span className="chip" key={path} title={path}>
+                  <span className="oc-chip" key={path} title={path}>
                     <span>{path}</span>
                     <button type="button" disabled={running} onClick={() => setPaths(paths.filter((p) => p !== path))}>
                       <X size={12} />
@@ -209,7 +209,7 @@ export function ImportPage({ site }: { site: string }) {
           </div>
           {running && (
             <div className="stack">
-              <div className={`progress ${progress ? "" : "indeterminate"}`}>
+              <div className={`oc-progress ${progress ? "" : "indeterminate"}`}>
                 <div style={progress ? { width: `${((progress.index + 0.5) / progress.total) * 100}%` } : undefined} />
               </div>
               {progress && (
@@ -239,8 +239,8 @@ export function ImportPage({ site }: { site: string }) {
         {(overview.data?.history.length ?? 0) === 0 ? (
           <p className="muted">{t("import.noHistory")}</p>
         ) : (
-          <div className="table-wrap">
-            <table className="table-simple">
+          <div className="oc-table-wrap">
+            <table className="oc-table">
               <thead>
                 <tr>
                   <th />
@@ -301,7 +301,7 @@ export function ImportPage({ site }: { site: string }) {
 function FileResults({ files }: { files: FileImportReport[] }) {
   const { t, locale } = useI18n();
   return (
-    <table className="table-simple">
+    <table className="oc-table">
       <tbody>
         {files.map((file) => (
           <tr key={file.path}>
@@ -334,7 +334,7 @@ function InspectResult({ report }: { report: InspectReport }) {
   const { t, locale } = useI18n();
   const ok = report.parsed_lines > 0;
   return (
-    <div className={`banner ${ok ? "info" : "error"}`}>
+    <div className={`oc-banner ${ok ? "info" : "error"}`}>
       <FileSearch size={18} />
       <div className="grow stack">
         <div>

@@ -1,6 +1,6 @@
 // Minimal i18n: typed message keys, `{name}` placeholders, English and Turkish.
 
-import { createContext, useCallback, useContext, useMemo, type ReactNode } from "react";
+import { createContext, useCallback, useContext, useEffect, useMemo, type ReactNode } from "react";
 
 import { useStored } from "../lib/storage";
 import { en, type MessageKey } from "./en";
@@ -36,6 +36,10 @@ export function interpolate(text: string, values?: Record<string, string | numbe
 
 export function I18nProvider({ children }: { children: ReactNode }) {
   const [language, setLanguage] = useStored<Language>("language", initialLanguage());
+  // CSS uppercase follows the page language: Turkish turns "i" into "İ".
+  useEffect(() => {
+    document.documentElement.lang = language;
+  }, [language]);
   const t = useCallback<Translate>(
     (key, values) => interpolate(dictionaries[language][key] ?? en[key] ?? key, values),
     [language],

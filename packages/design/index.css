@@ -1,0 +1,4 @@
+/* octopusSEO Chromatophore: tokens, foundations and components in one import. */
+@import "./tokens.css";
+@import "./base.css";
+@import "./components.css";

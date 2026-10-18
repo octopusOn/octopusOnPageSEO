@@ -25,7 +25,7 @@ export class ErrorBoundary extends Component<{ children: ReactNode; resetKey?: s
     if (!this.state.error) return this.props.children;
     return (
       <div className="page">
-        <div className="banner error" role="alert">
+        <div className="oc-banner error" role="alert">
           <div className="grow">
             <strong>{this.state.error.name}</strong>: {this.state.error.message}
             <pre>{this.state.error.stack}</pre>

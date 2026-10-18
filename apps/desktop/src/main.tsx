@@ -6,6 +6,7 @@ import { App } from "./App";
 import { ToastProvider } from "./components/Toasts";
 import { I18nProvider } from "./i18n";
 import { AppStateProvider } from "./state";
+import "@octopusseo/design";
 import "./styles.css";
 
 const queryClient = new QueryClient({
