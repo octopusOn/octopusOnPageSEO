@@ -56,7 +56,7 @@ export function siteUrl(): string {
   return (process.env.BETTER_AUTH_URL ?? "http://localhost:3030").replace(/\/+$/, "");
 }
 
-/** The buyer's address as Caddy reports it. */
+/** The buyer's address as nginx in front reports it. */
 export function clientIp(forwardedFor: string | null): string {
   return forwardedFor?.split(",").at(-1)?.trim() || "127.0.0.1";
 }

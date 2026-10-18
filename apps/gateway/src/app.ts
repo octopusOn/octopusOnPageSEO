@@ -26,7 +26,7 @@ export interface AppDeps extends ProxyDeps {
 
 type Env = { Bindings: Partial<HttpBindings>; Variables: { owner: TokenOwner } };
 
-/** The client address: Caddy's X-Forwarded-For when trusted, else the socket. */
+/** The client address: the proxy's X-Forwarded-For when trusted, else the socket. */
 function clientIp(c: Context<Env>, trustProxy: boolean): string {
   if (trustProxy) {
     const forwarded = c.req.header("x-forwarded-for")?.split(",").at(-1)?.trim();

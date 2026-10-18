@@ -24,7 +24,9 @@ const app = createApp({
   log,
 });
 
-const server = serve({ fetch: app.fetch, port: config.port }, (info) => log({ event: "listening", port: info.port }));
+const server = serve({ fetch: app.fetch, hostname: config.host, port: config.port }, (info) =>
+  log({ event: "listening", host: config.host, port: info.port }),
+);
 
 // Holds left by a request that never finished (a crash or a restart) are freed without a charge.
 const sweeper = setInterval(async () => {
