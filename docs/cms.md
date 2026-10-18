@@ -62,7 +62,7 @@ The CMS tests cover paths and redirects, the API (drafts, schedules, previews, l
 
 | Table | What it holds |
 |---|---|
-| `pages` | The tree, shared by every language. Fields: `type` (home, page, category, product, post, doc), `parent_id`, `position`, `product`, `icon`, `in_header`, `footer_column`. |
+| `pages` | The tree, shared by every language. Fields: `type` (home, page, category, product, post, doc, legal), `key` (legal texts), `parent_id`, `position`, `product`, `icon`, `in_header`, `footer_column`. |
 | `page_translations` | One row per page and language. Fields: `slug`, full `path`, `title`, `nav_title`, `excerpt`, `blocks` (JSON), SEO fields, `status`, `published_at`. |
 | `languages` | `code` (URL prefix and hreflang), names, `locale_tag` (BCP 47), default and active flags. |
 | `media` | Uploaded images and PDFs on the `public` disk (`CMS_MEDIA_DISK`). SVG is refused. |
@@ -88,6 +88,14 @@ Comparison pages:
 - The seed's comparison pages sit under the **Compare** category (`/en/compare/…`): Screaming Frog SEO Spider vs SEO Crawler, and Screaming Frog Log File Analyser vs Log Analyser. The two program pages carry a short version of the table and a link to the full page.
 - Write the other tool's facts with their source and date in the block's note, and update them when its prices change. The seed's figures were checked on screamingfrog.co.uk on 18 October 2026.
 
+Legal texts of the account site (my.octopuson.com):
+- They are pages of type `legal` at the top of the tree, with a `key` that is the same in every language: `credit-terms`, `pre-contract-information`, `distance-sales`, `privacy`, `cookies`. The account site links to them by key, so a slug can change freely.
+- The website never shows them: resolve, the sitemap, menus, listings and redirects skip them. The admin's "view" link opens them on the account site.
+- Write the text as one Markdown block. `{{company.title}}`, `{{company.address}}`, `{{company.tax_office}}`, `{{company.tax_number}}`, `{{company.mersis}}`, `{{company.email}}`, `{{company.phone}}`, `{{company.kep}}` and `{{company.site}}` are filled from the account site's settings; missing details show as bracketed placeholders in the reader's language.
+- The menu title (`nav_title`) is the short name in the account site's footers.
+- The Turkish text is binding; the account site marks the other languages as translations. A text missing in a language is shown in the default language.
+- The first texts, in four languages, are `database/seeders/legal/<key>.<language>.md`. Their migration adds the missing ones to an existing site and never overwrites an edited text.
+
 ## API
 
 All endpoints are public and read-only. They return only live translations (published, with a publication time that has come) of active languages. A request with `Authorization: Bearer <CMS_PREVIEW_SECRET>` also sees drafts.
@@ -98,6 +106,8 @@ All endpoints are public and read-only. They return only live translations (publ
 | `GET /api/v1/site?locale=tr` | Languages, the header and footer menus of the language, and the download page's address. |
 | `GET /api/v1/pages/resolve?locale=tr&path=blog/yazi` | `{"data": page}`, `{"redirect": {"to", "status"}}` or 404. |
 | `GET /api/v1/sitemap` | Every indexable live address with its language versions. |
+| `GET /api/v1/legal?locale=tr` | The account site's legal texts: key, slug, title, short label, language. |
+| `GET /api/v1/legal/{slug}?locale=tr` | One legal text by its slug, its key or another language's slug, in that language when it has one: its blocks and the slugs of its other languages. |
 
 A resolved page carries:
 - its blocks, with media ids replaced by files and product cards filled in;

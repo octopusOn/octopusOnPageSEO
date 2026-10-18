@@ -6,6 +6,7 @@ import Link from "next/link";
 import { type FormEvent, useState } from "react";
 
 import type { Dictionary } from "@/i18n";
+import { useUrl } from "@/i18n/client";
 import { authClient } from "@/lib/auth-client";
 import { safeNext } from "@/lib/paths";
 
@@ -50,6 +51,7 @@ function Feedback({ error, done }: { error: string | null; done: string | null }
 }
 
 export function SignInForm({ t, next }: { t: Strings; next: string | null }) {
+  const url = useUrl();
   const state = useSubmit();
   const target = safeNext(next);
   return (
@@ -83,9 +85,9 @@ export function SignInForm({ t, next }: { t: Strings; next: string | null }) {
       </button>
       <Feedback error={state.error} done={state.done} />
       <p className="auth-links">
-        <Link href="/sifre">{t.forgot}</Link>
+        <Link href={url("password")}>{t.forgot}</Link>
         <span>
-          {t.noAccount} <Link href={next ? `/kayit?next=${encodeURIComponent(next)}` : "/kayit"}>{t.signUp}</Link>
+          {t.noAccount} <Link href={url("sign-up", {}, { next: next ?? undefined })}>{t.signUp}</Link>
         </span>
       </p>
     </form>
@@ -93,6 +95,7 @@ export function SignInForm({ t, next }: { t: Strings; next: string | null }) {
 }
 
 export function SignUpForm({ t, next }: { t: Strings; next: string | null }) {
+  const url = useUrl();
   const state = useSubmit();
   return (
     <form
@@ -105,7 +108,7 @@ export function SignUpForm({ t, next }: { t: Strings; next: string | null }) {
             state.setError(error.message ?? t.failed);
             return;
           }
-          window.location.href = `/dogrula?e=${encodeURIComponent(email)}`;
+          window.location.href = url("verify", {}, { email });
         });
       }}
     >
@@ -131,7 +134,7 @@ export function SignUpForm({ t, next }: { t: Strings; next: string | null }) {
       <Feedback error={state.error} done={state.done} />
       <p className="auth-links">
         <span>
-          {t.haveAccount} <Link href="/giris">{t.signIn}</Link>
+          {t.haveAccount} <Link href={url("sign-in")}>{t.signIn}</Link>
         </span>
       </p>
     </form>
@@ -139,6 +142,7 @@ export function SignUpForm({ t, next }: { t: Strings; next: string | null }) {
 }
 
 export function ResetRequestForm({ t }: { t: Strings }) {
+  const url = useUrl();
   const state = useSubmit();
   return (
     <form
@@ -146,7 +150,7 @@ export function ResetRequestForm({ t }: { t: Strings }) {
       onSubmit={(event) => {
         const { email = "" } = fields(event);
         void state.run(async () => {
-          await authClient.requestPasswordReset({ email, redirectTo: `${window.location.origin}/sifre/yeni` });
+          await authClient.requestPasswordReset({ email, redirectTo: `${window.location.origin}${url("password/new")}` });
           state.setDone(t.resetSent);
         });
       }}
@@ -162,13 +166,14 @@ export function ResetRequestForm({ t }: { t: Strings }) {
       </button>
       <Feedback error={state.error} done={state.done} />
       <p className="auth-links">
-        <Link href="/giris">{t.signIn}</Link>
+        <Link href={url("sign-in")}>{t.signIn}</Link>
       </p>
     </form>
   );
 }
 
 export function ResetForm({ t, token }: { t: Strings; token: string | null }) {
+  const url = useUrl();
   const state = useSubmit();
   if (!token) return <p className="form-error">{t.resetInvalid}</p>;
   return (
@@ -195,7 +200,7 @@ export function ResetForm({ t, token }: { t: Strings; token: string | null }) {
       <Feedback error={state.error} done={state.done} />
       {state.done ? (
         <p className="auth-links">
-          <Link href="/giris">{t.signIn}</Link>
+          <Link href={url("sign-in")}>{t.signIn}</Link>
         </p>
       ) : null}
     </form>
@@ -252,6 +257,7 @@ export function TwoFactorForm({ t, next }: { t: Strings; next: string | null }) 
 }
 
 export function ResendVerification({ t, email }: { t: Strings; email: string | null }) {
+  const url = useUrl();
   const state = useSubmit();
   return (
     <div className="form">
@@ -263,7 +269,7 @@ export function ResendVerification({ t, email }: { t: Strings; email: string | n
           disabled={state.pending || Boolean(state.done)}
           onClick={() =>
             void state.run(async () => {
-              await authClient.sendVerificationEmail({ email, callbackURL: "/" });
+              await authClient.sendVerificationEmail({ email, callbackURL: url("") });
               state.setDone(t.verifyResent);
             })
           }
@@ -273,7 +279,7 @@ export function ResendVerification({ t, email }: { t: Strings; email: string | n
       ) : null}
       <Feedback error={state.error} done={state.done} />
       <p className="auth-links">
-        <Link href="/giris">{t.signIn}</Link>
+        <Link href={url("sign-in")}>{t.signIn}</Link>
       </p>
     </div>
   );

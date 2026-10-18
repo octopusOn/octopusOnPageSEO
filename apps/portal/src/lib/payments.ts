@@ -56,6 +56,11 @@ export function siteUrl(): string {
   return (process.env.BETTER_AUTH_URL ?? "http://localhost:3030").replace(/\/+$/, "");
 }
 
+/** The payment page's language: iyzico and PayTR speak Turkish and English only. */
+export function paymentLanguage(locale: string): "tr" | "en" {
+  return locale === "tr" ? "tr" : "en";
+}
+
 /** The buyer's address as nginx in front reports it. */
 export function clientIp(forwardedFor: string | null): string {
   return forwardedFor?.split(",").at(-1)?.trim() || "127.0.0.1";

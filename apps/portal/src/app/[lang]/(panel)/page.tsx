@@ -9,7 +9,7 @@ import { formatCredits, formatNumber } from "@/lib/format";
 import { requireUser } from "@/lib/session";
 
 export default async function Dashboard() {
-  const [user, { t, locale }] = await Promise.all([requireUser(), getDictionary()]);
+  const [user, { t, locale, url }] = await Promise.all([requireUser(), getDictionary()]);
   const since = new Date(Date.now() - 30 * 86_400_000);
   const [current, settings, sources, recent] = await Promise.all([
     wallet(db(), user.id),
@@ -28,7 +28,7 @@ export default async function Dashboard() {
         title={t.dashboard.title}
         lead={t.dashboard.lead}
         actions={
-          <Link className="oc-btn primary" href="/kredi">
+          <Link className="oc-btn primary" href={url("credits")}>
             {t.dashboard.buy}
           </Link>
         }
@@ -72,7 +72,7 @@ export default async function Dashboard() {
           <section className="oc-panel">
             <div className="oc-panel-head">
               <h2 className="oc-panel-title">{t.dashboard.recent}</h2>
-              <Link href="/kullanim" className="oc-btn ghost small">
+              <Link href={url("usage")} className="oc-btn ghost small">
                 {t.nav.usage}
               </Link>
             </div>

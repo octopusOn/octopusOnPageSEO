@@ -4,30 +4,34 @@ import { LogOut } from "lucide-react";
 import Link from "next/link";
 import type { ReactNode } from "react";
 
-import { setLanguage, signOut } from "@/app/actions";
-import type { Dictionary } from "@/i18n";
+import { signOut } from "@/app/actions";
+import { getDictionary } from "@/i18n";
+import { legalTexts } from "@/legal/cms";
 import type { SessionUser } from "@/lib/session";
 
 import { BrandMark } from "./BrandMark";
+import { LanguageMenu } from "./LanguageMenu";
 import { Nav, type NavItem } from "./Nav";
 
-export function Shell({ user, t, children }: { user: SessionUser; t: Dictionary; children: ReactNode }) {
+export async function Shell({ user, children }: { user: SessionUser; children: ReactNode }) {
+  const { t, locale, url } = await getDictionary();
+  const legal = await legalTexts(locale);
   const account: NavItem[] = [
-    { href: "/", label: t.nav.dashboard, icon: "dashboard", tone: "violet" },
-    { href: "/kredi", label: t.nav.buy, icon: "buy", tone: "amber" },
-    { href: "/kullanim", label: t.nav.usage, icon: "usage", tone: "teal" },
-    { href: "/jetonlar", label: t.nav.tokens, icon: "tokens", tone: "blue" },
-    { href: "/fatura", label: t.nav.invoices, icon: "invoices", tone: "pink" },
-    { href: "/hesap", label: t.nav.profile, icon: "profile", tone: "slate" },
+    { href: url(""), label: t.nav.dashboard, icon: "dashboard", tone: "violet", exact: true },
+    { href: url("credits"), label: t.nav.buy, icon: "buy", tone: "amber" },
+    { href: url("usage"), label: t.nav.usage, icon: "usage", tone: "teal" },
+    { href: url("tokens"), label: t.nav.tokens, icon: "tokens", tone: "blue" },
+    { href: url("invoices"), label: t.nav.invoices, icon: "invoices", tone: "pink" },
+    { href: url("account"), label: t.nav.profile, icon: "profile", tone: "slate" },
   ];
   const admin: NavItem[] = [
-    { href: "/admin", label: t.nav.overview, icon: "overview", tone: "violet" },
-    { href: "/admin/baglayicilar", label: t.nav.connectors, icon: "connectors", tone: "orange" },
-    { href: "/admin/kullanicilar", label: t.nav.users, icon: "users", tone: "cyan" },
-    { href: "/admin/siparisler", label: t.nav.orders, icon: "orders", tone: "amber" },
-    { href: "/admin/ayarlar", label: t.nav.settings, icon: "settings", tone: "pink" },
-    { href: "/admin/raporlar", label: t.nav.reports, icon: "reports", tone: "teal" },
-    { href: "/admin/denetim", label: t.nav.audit, icon: "audit", tone: "slate" },
+    { href: url("admin"), label: t.nav.overview, icon: "overview", tone: "violet", exact: true },
+    { href: url("admin/connectors"), label: t.nav.connectors, icon: "connectors", tone: "orange" },
+    { href: url("admin/users"), label: t.nav.users, icon: "users", tone: "cyan" },
+    { href: url("admin/orders"), label: t.nav.orders, icon: "orders", tone: "amber" },
+    { href: url("admin/settings"), label: t.nav.settings, icon: "settings", tone: "pink" },
+    { href: url("admin/reports"), label: t.nav.reports, icon: "reports", tone: "teal" },
+    { href: url("admin/audit"), label: t.nav.audit, icon: "audit", tone: "slate" },
   ];
   return (
     <div className="oc-shell oc-ground portal-shell">
@@ -43,9 +47,11 @@ export function Shell({ user, t, children }: { user: SessionUser; t: Dictionary;
         </div>
         <Nav items={account} />
         {user.role === "admin" ? <Nav items={admin} heading={t.nav.admin} /> : null}
-        <nav className="rail-legal small">
-          <Link href="/yasal/kredi-kosullari">{t.nav.legal}</Link>
-        </nav>
+        {legal[0] ? (
+          <nav className="rail-legal small">
+            <Link href={url("legal/[slug]", { slug: legal[0].slug })}>{t.nav.legal}</Link>
+          </nav>
+        ) : null}
         <div className="oc-rail-foot">
           <div className="rail-user">
             <strong>{user.name}</strong>
@@ -58,9 +64,7 @@ export function Shell({ user, t, children }: { user: SessionUser; t: Dictionary;
                 {t.nav.signOut}
               </button>
             </form>
-            <form action={setLanguage}>
-              <button className="oc-btn ghost small">{t.nav.language}</button>
-            </form>
+            <LanguageMenu className="up" />
           </div>
         </div>
       </aside>

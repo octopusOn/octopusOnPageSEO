@@ -83,7 +83,7 @@ export function createApp(deps: AppDeps): Hono<Env> {
       device_code: started.deviceCode,
       user_code: started.userCode,
       verification_uri: verification,
-      verification_uri_complete: `${verification}?kod=${encodeURIComponent(started.userCode)}`,
+      verification_uri_complete: `${verification}?code=${encodeURIComponent(started.userCode)}`,
       expires_in: started.expiresIn,
       interval: started.interval,
     });

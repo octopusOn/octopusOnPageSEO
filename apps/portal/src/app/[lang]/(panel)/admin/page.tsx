@@ -8,7 +8,7 @@ import { formatCredits, formatNumber, formatTry, formatUsd } from "@/lib/format"
 import { STATUS_TONE } from "@/lib/tones";
 
 export default async function AdminOverview() {
-  const { t, locale } = await getDictionary();
+  const { t, locale, url } = await getDictionary();
   const [figures, settings, connectors] = await Promise.all([
     overview(db(), new Date(Date.now() - 30 * 86_400_000)),
     getSettings(db()),
@@ -44,7 +44,7 @@ export default async function AdminOverview() {
         </div>
         <div className="oc-chips">
           {connectors.map(({ connector, missingSecrets }) => (
-            <Link key={connector.id} href={`/admin/baglayicilar/${connector.id}`} className="oc-chip">
+            <Link key={connector.id} href={url("admin/connectors/[id]", { id: connector.id })} className="oc-chip">
               <span className={`oc-badge ${STATUS_TONE[connector.status]}`}>{t.admin.status[connector.status]}</span>
               {connector.name}
               {missingSecrets.length ? <span className="oc-badge warning">{t.admin.missingSecrets}</span> : null}

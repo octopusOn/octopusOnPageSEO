@@ -19,7 +19,7 @@ export async function retryInvoice(_: ActionResult, form: FormData): Promise<Act
   const platform = String(form.get("provider")) === "paytr" ? "PayTR" : "iyzico";
   try {
     const status = await issueInvoice(db(), client, id, { url: siteUrl(), platform, vatRate });
-    revalidatePath("/admin/siparisler");
+    revalidatePath("/[lang]/admin/orders", "page");
     return { ok: t.billing.invoiceStatus[status] ?? status };
   } catch (error) {
     return { error: errorText(error, t.common.error) };
@@ -35,6 +35,6 @@ export async function reverse(_: ActionResult, form: FormData): Promise<ActionRe
   } catch (error) {
     return { error: errorText(error, t.common.error) };
   }
-  revalidatePath("/admin/siparisler");
+  revalidatePath("/[lang]/admin/orders", "page");
   return { ok: t.profile.saved };
 }

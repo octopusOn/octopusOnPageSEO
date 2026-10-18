@@ -10,9 +10,9 @@ import { parasut, paymentProvider } from "@/lib/payments";
 
 import { retryInvoice, reverse } from "./actions";
 
-export default async function Orders({ searchParams }: { searchParams: Promise<{ durum?: string }> }) {
-  const [{ t, locale }, { durum }] = await Promise.all([getDictionary(), searchParams]);
-  const [rows, settings] = await Promise.all([listOrders(db(), { status: durum || undefined, limit: 300 }), getSettings(db())]);
+export default async function Orders({ searchParams }: { searchParams: Promise<{ status?: string }> }) {
+  const [{ t, locale, url }, { status: shown }] = await Promise.all([getDictionary(), searchParams]);
+  const [rows, settings] = await Promise.all([listOrders(db(), { status: shown || undefined, limit: 300 }), getSettings(db())]);
   const month = new Date().toISOString().slice(0, 7);
   const invoicing = parasut() !== null;
   return (
@@ -21,7 +21,7 @@ export default async function Orders({ searchParams }: { searchParams: Promise<{
         title={t.nav.orders}
         lead={t.admin.ordersLead}
         actions={
-          <a className="oc-btn ghost" href={`/admin/siparisler/csv?ay=${month}`}>
+          <a className="oc-btn ghost" href={url("admin/orders/csv", {}, { month })}>
             {fill(t.admin.exportCsv, { month })}
           </a>
         }
@@ -30,7 +30,7 @@ export default async function Orders({ searchParams }: { searchParams: Promise<{
       {!invoicing ? <div className="oc-banner info">{t.admin.noInvoicing}</div> : null}
       <div className="oc-chips">
         {["", "paid", "created", "failed", "refunded", "chargeback"].map((status) => (
-          <Link key={status || "all"} href={status ? `/admin/siparisler?durum=${status}` : "/admin/siparisler"} className={`oc-chip ${(durum ?? "") === status ? "active" : ""}`}>
+          <Link key={status || "all"} href={url("admin/orders", {}, { status })} className={`oc-chip ${(shown ?? "") === status ? "active" : ""}`}>
             {status ? (t.billing.orderStatus[status] ?? status) : t.admin.total}
           </Link>
         ))}
@@ -54,7 +54,7 @@ export default async function Orders({ searchParams }: { searchParams: Promise<{
               <tr key={order.id}>
                 <td className="mono">{formatTime(order.paidAt ?? order.createdAt)}</td>
                 <td>
-                  <Link href={`/admin/kullanicilar/${encodeURIComponent(order.userId)}`}>{email}</Link>
+                  <Link href={url("admin/users/[id]", { id: order.userId })}>{email}</Link>
                   <div className="mono muted small">{order.conversationId}</div>
                 </td>
                 <td>{order.provider}</td>

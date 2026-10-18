@@ -21,14 +21,14 @@ const TEMPLATE = {
 };
 
 export default async function NewConnector() {
-  const { t } = await getDictionary();
+  const { t, url } = await getDictionary();
   return (
     <>
       <PageHead
         title={t.admin.newConnector}
         lead={t.admin.configurationHint}
         actions={
-          <Link href="/admin/baglayicilar" className="oc-btn ghost">
+          <Link href={url("admin/connectors")} className="oc-btn ghost">
             {t.common.back}
           </Link>
         }

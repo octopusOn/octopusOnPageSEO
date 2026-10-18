@@ -8,8 +8,18 @@ import { drizzleAdapter } from "better-auth/adapters/drizzle";
 import { nextCookies } from "better-auth/next-js";
 import { admin, twoFactor } from "better-auth/plugins";
 
+import { type Dictionary, dictionaryFor, fill } from "@/i18n";
+import { languages, preferredLanguage } from "@/i18n/languages";
+
 import { db } from "./db";
 import { sendMail } from "./mail";
+
+/** The e-mail texts in the language of the page the request came from (its `lang` cookie). */
+async function mailTexts(request?: Request): Promise<Dictionary["mail"]> {
+  const remembered = /(?:^|;\s*)lang=([^;]+)/.exec(request?.headers.get("cookie") ?? "")?.[1];
+  const { t } = await dictionaryFor(preferredLanguage(remembered, await languages()));
+  return t.mail;
+}
 
 function createAuth() {
   return betterAuth({
@@ -31,23 +41,17 @@ function createAuth() {
       requireEmailVerification: true,
       minPasswordLength: 10,
       revokeSessionsOnPasswordReset: true,
-      sendResetPassword: async ({ user, url }) => {
-        await sendMail(
-          user.email,
-          "OctopusOn SEO şifre yenileme / password reset",
-          `Şifrenizi yenilemek için bu bağlantıyı açın (1 saat geçerli):\n${url}\n\nTo reset your password, open this link (valid for 1 hour).\n\nBu isteği siz yapmadıysanız bu e-postayı yok sayın.`,
-        );
+      sendResetPassword: async ({ user, url }, request) => {
+        const t = await mailTexts(request);
+        await sendMail(user.email, t.resetSubject, fill(t.resetBody, { url }));
       },
     },
     emailVerification: {
       sendOnSignUp: true,
       autoSignInAfterVerification: true,
-      sendVerificationEmail: async ({ user, url }) => {
-        await sendMail(
-          user.email,
-          "OctopusOn SEO hesabınızı doğrulayın / verify your account",
-          `Hesabınızı doğrulamak için bu bağlantıyı açın:\n${url}\n\nTo verify your OctopusOn SEO account, open this link.`,
-        );
+      sendVerificationEmail: async ({ user, url }, request) => {
+        const t = await mailTexts(request);
+        await sendMail(user.email, t.verifySubject, fill(t.verifyBody, { url }));
       },
     },
     session: { expiresIn: 60 * 60 * 24 * 30, updateAge: 60 * 60 * 24 },

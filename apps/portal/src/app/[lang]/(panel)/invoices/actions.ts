@@ -36,6 +36,6 @@ export async function saveProfile(_: ActionResult, form: FormData): Promise<Acti
     country: form.get("country") === "TR" ? "TR" : text(form, "country", 60) || "TR",
     phone,
   });
-  revalidatePath("/fatura");
+  revalidatePath("/[lang]/invoices", "page");
   return { ok: t.billing.saved };
 }

@@ -11,7 +11,7 @@ import { formatCredits, formatTime, formatTry } from "@/lib/format";
 import { adjust, revokeDevices, suspend } from "../actions";
 
 export default async function UserPage({ params }: { params: Promise<{ id: string }> }) {
-  const [{ id }, { t, locale }] = await Promise.all([params, getDictionary()]);
+  const [{ id }, { t, locale, url }] = await Promise.all([params, getDictionary()]);
   const userId = decodeURIComponent(id);
   const [detail, settings] = await Promise.all([userDetail(db(), userId), getSettings(db())]);
   if (!detail) notFound();
@@ -23,7 +23,7 @@ export default async function UserPage({ params }: { params: Promise<{ id: strin
         title={user.email}
         lead={`${user.name} · ${formatTime(user.createdAt)}`}
         actions={
-          <Link href="/admin/kullanicilar" className="oc-btn ghost">
+          <Link href={url("admin/users")} className="oc-btn ghost">
             {t.common.back}
           </Link>
         }

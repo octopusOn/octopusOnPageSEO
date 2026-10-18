@@ -21,6 +21,8 @@ Environment=NEXT_TELEMETRY_DISABLED=1
 Environment=HOSTNAME=127.0.0.1
 Environment=PORT=3030
 Environment=BETTER_AUTH_URL=https://my.octopuson.com
+# Languages and legal texts come from the CMS (apps/cms) on this server.
+Environment=CMS_API_URL=http://127.0.0.1:8095
 ExecStart=/opt/node-v22.23.3-linux-x64/bin/node server.js
 Restart=always
 RestartSec=3

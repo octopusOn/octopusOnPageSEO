@@ -15,7 +15,7 @@ import { changeStatus, deleteSecret, probeConnector, restoreVersion, saveJson, s
 const STATUSES = ["draft", "test", "active", "disabled"] as const;
 
 export default async function ConnectorPage({ params }: { params: Promise<{ id: string }> }) {
-  const [{ id }, { t, locale }] = await Promise.all([params, getDictionary()]);
+  const [{ id }, { t, locale, url }] = await Promise.all([params, getDictionary()]);
   const record = (await listConnectors(db())).find((item) => item.connector.id === id);
   if (!record) notFound();
   const { connector } = record;
@@ -33,7 +33,7 @@ export default async function ConnectorPage({ params }: { params: Promise<{ id: 
         title={connector.name}
         lead={connector.description || connector.upstream}
         actions={
-          <Link href="/admin/baglayicilar" className="oc-btn ghost">
+          <Link href={url("admin/connectors")} className="oc-btn ghost">
             {t.common.back}
           </Link>
         }

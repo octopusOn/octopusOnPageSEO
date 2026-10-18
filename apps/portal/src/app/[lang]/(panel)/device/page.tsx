@@ -8,10 +8,12 @@ import { requireUser } from "@/lib/session";
 
 import { decide } from "./actions";
 
-export default async function Device({ searchParams }: { searchParams: Promise<{ kod?: string }> }) {
-  const [{ kod }, { t }] = await Promise.all([searchParams, getDictionary()]);
-  await requireUser(kod ? `/cihaz?kod=${encodeURIComponent(kod)}` : "/cihaz");
-  const code = kod ? normalizeUserCode(kod) : "";
+export default async function Device({ searchParams }: { searchParams: Promise<{ code?: string; kod?: string }> }) {
+  const [query, { t, url }] = await Promise.all([searchParams, getDictionary()]);
+  // Programs from before the multilingual addresses send the code as `kod`.
+  const given = query.code ?? query.kod;
+  await requireUser(url("device", {}, { code: given }));
+  const code = given ? normalizeUserCode(given) : "";
   const pending = code ? await pendingDevice(db(), code) : null;
   return (
     <>
@@ -33,7 +35,7 @@ export default async function Device({ searchParams }: { searchParams: Promise<{
             ) : null}
             <label className="oc-field">
               <span className="type-label">{t.device.code}</span>
-              <input className="oc-input mono device-input" name="kod" placeholder="ABCD-EFGH" autoComplete="off" required autoFocus />
+              <input className="oc-input mono device-input" name="code" placeholder="ABCD-EFGH" autoComplete="off" required autoFocus />
             </label>
             <button className="oc-btn primary">{t.device.find}</button>
           </form>

@@ -8,7 +8,7 @@ import { formatTime } from "@/lib/format";
 import { STATUS_TONE } from "@/lib/tones";
 
 export default async function Connectors() {
-  const { t } = await getDictionary();
+  const { t, url } = await getDictionary();
   const records = await listConnectors(db());
   return (
     <>
@@ -16,7 +16,7 @@ export default async function Connectors() {
         title={t.nav.connectors}
         lead={t.admin.connectorsLead}
         actions={
-          <Link href="/admin/baglayicilar/yeni" className="oc-btn primary">
+          <Link href={url("admin/connectors/new")} className="oc-btn primary">
             {t.admin.newConnector}
           </Link>
         }
@@ -37,7 +37,7 @@ export default async function Connectors() {
             {records.map(({ connector, version, updatedAt, missingSecrets }) => (
               <tr key={connector.id}>
                 <td>
-                  <Link href={`/admin/baglayicilar/${connector.id}`}>
+                  <Link href={url("admin/connectors/[id]", { id: connector.id })}>
                     <strong>{connector.name}</strong>
                   </Link>
                   <div className="mono muted small">{connector.id}</div>

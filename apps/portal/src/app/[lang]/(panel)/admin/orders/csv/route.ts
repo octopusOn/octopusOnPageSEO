@@ -18,7 +18,7 @@ function cell(value: unknown): string {
 export async function GET(request: NextRequest): Promise<Response> {
   const user = await currentUser();
   if (!user || user.role !== "admin" || !user.twoFactorEnabled) return new NextResponse(null, { status: 404 });
-  const month = request.nextUrl.searchParams.get("ay") ?? new Date().toISOString().slice(0, 7);
+  const month = request.nextUrl.searchParams.get("month") ?? new Date().toISOString().slice(0, 7);
   if (!/^\d{4}-\d{2}$/.test(month)) return new NextResponse(null, { status: 400 });
   const from = new Date(`${month}-01T00:00:00+03:00`);
   const to = new Date(from);

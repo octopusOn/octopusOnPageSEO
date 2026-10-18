@@ -19,7 +19,7 @@ import { fill, getDictionary } from "@/i18n";
 import type { ActionResult } from "@/lib/actions";
 import { db } from "@/lib/db";
 import { formatTry } from "@/lib/format";
-import { clientIp, paymentProvider, siteUrl } from "@/lib/payments";
+import { clientIp, paymentLanguage, paymentProvider, siteUrl } from "@/lib/payments";
 import { rateOrNull } from "@/lib/rate";
 import { requireUser } from "@/lib/session";
 
@@ -32,7 +32,7 @@ function splitName(full: string): [string, string] {
 
 export async function pay(_: ActionResult, form: FormData): Promise<ActionResult> {
   const user = await requireUser();
-  const { t, locale } = await getDictionary();
+  const { t, locale, url } = await getDictionary();
   const provider = paymentProvider();
   if (!provider) return { error: t.buy.soon };
   if (form.get("consent") !== "on") return { error: t.buy.consentRequired };
@@ -66,8 +66,8 @@ export async function pay(_: ActionResult, form: FormData): Promise<ActionResult
         conversationId: order.conversationId,
         amountKurus,
         itemName,
-        callbackUrl: `${siteUrl()}/api/odeme/iyzico?siparis=${order.id}`,
-        locale,
+        callbackUrl: `${siteUrl()}/api/odeme/iyzico?order=${order.id}`,
+        locale: paymentLanguage(locale),
         billingName: profile.kind === "company" ? (profile.companyName ?? profile.fullName) : profile.fullName,
         buyer: {
           id: user.id,
@@ -94,12 +94,12 @@ export async function pay(_: ActionResult, form: FormData): Promise<ActionResult
         userName: profile.fullName,
         userAddress: `${profile.address} ${profile.city}`,
         userPhone: profile.phone,
-        okUrl: `${siteUrl()}/kredi/sonuc?siparis=${order.id}`,
-        failUrl: `${siteUrl()}/kredi/sonuc?siparis=${order.id}`,
-        lang: locale,
+        okUrl: `${siteUrl()}${url("credits/result", {}, { order: order.id })}`,
+        failUrl: `${siteUrl()}${url("credits/result", {}, { order: order.id })}`,
+        lang: paymentLanguage(locale),
       });
       await setOrderReference(db(), order.id, started.token);
-      next = `/kredi/odeme/${order.id}`;
+      next = url("credits/payment/[id]", { id: order.id });
     }
   } catch (error) {
     const reason = error instanceof Error ? error.message : String(error);

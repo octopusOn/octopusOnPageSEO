@@ -39,9 +39,9 @@ async function savedMessage(id: string): Promise<string> {
   return fill(t.admin.saved, { version: latest?.version ?? 1 });
 }
 
-function refresh(id: string): void {
-  revalidatePath("/admin/baglayicilar");
-  revalidatePath(`/admin/baglayicilar/${id}`);
+function refresh(): void {
+  revalidatePath("/[lang]/admin/connectors", "page");
+  revalidatePath("/[lang]/admin/connectors/[id]", "page");
 }
 
 export async function saveJson(_: ActionResult, form: FormData): Promise<ActionResult> {
@@ -61,8 +61,8 @@ export async function saveJson(_: ActionResult, form: FormData): Promise<ActionR
   } catch (error) {
     return { error: errorText(error, t.common.error) };
   }
-  if (!expected) redirect(`/admin/baglayicilar/${input.id}`);
-  refresh(input.id);
+  if (!expected) redirect((await getDictionary()).url("admin/connectors/[id]", { id: String(input.id) }));
+  refresh();
   return { ok: await savedMessage(input.id) };
 }
 
@@ -112,7 +112,7 @@ export async function saveQuick(_: ActionResult, form: FormData): Promise<Action
   } catch (error) {
     return { error: errorText(error, t.common.error) };
   }
-  refresh(id);
+  refresh();
   return { ok: await savedMessage(id) };
 }
 
@@ -125,7 +125,7 @@ export async function changeStatus(_: ActionResult, form: FormData): Promise<Act
   } catch (error) {
     return { error: errorText(error, t.common.error) };
   }
-  refresh(id);
+  refresh();
   return { ok: t.admin.statusChanged };
 }
 
@@ -141,7 +141,7 @@ export async function restoreVersion(_: ActionResult, form: FormData): Promise<A
   } catch (error) {
     return { error: errorText(error, t.common.error) };
   }
-  refresh(id);
+  refresh();
   return { ok: await savedMessage(id) };
 }
 
@@ -157,7 +157,7 @@ export async function saveSecret(_: ActionResult, form: FormData): Promise<Actio
   } catch (error) {
     return { error: errorText(error, t.common.error) };
   }
-  refresh(id);
+  refresh();
   return { ok: t.profile.saved };
 }
 
@@ -166,7 +166,7 @@ export async function deleteSecret(_: ActionResult, form: FormData): Promise<Act
   const { t } = await getDictionary();
   const id = String(form.get("id"));
   await removeConnectorSecret(db(), id, String(form.get("name")), admin.id);
-  refresh(id);
+  refresh();
   return { ok: t.profile.saved };
 }
 

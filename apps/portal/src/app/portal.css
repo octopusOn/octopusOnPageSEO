@@ -602,3 +602,74 @@ a.oc-btn {
 .auth-legal a {
   color: var(--ink-faint);
 }
+
+.legal-body ul {
+  margin: 0 0 var(--space-2);
+  padding-left: 1.25em;
+  color: var(--ink-muted);
+}
+
+.legal-body li + li {
+  margin-top: var(--space-1);
+}
+
+.legal-body strong {
+  color: var(--ink);
+}
+
+/* The language menu: a disclosure with the offered languages. `up` opens it above the button. */
+.lang-menu {
+  position: relative;
+}
+
+.lang-menu > summary {
+  list-style: none;
+  cursor: pointer;
+}
+
+.lang-menu > summary::-webkit-details-marker {
+  display: none;
+}
+
+.lang-menu ul {
+  position: absolute;
+  z-index: 20;
+  top: calc(100% + var(--space-1));
+  left: 0;
+  min-width: 160px;
+  margin: 0;
+  padding: var(--space-1);
+  list-style: none;
+  background: var(--surface-raised);
+  backdrop-filter: blur(16px);
+  border: 1px solid var(--line-strong);
+  border-radius: var(--radius-sm);
+  box-shadow: 0 12px 32px rgb(0 0 0 / 0.35);
+}
+
+.lang-menu.up ul {
+  top: auto;
+  bottom: calc(100% + var(--space-1));
+}
+
+.lang-menu a {
+  display: block;
+  padding: 6px 10px;
+  border-radius: var(--radius-sm);
+  color: var(--ink-muted);
+  text-decoration: none;
+}
+
+.lang-menu a:hover,
+.lang-menu a[aria-current] {
+  background: var(--surface-3);
+  color: var(--ink);
+}
+
+.auth-lang {
+  align-self: center;
+}
+
+.legal-nav .lang-menu {
+  margin-left: auto;
+}

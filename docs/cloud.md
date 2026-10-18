@@ -28,6 +28,19 @@ Without `SMTP_URL`, development prints the e-mails (verification, password reset
 
 Tests: `pnpm --filter @octopusseo/cloud-core check`, `pnpm --filter @octopusseo/gateway check`, `pnpm --filter @octopusseo/portal check`. They run on PGlite; with `TEST_DATABASE_URL` set, the ledger's parallel-spending test also runs on a real PostgreSQL server.
 
+## Languages
+
+The portal speaks every language the CMS lists as active that also has a messages file. Nothing in the code names a language.
+
+- **Texts.** `apps/portal/messages/<code>.json`, one file per language with the same keys (tr.json is the reference; a test checks the others). Each file also names its language (`language`) and translates the address segments (`routes`).
+- **Languages and default.** From the CMS (`CMS_API_URL`, `/api/v1/languages`), cached for a minute. The CMS's default language is the portal's default; a visitor's last language is remembered in the `lang` cookie. Without the CMS, every messages file is offered.
+- **Addresses.** Every page lives under its language with translated segments: `/tr/kredi/onay`, `/en/credits/confirm`, `/de/credits/bezahlen`. The folders under `app/[lang]` carry the English route names (`src/i18n/routes.ts`). `src/proxy.ts` redirects addresses without a language (the old `/giris`, the programs' `/cihaz`) and addresses in another language or in English to the right one, and checks the session cookie. `next.config.ts` rewrites each language's addresses to the folders; it reads the messages files when the portal is built.
+- **Links in code.** `const { t, url } = await getDictionary()` in server code and `useUrl()` in client components: `url("credits/confirm", {}, { amount })`. Server code that cannot know the language (payment callbacks, `/baglan`) redirects to the English route name without a language (`/credits/result`), which the proxy sends on in the visitor's language.
+- **Legal texts.** From the CMS (pages of type `legal`, see [cms.md](cms.md#data-model)), with the seller's details from the portal's `COMPANY_*` settings. `LEGAL_LANGUAGE` (Turkish unless set) is the binding language; the others carry a translation note.
+- **E-mails.** Sent in the language of the page the request came from (the `lang` cookie).
+
+To add a language: add it in the CMS admin, copy `messages/en.json` to `messages/<code>.json` and translate it (keep the keys and `{placeholders}`), translate the legal texts in the CMS, then deploy.
+
 ## Deploying
 
 Both apps run on the same Contabo server as the website (207.180.209.30, managed by CloudPanel alongside other sites; see [cms.md](cms.md#deploying)). Cloudflare sits in front with SSL mode "Full", so the origin's self-signed `octopuson.com` certificate is enough for both subdomains.
@@ -42,7 +55,7 @@ Both apps run on the same Contabo server as the website (207.180.209.30, managed
 | Database | PostgreSQL 16 on the server, database `octopus`, role `octopuson`, reached over the local socket without a password (peer authentication) |
 | Logs | `journalctl -u octopuson-portal` / `-u octopuson-gateway`; nginx writes `/home/octopuson/logs/nginx/my-*.log` and `api-*.log` |
 
-The units and the nginx file are kept in [`deploy/account`](../deploy/account). Node is the server's `/opt/node-v22.23.3-linux-x64`, the same as the website's.
+The units and the nginx file are kept in [`deploy/account`](../deploy/account). Node is the server's `/opt/node-v22.23.3-linux-x64`, the same as the website's. The portal reads its languages and legal texts from the CMS at `127.0.0.1:8095` (`CMS_API_URL` in the unit), so when both changed, deploy the CMS first (`scripts/deploy-website.sh`).
 
 ### Settings
 

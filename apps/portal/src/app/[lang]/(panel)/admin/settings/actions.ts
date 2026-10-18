@@ -51,6 +51,6 @@ export async function saveSettings(_: ActionResult, form: FormData): Promise<Act
   } catch (error) {
     return { error: errorText(error, t.common.error) };
   }
-  revalidatePath("/admin/ayarlar");
+  revalidatePath("/[lang]/admin/settings", "page");
   return { ok: t.profile.saved };
 }

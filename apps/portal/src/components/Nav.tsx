@@ -34,7 +34,8 @@ const ICONS = {
   audit: FileClock,
 };
 
-export type NavItem = { href: string; label: string; icon: keyof typeof ICONS; tone: string };
+/** `exact` items (the dashboards) are active only on their own page, the others on their subpages too. */
+export type NavItem = { href: string; label: string; icon: keyof typeof ICONS; tone: string; exact?: boolean };
 
 export function Nav({ items, heading }: { items: NavItem[]; heading?: string }) {
   const path = usePathname();
@@ -43,7 +44,7 @@ export function Nav({ items, heading }: { items: NavItem[]; heading?: string }) 
       {heading ? <div className="nav-heading type-label">{heading}</div> : null}
       {items.map((item) => {
         const Icon = ICONS[item.icon];
-        const active = item.href === "/" || item.href === "/admin" ? path === item.href : path.startsWith(item.href);
+        const active = item.exact ? path === item.href : path === item.href || path.startsWith(`${item.href}/`);
         return (
           <Link key={item.href} href={item.href} className={`oc-nav-item ${active ? "active" : ""}`} aria-current={active ? "page" : undefined}>
             <span className={`oc-tile ${item.tone}`}>

@@ -5,6 +5,7 @@ import { redirect } from "next/navigation";
 import { ActionForm } from "@/components/ActionForm";
 import { PageHead } from "@/components/Shell";
 import { fill, getDictionary } from "@/i18n";
+import { legalSlug, legalTexts } from "@/legal/cms";
 import { db } from "@/lib/db";
 import { formatCredits, formatRate, formatTry, parseDecimal } from "@/lib/format";
 import { paymentProvider } from "@/lib/payments";
@@ -13,17 +14,23 @@ import { requireUser } from "@/lib/session";
 
 import { pay } from "../actions";
 
-export default async function Confirm({ searchParams }: { searchParams: Promise<{ tutar?: string; tl?: string }> }) {
-  const [user, { t, locale }, query] = await Promise.all([requireUser(), getDictionary(), searchParams]);
-  const typed = query.tl ? parseDecimal(query.tl, locale) : null;
-  const amountKurus = typed !== null ? Math.round(typed * 100) : Number(query.tutar);
-  const [settings, rate, profile, paidBefore] = await Promise.all([
+/** `amount` is a package in kuruş; `value` is an amount typed in lira. */
+export default async function Confirm({ searchParams }: { searchParams: Promise<{ amount?: string; value?: string }> }) {
+  const [user, { t, locale, url }, query] = await Promise.all([requireUser(), getDictionary(), searchParams]);
+  const typed = query.value ? parseDecimal(query.value, locale) : null;
+  const amountKurus = typed !== null ? Math.round(typed * 100) : Number(query.amount);
+  const [settings, rate, profile, paidBefore, legal] = await Promise.all([
     getSettings(db()),
     rateOrNull(),
     billingProfile(db(), user.id),
     hasPaidOrder(db(), user.id),
+    legalTexts(locale),
   ]);
-  if (!paymentProvider() || !rate || !Number.isInteger(amountKurus) || amountKurus <= 0) redirect("/kredi");
+  if (!paymentProvider() || !rate || !Number.isInteger(amountKurus) || amountKurus <= 0) redirect(url("credits"));
+  const legalLink = (key: string) => {
+    const text = legal.find((item) => item.key === key);
+    return { href: url("legal/[slug]", { slug: legalSlug(legal, key) }), label: text?.label ?? key };
+  };
   const problem = amountProblem(amountKurus, settings, !paidBefore);
   const priced = quote(amountKurus, settings, rate.rate);
   const unit = settings.creditUnitMicros;
@@ -79,7 +86,7 @@ export default async function Confirm({ searchParams }: { searchParams: Promise<
           ) : (
             <div className="oc-banner warning">{t.buy.profileRequired}</div>
           )}
-          <Link href="/fatura" className="oc-btn ghost small">
+          <Link href={url("invoices")} className="oc-btn ghost small">
             {t.buy.editProfile}
           </Link>
         </section>
@@ -89,17 +96,14 @@ export default async function Confirm({ searchParams }: { searchParams: Promise<
           <ActionForm action={pay} submit={`${t.buy.pay} · ${formatTry(priced.amountKurus, locale)}`}>
             <input type="hidden" name="amount" value={amountKurus} />
             <p className="small">
-              <Link href="/yasal/on-bilgilendirme" target="_blank">
-                Ön bilgilendirme formu
-              </Link>{" "}
-              ·{" "}
-              <Link href="/yasal/mesafeli-satis" target="_blank">
-                Mesafeli satış sözleşmesi
-              </Link>{" "}
-              ·{" "}
-              <Link href="/yasal/kredi-kosullari" target="_blank">
-                {t.buy.terms}
-              </Link>
+              {["pre-contract-information", "distance-sales", "credit-terms"].map((key, index) => (
+                <span key={key}>
+                  {index > 0 ? " · " : null}
+                  <Link href={legalLink(key).href} target="_blank">
+                    {legalLink(key).label}
+                  </Link>
+                </span>
+              ))}
             </p>
             <label className="oc-check">
               <input type="checkbox" name="consent" required />

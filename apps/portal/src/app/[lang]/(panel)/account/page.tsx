@@ -9,7 +9,7 @@ export default async function Account({ searchParams }: { searchParams: Promise<
   return (
     <>
       <PageHead title={t.profile.title} lead={t.profile.lead} />
-      {query["iki-adim"] ? <div className="oc-banner warning">{t.profile.twoFactorRequired}</div> : null}
+      {query["two-step"] ? <div className="oc-banner warning">{t.profile.twoFactorRequired}</div> : null}
       <div className="oc-cards two">
         <section className="oc-card">
           <h2 className="oc-card-title">{user.name}</h2>

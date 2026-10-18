@@ -21,7 +21,7 @@ export async function adjust(_: ActionResult, form: FormData): Promise<ActionRes
   } catch (error) {
     return { error: errorText(error, t.common.error) };
   }
-  revalidatePath(`/admin/kullanicilar/${encodeURIComponent(userId)}`);
+  revalidatePath("/[lang]/admin/users/[id]", "page");
   return { ok: t.admin.adjustDone };
 }
 
@@ -33,7 +33,7 @@ export async function suspend(_: ActionResult, form: FormData): Promise<ActionRe
   const banned = form.get("banned") === "true";
   await setBanned(db(), userId, banned, String(form.get("reason") ?? ""), admin.id);
   if (banned) await revokeAllTokens(db(), userId, admin.id);
-  revalidatePath(`/admin/kullanicilar/${encodeURIComponent(userId)}`);
+  revalidatePath("/[lang]/admin/users/[id]", "page");
   return { ok: t.profile.saved };
 }
 
@@ -42,6 +42,6 @@ export async function revokeDevices(_: ActionResult, form: FormData): Promise<Ac
   const { t } = await getDictionary();
   const userId = String(form.get("userId"));
   const count = await revokeAllTokens(db(), userId, admin.id);
-  revalidatePath(`/admin/kullanicilar/${encodeURIComponent(userId)}`);
+  revalidatePath("/[lang]/admin/users/[id]", "page");
   return { ok: fill(t.admin.revokedCount, { count }) };
 }

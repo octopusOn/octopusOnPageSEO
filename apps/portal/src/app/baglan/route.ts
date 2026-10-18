@@ -13,11 +13,12 @@ import { siteUrl } from "@/lib/payments";
 
 export async function GET(request: NextRequest): Promise<Response> {
   const connect = parseConnectRequest(request.nextUrl.searchParams);
-  if (!connect) return NextResponse.redirect(new URL("/cihaz", siteUrl()), 303);
+  // Pages are addressed by their English route names here; the proxy shows them in the person's language.
+  if (!connect) return NextResponse.redirect(new URL("/device", siteUrl()), 303);
   const session = await auth().api.getSession({ headers: await headers() });
   if (!session) {
     const back = `/baglan${request.nextUrl.search}`;
-    return NextResponse.redirect(new URL(`/giris?next=${encodeURIComponent(back)}`, siteUrl()), 303);
+    return NextResponse.redirect(new URL(`/sign-in?next=${encodeURIComponent(back)}`, siteUrl()), 303);
   }
   const target = await createConnectCode(db(), session.user.id, connect);
   await audit(db(), session.user.id, "device.connect", { type: "user", id: session.user.id }, { client: connect.client });

@@ -6,7 +6,9 @@
 #
 # It pulls main, installs dependencies, applies the database migrations, builds the portal into a
 # new release directory, refreshes the systemd units from deploy/account and restarts both
-# services. The settings in /etc/octopuson and the nginx vhost stay as they are.
+# services. The settings in /etc/octopuson and the nginx vhost stay as they are. The portal reads
+# its languages and legal texts from the CMS, so deploy the CMS first when both changed
+# (scripts/deploy-website.sh).
 set -euo pipefail
 
 ROOT=/home/octopuson/octopusOnPageSEO
@@ -28,6 +30,7 @@ release="$RELEASES/$(date +%Y%m%d-%H%M%S)"
 as_site mkdir -p "$RELEASES"
 as_site cp -a "$ROOT/apps/portal/.next/standalone" "$release"
 as_site cp -a "$ROOT/apps/portal/.next/static" "$release/apps/portal/.next/static"
+as_site cp -a "$ROOT/apps/portal/messages" "$release/apps/portal/"
 if [ -d "$ROOT/apps/portal/public" ]; then as_site cp -a "$ROOT/apps/portal/public" "$release/apps/portal/public"; fi
 as_site ln -sfn "$(basename "$release")" "$RELEASES/current"
 

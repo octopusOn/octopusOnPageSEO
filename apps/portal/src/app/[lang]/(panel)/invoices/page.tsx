@@ -12,7 +12,7 @@ import { saveProfile } from "./actions";
 const ORDER_TONE: Record<string, string> = { created: "info", paid: "good", failed: "critical", refunded: "warning", chargeback: "critical" };
 
 export default async function Invoices() {
-  const [user, { t, locale }] = await Promise.all([requireUser(), getDictionary()]);
+  const [user, { t, locale, url }] = await Promise.all([requireUser(), getDictionary()]);
   const [profile, rows, settings] = await Promise.all([billingProfile(db(), user.id), userOrders(db(), user.id), getSettings(db())]);
   return (
     <>
@@ -48,7 +48,7 @@ export default async function Invoices() {
                       </td>
                       <td>
                         {invoice?.status === "issued" && invoice.documentId ? (
-                          <a href={`/fatura/${order.id}/pdf`} target="_blank" rel="noreferrer">
+                          <a href={url("invoices/[id]/pdf", { id: order.id })} target="_blank" rel="noreferrer">
                             {invoice.number ?? t.billing.pdf}
                           </a>
                         ) : invoice ? (

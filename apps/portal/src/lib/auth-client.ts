@@ -7,7 +7,9 @@ export const authClient = createAuthClient({
   plugins: [
     twoFactorClient({
       onTwoFactorRedirect() {
-        window.location.href = `/giris/iki-adim${window.location.search}`;
+        // The route's English name under the page's language; the proxy translates it.
+        const language = window.location.pathname.split("/")[1] ?? "";
+        window.location.href = `/${language}/sign-in/two-step${window.location.search}`;
       },
     }),
     adminClient(),

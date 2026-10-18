@@ -2,9 +2,10 @@
 
 import { microsToCredits } from "@octopusseo/cloud-core";
 
-import type { Locale } from "@/i18n/pick";
+/** A language code ("tr") or tag ("tr-TR"); Intl picks the language's conventions from it. */
+type Locale = string;
 
-const tag = (locale: Locale) => (locale === "tr" ? "tr-TR" : "en-US");
+const tag = (locale: Locale) => locale;
 
 export function formatCredits(micros: number, unitMicros: number, locale: Locale): string {
   return new Intl.NumberFormat(tag(locale), { maximumFractionDigits: 2 }).format(microsToCredits(micros, unitMicros));
@@ -49,11 +50,21 @@ export function formatTime(value: Date | string | null | undefined): string {
   return TABLE_TIME.format(typeof value === "string" ? new Date(value) : value);
 }
 
+/** The decimal and grouping marks of a language: Turkish "," and ".", English "." and ",". */
+function separators(locale: Locale): { decimal: string; group: string } {
+  const parts = new Intl.NumberFormat(tag(locale)).formatToParts(12345.6);
+  return {
+    decimal: parts.find((part) => part.type === "decimal")?.value ?? ".",
+    group: parts.find((part) => part.type === "group")?.value ?? ",",
+  };
+}
+
 /** A number as typed in the page's language: Turkish "1.234,5", English "1,234.5". */
 export function parseDecimal(text: string, locale: Locale): number | null {
   const compact = text.trim().replace(/\s/g, "");
   if (!compact) return null;
-  const normalized = locale === "tr" ? compact.replace(/\./g, "").replace(",", ".") : compact.replace(/,/g, "");
+  const { decimal, group } = separators(locale);
+  const normalized = compact.split(group.trim() || "\u00a0").join("").replace(decimal, ".");
   if (!/^-?\d*\.?\d+$/.test(normalized)) return null;
   return Number(normalized);
 }

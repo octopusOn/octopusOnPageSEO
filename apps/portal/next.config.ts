@@ -1,4 +1,17 @@
+import { readdirSync, readFileSync } from "node:fs";
+import { join } from "node:path";
+
 import type { NextConfig } from "next";
+
+import { localizedRewrites } from "./src/i18n/routes";
+
+/** Each language's route names from its messages file, read when the portal is built. */
+function routeNames(): [string, Record<string, string>][] {
+  const directory = join(process.cwd(), "messages");
+  return readdirSync(directory)
+    .filter((name) => name.endsWith(".json"))
+    .map((name) => [name.slice(0, -5), (JSON.parse(readFileSync(join(directory, name), "utf8")) as { routes: Record<string, string> }).routes]);
+}
 
 const nextConfig: NextConfig = {
   reactStrictMode: true,
@@ -7,6 +20,11 @@ const nextConfig: NextConfig = {
   // The shared server code is TypeScript in the workspace.
   transpilePackages: ["@octopusseo/cloud-core"],
   serverExternalPackages: ["pg"],
+  // Addresses in each language to the page folders (src/i18n/routes.ts); the proxy has already
+  // corrected the address.
+  async rewrites() {
+    return { beforeFiles: localizedRewrites(routeNames()), afterFiles: [], fallback: [] };
+  },
   async headers() {
     return [
       {

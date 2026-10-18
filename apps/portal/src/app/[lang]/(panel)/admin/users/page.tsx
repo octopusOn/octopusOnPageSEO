@@ -7,7 +7,7 @@ import { db } from "@/lib/db";
 import { formatCredits, formatTime } from "@/lib/format";
 
 export default async function Users({ searchParams }: { searchParams: Promise<{ q?: string }> }) {
-  const [{ q = "" }, { t, locale }] = await Promise.all([searchParams, getDictionary()]);
+  const [{ q = "" }, { t, locale, url }] = await Promise.all([searchParams, getDictionary()]);
   const [rows, settings] = await Promise.all([searchUsers(db(), q, 100), getSettings(db())]);
   return (
     <>
@@ -32,7 +32,7 @@ export default async function Users({ searchParams }: { searchParams: Promise<{ 
             {rows.map((row) => (
               <tr key={row.id}>
                 <td>
-                  <Link href={`/admin/kullanicilar/${encodeURIComponent(row.id)}`}>{row.email}</Link>
+                  <Link href={url("admin/users/[id]", { id: row.id })}>{row.email}</Link>
                   <div className="muted small">{row.name}</div>
                 </td>
                 <td>

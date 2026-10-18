@@ -3,6 +3,8 @@
 import { headers } from "next/headers";
 import { notFound, redirect } from "next/navigation";
 
+import { getDictionary } from "@/i18n";
+
 import { auth } from "./auth";
 
 export type SessionUser = {
@@ -19,9 +21,10 @@ export async function currentUser(): Promise<SessionUser | null> {
   return (session?.user as SessionUser | undefined) ?? null;
 }
 
+/** The signed-in person, else sign-in first and come back to `next` (an address on this site). */
 export async function requireUser(next?: string): Promise<SessionUser> {
   const user = await currentUser();
-  if (!user) redirect(next ? `/giris?next=${encodeURIComponent(next)}` : "/giris");
+  if (!user) redirect((await getDictionary()).url("sign-in", {}, { next }));
   return user;
 }
 
@@ -29,6 +32,6 @@ export async function requireUser(next?: string): Promise<SessionUser> {
 export async function requireAdmin(): Promise<SessionUser> {
   const user = await requireUser();
   if (user.role !== "admin") notFound();
-  if (!user.twoFactorEnabled) redirect("/hesap?iki-adim=gerekli");
+  if (!user.twoFactorEnabled) redirect((await getDictionary()).url("account", {}, { "two-step": "required" }));
   return user;
 }

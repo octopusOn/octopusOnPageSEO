@@ -3,6 +3,7 @@ import Link from "next/link";
 
 import { PageHead } from "@/components/Shell";
 import { fill, getDictionary } from "@/i18n";
+import { legalSlug, legalTexts } from "@/legal/cms";
 import { db } from "@/lib/db";
 import { formatCredits, formatTry, plainNumber } from "@/lib/format";
 import { paymentProvider } from "@/lib/payments";
@@ -10,8 +11,8 @@ import { rateOrNull } from "@/lib/rate";
 import { requireUser } from "@/lib/session";
 
 export default async function Buy() {
-  const [user, { t, locale }] = await Promise.all([requireUser(), getDictionary()]);
-  const [settings, rate, paidBefore] = await Promise.all([getSettings(db()), rateOrNull(), hasPaidOrder(db(), user.id)]);
+  const [user, { t, locale, url }] = await Promise.all([requireUser(), getDictionary()]);
+  const [settings, rate, paidBefore, legal] = await Promise.all([getSettings(db()), rateOrNull(), hasPaidOrder(db(), user.id), legalTexts(locale)]);
   const open = paymentProvider() !== null;
   const packages = settings.packagesKurus.filter((kurus) => paidBefore || kurus <= settings.firstPurchaseCapKurus);
   return (
@@ -30,7 +31,7 @@ export default async function Buy() {
               </div>
             ) : null}
             {open && rate ? (
-              <Link className="oc-btn primary" href={`/kredi/onay?tutar=${kurus}`}>
+              <Link className="oc-btn primary" href={url("credits/confirm", {}, { amount: kurus })}>
                 {t.buy.choose}
               </Link>
             ) : (
@@ -44,12 +45,12 @@ export default async function Buy() {
       {open && rate ? (
         <section className="oc-card narrow">
           <h2 className="oc-card-title">{t.buy.custom}</h2>
-          <form className="form-inline" action="/kredi/onay" method="get">
+          <form className="form-inline" action={url("credits/confirm")} method="get">
             <label className="oc-field">
               <span className="type-label">TL</span>
               <input
                 className="oc-input"
-                name="tl"
+                name="value"
                 inputMode="decimal"
                 required
                 placeholder={plainNumber(settings.minPurchaseKurus / 100, locale)}
@@ -61,7 +62,7 @@ export default async function Buy() {
         </section>
       ) : null}
       <p className="muted small">
-        {fill(t.buy.rateNote, { buffer: settings.fxBufferPercent })} <Link href="/yasal/kredi-kosullari">{t.buy.terms}</Link>
+        {fill(t.buy.rateNote, { buffer: settings.fxBufferPercent })} <Link href={url("legal/[slug]", { slug: legalSlug(legal, "credit-terms") })}>{t.buy.terms}</Link>
       </p>
     </>
   );

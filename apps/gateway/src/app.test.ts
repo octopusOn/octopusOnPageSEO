@@ -375,7 +375,7 @@ describe("device sign-in", () => {
       interval: number;
     };
     expect(code.verification_uri).toBe("https://my.octopuson.com/cihaz");
-    expect(code.verification_uri_complete).toBe(`https://my.octopuson.com/cihaz?kod=${code.user_code}`);
+    expect(code.verification_uri_complete).toBe(`https://my.octopuson.com/cihaz?code=${code.user_code}`);
 
     const poll = () =>
       app.request("/v1/device/token", {

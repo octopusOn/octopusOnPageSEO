@@ -13,7 +13,7 @@ export async function revoke(_: ActionResult, form: FormData): Promise<ActionRes
   const user = await requireUser();
   const { t } = await getDictionary();
   await revokeToken(db(), user.id, String(form.get("id")));
-  revalidatePath("/jetonlar");
+  revalidatePath("/[lang]/tokens", "page");
   return { ok: t.tokens.revoked };
 }
 
@@ -25,7 +25,7 @@ export async function setLimit(_: ActionResult, form: FormData): Promise<ActionR
   const cap = text.trim() ? parseCredits(text, creditUnitMicros, locale) : null;
   if (text.trim() && (cap === null || cap < 0)) return { error: t.common.error };
   await setTokenCap(db(), user.id, String(form.get("id")), cap);
-  revalidatePath("/jetonlar");
+  revalidatePath("/[lang]/tokens", "page");
   return { ok: t.profile.saved };
 }
 
@@ -34,6 +34,6 @@ export async function create(_: ActionResult, form: FormData): Promise<ActionRes
   const { t } = await getDictionary();
   const name = String(form.get("name") ?? "").trim() || "CLI";
   const token = await createToken(db(), user.id, name, "cli");
-  revalidatePath("/jetonlar");
+  revalidatePath("/[lang]/tokens", "page");
   return { ok: t.tokens.created, value: token.value };
 }

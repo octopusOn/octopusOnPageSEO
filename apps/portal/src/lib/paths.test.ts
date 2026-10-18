@@ -1,6 +1,5 @@
 import { describe, expect, it } from "vitest";
 
-import { pickLocale } from "@/i18n/pick";
 import { formatTime, parseCredits, parseDecimal, plainNumber } from "./format";
 import { safeNext } from "./paths";
 
@@ -25,20 +24,13 @@ describe("parseCredits", () => {
     expect(parseCredits("", 1000, "tr")).toBeNull();
     expect(parseCredits("abc", 1000, "en")).toBeNull();
     expect(parseCredits("1.2.3", 1000, "en")).toBeNull();
+    expect(parseCredits("1.234,5", 1000, "de")).toBe(1_234_500);
+    expect(parseCredits("2.500", 1000, "es")).toBe(2_500_000);
   });
 
   it("round-trips form values", () => {
     expect(parseDecimal(plainNumber(1234.5, "tr"), "tr")).toBe(1234.5);
     expect(parseDecimal(plainNumber(0.35, "en"), "en")).toBe(0.35);
-  });
-});
-
-describe("pickLocale", () => {
-  it("prefers the cookie, then the browser, then Turkish", () => {
-    expect(pickLocale("en", "tr-TR")).toBe("en");
-    expect(pickLocale(undefined, "en-GB,en;q=0.9")).toBe("en");
-    expect(pickLocale(undefined, "de-DE")).toBe("tr");
-    expect(pickLocale(undefined, null)).toBe("tr");
   });
 });
 
