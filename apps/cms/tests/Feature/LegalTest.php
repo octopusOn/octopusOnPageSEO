@@ -44,7 +44,8 @@ class LegalTest extends TestCase
             ->assertJsonCount(5, 'data')
             ->assertJsonPath('data.0.key', 'credit-terms')
             ->assertJsonPath('data.0.slug', 'kredi-kosullari')
-            ->assertJsonPath('data.0.title', 'OctopusOn SEO kredi kullanım koşulları');
+            ->assertJsonPath('data.0.title', 'OctopusOn SEO kredi kullanım koşulları')
+            ->assertJsonPath('data.3.label', 'KVKK');
         $document = $this->getJson('/api/v1/legal/kvkk?locale=tr')
             ->assertOk()
             ->assertJsonPath('data.key', 'privacy')

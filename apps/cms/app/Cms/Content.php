@@ -222,6 +222,8 @@ class Content
             'locale' => $translation->locale,
             'slug' => $translation->slug,
             'title' => $translation->title,
+            // The short name for menus: the translation's menu title, else its title.
+            'label' => $translation->label(),
             'updated_at' => $translation->updated_at?->toIso8601String(),
         ];
     }

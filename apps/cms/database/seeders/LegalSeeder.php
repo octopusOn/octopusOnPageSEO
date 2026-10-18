@@ -12,7 +12,7 @@ use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
 
 /**
- * The account site's legal texts (legal/<key>.<language>.md, slugs in legal/index.json) as
+ * The account site's legal texts (legal/<key>.<language>.md; slugs and short labels in legal/index.json) as
  * `legal` pages in every language the site has. A text whose key already exists is skipped, so
  * edits made in the admin are never overwritten. Runs from its migration on existing sites and
  * from DatabaseSeeder on new ones, where the languages arrive with the website's content.
@@ -50,6 +50,7 @@ class LegalSeeder extends Seeder
                     Paths::save($translation, [
                         'slug' => $slug,
                         'title' => $title,
+                        'nav_title' => $document['labels'][$locale] ?? null,
                         'blocks' => [['id' => 'b'.Str::lower(Str::random(10)), 'type' => 'rich_text', 'data' => ['body' => $body]]],
                         'noindex' => true,
                         'status' => PublishStatus::Published,

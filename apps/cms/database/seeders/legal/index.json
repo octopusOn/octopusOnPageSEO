@@ -1,7 +1,7 @@
 [
-  { "key": "credit-terms", "slugs": { "tr": "kredi-kosullari", "en": "credit-terms", "de": "kreditbedingungen", "es": "condiciones-de-los-creditos" } },
-  { "key": "pre-contract-information", "slugs": { "tr": "on-bilgilendirme", "en": "pre-contract-information", "de": "vorvertragliche-informationen", "es": "informacion-precontractual" } },
-  { "key": "distance-sales", "slugs": { "tr": "mesafeli-satis", "en": "distance-sales-contract", "de": "fernabsatzvertrag", "es": "contrato-de-venta-a-distancia" } },
-  { "key": "privacy", "slugs": { "tr": "kvkk", "en": "privacy-notice", "de": "datenschutzhinweise", "es": "aviso-de-privacidad" } },
-  { "key": "cookies", "slugs": { "tr": "cerezler", "en": "cookie-policy", "de": "cookie-richtlinie", "es": "politica-de-cookies" } }
+  { "key": "credit-terms", "slugs": { "tr": "kredi-kosullari", "en": "credit-terms", "de": "kreditbedingungen", "es": "condiciones-de-los-creditos" }, "labels": { "tr": "Kredi koşulları", "en": "Credit terms", "de": "Credit-Bedingungen", "es": "Condiciones de los créditos" } },
+  { "key": "pre-contract-information", "slugs": { "tr": "on-bilgilendirme", "en": "pre-contract-information", "de": "vorvertragliche-informationen", "es": "informacion-precontractual" }, "labels": { "tr": "Ön bilgilendirme", "en": "Pre-contract information", "de": "Vorvertragliche Informationen", "es": "Información precontractual" } },
+  { "key": "distance-sales", "slugs": { "tr": "mesafeli-satis", "en": "distance-sales-contract", "de": "fernabsatzvertrag", "es": "contrato-de-venta-a-distancia" }, "labels": { "tr": "Mesafeli satış", "en": "Distance sales", "de": "Fernabsatzvertrag", "es": "Venta a distancia" } },
+  { "key": "privacy", "slugs": { "tr": "kvkk", "en": "privacy-notice", "de": "datenschutzhinweise", "es": "aviso-de-privacidad" }, "labels": { "tr": "KVKK", "en": "Privacy", "de": "Datenschutz", "es": "Privacidad" } },
+  { "key": "cookies", "slugs": { "tr": "cerezler", "en": "cookie-policy", "de": "cookie-richtlinie", "es": "politica-de-cookies" }, "labels": { "tr": "Çerezler", "en": "Cookies", "de": "Cookies", "es": "Cookies" } }
 ]
