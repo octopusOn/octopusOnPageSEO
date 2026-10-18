@@ -16,7 +16,7 @@ as_site() { sudo -u "$SITE_USER" -H env PATH="$NODE_BIN:$PATH" COREPACK_ENABLE_D
 
 cd "$ROOT"
 as_site git pull --ff-only
-as_site corepack pnpm install --frozen-lockfile --ignore-scripts --filter "@octopusseo/web..." --filter "@octopusseo/cms..."
+as_site corepack pnpm install --frozen-lockfile --filter "@octopusseo/web..." --filter "@octopusseo/cms..."
 
 cd "$ROOT/apps/cms"
 as_site "$PHP" /usr/local/bin/composer install --no-dev --optimize-autoloader --no-interaction --no-progress

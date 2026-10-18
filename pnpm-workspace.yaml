@@ -1,12 +1,16 @@
 packages:
-  - apps/desktop
-  - apps/spider
-  - apps/finder
-  - apps/serp
-  - apps/keywords
+  - apps/log-analyser
+  - apps/seo-crawler
+  - apps/index-checker
+  - apps/serp-checker
+  - apps/seo-keyword-research
   - apps/web
   - packages/design
   - packages/cloud-core
   - apps/gateway
   - apps/portal
   - apps/cms
+
+# esbuild installs its platform binary from a build script; pnpm 12 refuses unapproved scripts.
+allowBuilds:
+  esbuild: true
