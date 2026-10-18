@@ -33,7 +33,7 @@ export function formatNumber(value: number, locale: Locale): string {
 }
 
 /** The time zone tables use: Turkey unless the server is told otherwise. */
-const TIME_ZONE = process.env.PORTAL_TIME_ZONE ?? "Europe/Istanbul";
+const TIME_ZONE = process.env.PORTAL_TIME_ZONE || "Europe/Istanbul";
 const TABLE_TIME = new Intl.DateTimeFormat("sv-SE", {
   timeZone: TIME_ZONE,
   year: "numeric",

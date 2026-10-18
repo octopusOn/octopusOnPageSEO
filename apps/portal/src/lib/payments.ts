@@ -21,7 +21,7 @@ export function paymentProvider(env: NodeJS.ProcessEnv = process.env): PaymentPr
   if (wanted === "iyzico" && env.IYZICO_API_KEY && env.IYZICO_SECRET_KEY) {
     return {
       kind: "iyzico",
-      config: { apiKey: env.IYZICO_API_KEY, secretKey: env.IYZICO_SECRET_KEY, baseUrl: env.IYZICO_BASE_URL ?? IYZICO_SANDBOX },
+      config: { apiKey: env.IYZICO_API_KEY, secretKey: env.IYZICO_SECRET_KEY, baseUrl: env.IYZICO_BASE_URL || IYZICO_SANDBOX },
     };
   }
   if (wanted === "paytr" && env.PAYTR_MERCHANT_ID && env.PAYTR_MERCHANT_KEY && env.PAYTR_MERCHANT_SALT) {

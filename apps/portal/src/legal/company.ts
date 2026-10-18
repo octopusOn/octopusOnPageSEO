@@ -14,14 +14,14 @@ export interface Company {
 
 export function company(env: NodeJS.ProcessEnv = process.env): Company {
   return {
-    title: env.COMPANY_TITLE ?? "[Şirket unvanı]",
-    address: env.COMPANY_ADDRESS ?? "[Şirket adresi]",
-    taxOffice: env.COMPANY_TAX_OFFICE ?? "[Vergi dairesi]",
-    taxNumber: env.COMPANY_TAX_NUMBER ?? "[Vergi kimlik no]",
-    mersis: env.COMPANY_MERSIS ?? "[MERSİS no]",
-    email: env.COMPANY_EMAIL ?? "destek@octopuson.com",
-    phone: env.COMPANY_PHONE ?? "[Telefon]",
-    kep: env.COMPANY_KEP ?? "[KEP adresi]",
+    title: env.COMPANY_TITLE || "[Şirket unvanı]",
+    address: env.COMPANY_ADDRESS || "[Şirket adresi]",
+    taxOffice: env.COMPANY_TAX_OFFICE || "[Vergi dairesi]",
+    taxNumber: env.COMPANY_TAX_NUMBER || "[Vergi kimlik no]",
+    mersis: env.COMPANY_MERSIS || "[MERSİS no]",
+    email: env.COMPANY_EMAIL || "destek@octopuson.com",
+    phone: env.COMPANY_PHONE || "[Telefon]",
+    kep: env.COMPANY_KEP || "[KEP adresi]",
     site: (env.BETTER_AUTH_URL ?? "https://my.octopuson.com").replace(/\/+$/, ""),
   };
 }
