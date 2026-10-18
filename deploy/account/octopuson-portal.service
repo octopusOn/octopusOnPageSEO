@@ -24,6 +24,8 @@ Environment=BETTER_AUTH_URL=https://my.octopuson.com
 # Languages and legal texts come from the CMS (apps/cms) on this server.
 Environment=CMS_API_URL=http://127.0.0.1:8095
 ExecStart=/opt/node-v22.23.3-linux-x64/bin/node server.js
+# Next.js exits with 143 when systemd stops it with SIGTERM.
+SuccessExitStatus=143
 Restart=always
 RestartSec=3
 NoNewPrivileges=true

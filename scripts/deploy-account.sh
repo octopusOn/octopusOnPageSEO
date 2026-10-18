@@ -47,5 +47,6 @@ systemctl restart octopuson-portal octopuson-gateway
 find "$RELEASES" -mindepth 1 -maxdepth 1 -type d -name '20*' | sort | head -n -3 | xargs -r rm -rf
 
 sleep 3
-curl -fsS -o /dev/null -w "portal %{http_code}\n" http://127.0.0.1:3030/giris
+# The portal sends / on to the sign-in page in the default language.
+curl -fsSL -o /dev/null -w "portal %{http_code} %{url_effective}\n" http://127.0.0.1:3030/
 curl -fsS -o /dev/null -w "gateway %{http_code}\n" http://127.0.0.1:8787/health

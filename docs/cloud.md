@@ -87,7 +87,7 @@ The script:
 2. applies the database migrations;
 3. builds the portal and copies the build to a new directory in `/home/octopuson/portal-releases`, so the build never touches the running server;
 4. refreshes the systemd units from `deploy/account` when they changed;
-5. restarts both services, keeps the three newest releases and checks `/giris` and `/health`.
+5. restarts both services, keeps the three newest releases and checks the sign-in page and `/health`.
 
 To roll back the portal, point `current` at an older release and restart it:
 
