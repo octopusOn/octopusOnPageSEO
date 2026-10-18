@@ -18,7 +18,12 @@ RELEASES=/home/octopuson/portal-releases
 as_site() { sudo -u "$SITE_USER" -H env PATH="$NODE_BIN:$PATH" COREPACK_ENABLE_DOWNLOAD_PROMPT=0 NEXT_TELEMETRY_DISABLED=1 CI=1 "$@"; }
 
 cd "$ROOT"
-as_site git pull --ff-only
+# Pull first, then run the pulled version of this script: bash reads a script as it goes, so it
+# must not change under a running copy.
+if [ "${1:-}" != "--pulled" ]; then
+  as_site git pull --ff-only
+  exec bash "$ROOT/scripts/deploy-account.sh" --pulled
+fi
 as_site corepack pnpm install --frozen-lockfile --ignore-scripts --filter "@octopusseo/portal..." --filter "@octopusseo/gateway..."
 
 # Migrations first, so the new code finds its tables.
