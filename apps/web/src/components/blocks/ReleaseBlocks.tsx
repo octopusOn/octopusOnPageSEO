@@ -5,6 +5,7 @@ import Link from "next/link";
 import { ArrowRight, Hammer, Sparkles } from "lucide-react";
 
 import { DownloadButton } from "@/components/DownloadButton";
+import { MacHint } from "@/components/MacHint";
 import { Markdown } from "@/components/Markdown";
 import { ProductDownloads } from "@/components/ProductDownloads";
 import { AppMockup } from "@/components/AppMockup";
@@ -47,6 +48,9 @@ export async function HeroBlock({ data, ctx }: { data: Data; ctx: BlockContext }
   const secondary = text(data, "secondary_label");
   const image = media(data, "image");
   const visual = text(data, "visual");
+  // Mac visitors of a program page get the command that opens the not-yet-notarized app.
+  const program = findProduct(text(data, "product"));
+  const macBuild = downloadChoices(release?.assets ?? [], ctx.dict.download.arch).some((c) => c.platform === "macos");
   return (
     <section className="hero">
       <div className="hero-glow" aria-hidden="true" />
@@ -83,6 +87,13 @@ export async function HeroBlock({ data, ctx }: { data: Data; ctx: BlockContext }
               </a>
             )}
           </div>
+          {program && macBuild && (
+            <MacHint
+              app={program.name}
+              anchor={`${program.id}-macos`}
+              labels={{ ...ctx.dict.macHint, copy: ctx.dict.common.copy, copied: ctx.dict.common.copied }}
+            />
+          )}
           {text(data, "note") && <p className="hero-note">{text(data, "note")}</p>}
         </div>
         {visual === "log-mockup" && <AppMockup dict={ctx.dict} />}

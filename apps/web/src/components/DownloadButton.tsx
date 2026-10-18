@@ -21,7 +21,7 @@ function userAgentData(): UserAgentData | undefined {
   return (navigator as Navigator & { userAgentData?: UserAgentData }).userAgentData;
 }
 
-function detectPlatform(): Platform | null {
+export function detectPlatform(): Platform | null {
   const hint = `${userAgentData()?.platform ?? ""} ${navigator.userAgent}`.toLowerCase();
   if (hint.includes("android") || hint.includes("iphone") || hint.includes("ipad")) return null;
   if (hint.includes("mac")) return "macos";

@@ -104,6 +104,11 @@ export const de: Dictionary = {
     partial: "Teilweise oder kostenpflichtig",
     no: "Nein",
   },
+  macHint: {
+    title: "Wichtig auf dem Mac:",
+    text: "Die App ist noch nicht von Apple notarisiert, deshalb blockiert macOS den ersten Start. Ziehen Sie sie in den Ordner „Programme“ und führen Sie dies einmal im Terminal aus:",
+    more: "Anderer Weg und Details",
+  },
   listing: {
     empty: "Hier wurde noch nichts veröffentlicht.",
     newer: "Neuer",

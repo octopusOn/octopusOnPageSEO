@@ -104,6 +104,11 @@ export const es: Dictionary = {
     partial: "En parte o de pago",
     no: "No",
   },
+  macHint: {
+    title: "Importante en Mac:",
+    text: "la app aún no está notarizada por Apple, así que macOS bloquea el primer inicio. Después de arrastrarla a Aplicaciones, ejecuta esto una vez en Terminal:",
+    more: "Otra forma y detalles",
+  },
   listing: {
     empty: "Todavía no se ha publicado nada aquí.",
     newer: "Más recientes",

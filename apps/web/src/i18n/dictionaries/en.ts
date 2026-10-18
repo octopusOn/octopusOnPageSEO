@@ -106,6 +106,11 @@ export const en = {
     partial: "Partly or paid",
     no: "No",
   },
+  macHint: {
+    title: "Important on a Mac:",
+    text: "the app is not notarized by Apple yet, so macOS blocks its first launch. After dragging it to Applications, run this once in Terminal:",
+    more: "Other way and details",
+  },
   listing: {
     empty: "Nothing has been published here yet.",
     newer: "Newer",

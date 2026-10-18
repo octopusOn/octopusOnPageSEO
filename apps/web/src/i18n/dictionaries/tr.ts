@@ -104,6 +104,11 @@ export const tr: Dictionary = {
     partial: "Kısmen ya da ücretli",
     no: "Yok",
   },
+  macHint: {
+    title: "Mac'te önemli:",
+    text: "uygulama henüz Apple onayından (notarization) geçmediği için macOS ilk açılışı engeller. Uygulamalar klasörüne sürükledikten sonra Terminal'de bunu bir kez çalıştırın:",
+    more: "Diğer yol ve ayrıntılar",
+  },
   listing: {
     empty: "Burada henüz yayınlanmış bir şey yok.",
     newer: "Daha yeni",
