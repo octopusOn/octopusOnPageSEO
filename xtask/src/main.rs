@@ -29,7 +29,8 @@ enum Task {
     Test,
     /// Run cargo-deny (licenses, advisories, bans, sources).
     Deny,
-    /// Type-check, test and build the desktop frontend and the website (needs pnpm).
+    /// Check the design tokens, type-check, test and build the desktop frontend and the website,
+    /// and test the credits service (needs pnpm).
     Frontend,
     /// Download crawler IP lists into the snapshot bundled with the application.
     BotRanges,
@@ -126,6 +127,14 @@ fn test() -> Result<()> {
         "--workspace",
         "--exclude",
         "seonexus-desktop",
+        "--exclude",
+        "seonexus-spider-desktop",
+        "--exclude",
+        "seonexus-finder-desktop",
+        "--exclude",
+        "seonexus-serp-desktop",
+        "--exclude",
+        "seonexus-kw-desktop",
         "--doc",
         "--locked",
     ])
@@ -151,10 +160,23 @@ fn frontend(required: bool) -> Result<()> {
         return Ok(());
     }
     exec("pnpm", &["install", "--frozen-lockfile"])?;
+    exec("pnpm", &["--filter", "@octopusseo/design", "check"])?;
     exec("pnpm", &["--filter", "@seonexus/desktop", "check"])?;
     exec("pnpm", &["--filter", "@seonexus/desktop", "build"])?;
+    exec("pnpm", &["--filter", "@octopusseo/spider", "check"])?;
+    exec("pnpm", &["--filter", "@octopusseo/spider", "build"])?;
+    exec("pnpm", &["--filter", "@octopusseo/finder", "check"])?;
+    exec("pnpm", &["--filter", "@octopusseo/finder", "build"])?;
+    exec("pnpm", &["--filter", "@octopusseo/serp", "check"])?;
+    exec("pnpm", &["--filter", "@octopusseo/serp", "build"])?;
+    exec("pnpm", &["--filter", "@octopusseo/keywords", "check"])?;
+    exec("pnpm", &["--filter", "@octopusseo/keywords", "build"])?;
     exec("pnpm", &["--filter", "@octopusseo/web", "check"])?;
-    exec("pnpm", &["--filter", "@octopusseo/web", "build"])
+    exec("pnpm", &["--filter", "@octopusseo/web", "build"])?;
+    exec("pnpm", &["--filter", "@octopusseo/cloud-core", "check"])?;
+    exec("pnpm", &["--filter", "@octopusseo/gateway", "check"])?;
+    exec("pnpm", &["--filter", "@octopusseo/portal", "check"])?;
+    exec("pnpm", &["--filter", "@octopusseo/portal", "build"])
 }
 
 fn exec(program: &str, args: &[&str]) -> Result<()> {

@@ -1,0 +1,17 @@
+[package]
+name = "seonexus-opportunities"
+description = "Deterministic, evidence-based SEO opportunities from GSC and GA4 observations."
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+publish.workspace = true
+
+[dependencies]
+seonexus-core.workspace = true
+serde.workspace = true
+serde_json.workspace = true
+url.workspace = true
+
+[lints]
+workspace = true

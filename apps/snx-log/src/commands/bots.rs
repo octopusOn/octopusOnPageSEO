@@ -41,7 +41,7 @@ enum BotsCommand {
     CheckIp {
         /// IPv4 or IPv6 address.
         ip: String,
-        /// Bot id (see `snx-log bots list`).
+        /// Bot id (see `octopuson-log bots list`).
         #[arg(long)]
         bot: String,
         /// Do not use reverse/forward DNS.
@@ -196,7 +196,7 @@ fn custom(workspace: &Workspace, command: &CustomCommand) -> miette::Result<()> 
                 if bots.is_empty() {
                     return writeln!(
                         out,
-                        "no custom bots; add one with `snx-log bots custom add`"
+                        "no custom bots; add one with `octopuson-log bots custom add`"
                     );
                 }
                 for bot in &bots {

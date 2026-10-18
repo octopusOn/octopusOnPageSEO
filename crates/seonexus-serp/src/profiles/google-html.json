@@ -1,0 +1,119 @@
+{
+  "id": "google-html",
+  "revision": 1,
+  "engine": "google",
+  "mapping": {
+    "format": "html",
+    "total": ["#result-stats"],
+    "results": {
+      "items": ["#rso div.tF2Cxc", "#rso div.g", "#rso div[data-snc]", "#search div[data-hveid]"],
+      "fields": {
+        "url": ["div.yuRUbf a @href", "a[jsname] @href", "a[data-ved] @href", "a @href"],
+        "title": ["h3"],
+        "snippet": ["div.VwiC3b", "div[data-sncf]", "div[style*='-webkit-line-clamp']", "span.aCOpRe"],
+        "displayed_url": ["cite"],
+        "date": ["span.LEwnzc span", "span.YrbPuc span"],
+        "sitelink_titles[]": ["table.jmjoTe a", "div.HiHjCd a", "div.usJj9c a"],
+        "sitelink_urls[]": ["table.jmjoTe a @href", "div.HiHjCd a @href", "div.usJj9c a @href"]
+      },
+      "exclude_within": [
+        "#tads", "#tadsb", "#bottomads",
+        "div.related-question-pair", "div[jsname='yEVEwb']", "g-accordion-expander",
+        "block-component", "div.xpdopen", "div.kp-wholepage", "g-section-with-header",
+        "div[data-attrid='AIOverview']", "g-scrolling-carousel"
+      ],
+      "skip_urls": [
+        "https://www.google.com/search", "https://www.google.com/maps", "https://maps.google.",
+        "https://support.google.com/websearch", "https://policies.google.com/"
+      ]
+    },
+    "features": [
+      {
+        "kind": "ads-top",
+        "container": ["#tads"],
+        "items": ["div[data-text-ad]", "div.uEierd"],
+        "fields": { "text": ["div[role='heading']", "span"], "url": ["a[data-rw] @href", "a @href"] }
+      },
+      {
+        "kind": "ads-bottom",
+        "container": ["#tadsb", "#bottomads"],
+        "items": ["div[data-text-ad]", "div.uEierd"],
+        "fields": { "text": ["div[role='heading']", "span"], "url": ["a[data-rw] @href", "a @href"] }
+      },
+      {
+        "kind": "shopping",
+        "container": ["div.commercial-unit-desktop-top", "div.cu-container", "div[data-enable-product-traversal]"],
+        "items": ["div.pla-unit", "a.pla-unit"],
+        "fields": { "text": ["span", "::text"], "url": ["a @href", "@href"] }
+      },
+      {
+        "kind": "ai-overview",
+        "container": ["div[data-attrid='AIOverview']", "#rcnt div[data-hveid]", "#rso div.MjjYud"],
+        "anchors": ["AI Overview", "Yapay Zeka Genel Bakışı", "Yapay zekaya genel bakış", "Yapay Zeka Özeti"],
+        "items": ["a[href^='http']"],
+        "fields": { "url": ["@href"], "text": ["::text"] }
+      },
+      {
+        "kind": "featured-snippet",
+        "container": ["block-component", "div.xpdopen", "div[data-attrid='wa:/description']"],
+        "items": ["div.yuRUbf", "a:has(h3)"],
+        "fields": { "text": ["h3"], "url": ["a @href", "@href"] }
+      },
+      {
+        "kind": "local-pack",
+        "container": ["#rso div.MjjYud", "#rso > div"],
+        "anchors": ["Places", "Businesses", "Yerler", "İşletmeler", "Konumlar"],
+        "items": ["div.VkpGBb", "div[jscontroller] a[data-cid]", "div.rllt__details"],
+        "fields": { "text": ["span.OSrXXb", "div[role='heading']", "::text"], "url": ["a @href"] }
+      },
+      {
+        "kind": "people-also-ask",
+        "container": ["#rso div.MjjYud", "#rso > div", "#search div[data-initq]"],
+        "anchors": ["People also ask", "Diğer kullanıcılar şunları da sordu", "Diğer kullanıcılar şunu da sordu", "Kullanıcılar ayrıca soruyor"],
+        "items": ["div.related-question-pair", "div[data-q]", "div[jsname='Cpkphb']"],
+        "fields": { "text": ["@data-q", "div[role='button'] span", "span"] }
+      },
+      {
+        "kind": "top-stories",
+        "container": ["#rso div.MjjYud", "#rso > div", "g-section-with-header"],
+        "anchors": ["Top stories", "Öne çıkan haberler", "Haberler"],
+        "items": ["a[href^='http']"],
+        "fields": { "url": ["@href"], "text": ["div[role='heading']", "::text"] }
+      },
+      {
+        "kind": "videos",
+        "container": ["#rso div.MjjYud", "#rso > div", "g-section-with-header"],
+        "anchors": ["Videos", "Videolar"],
+        "items": ["div[data-vid]", "video-voyager", "a[href*='youtube.com/watch']"],
+        "fields": { "url": ["a @href", "@href"], "text": ["div[role='heading']", "span", "::text"] }
+      },
+      {
+        "kind": "images",
+        "container": ["#iur", "#rso div.MjjYud", "#rso > div"],
+        "anchors": ["Images", "Görseller", "Resimler"]
+      },
+      {
+        "kind": "related-searches",
+        "container": ["#bres", "div[data-abe]", "#botstuff div.MjjYud"],
+        "anchors": ["Related searches", "People also search for", "Benzer aramalar", "İlgili aramalar", "Diğer kullanıcıların aradıkları", "Kullanıcılar şunları da aradı"],
+        "items": ["a"],
+        "fields": { "text": ["::text"], "url": ["@href"] }
+      },
+      {
+        "kind": "knowledge-panel",
+        "container": ["#rhs div.kp-wholepage", "div.kp-wholepage", "#rhs"],
+        "fields": { "text": ["div[data-attrid='title']", "h2", "[role='heading']"] }
+      }
+    ],
+    "challenges": [
+      { "kind": "captcha", "url_contains": "/sorry/" },
+      { "kind": "consent", "url_contains": "consent.google." },
+      { "kind": "captcha", "selector": "form#captcha-form" },
+      { "kind": "captcha", "selector": "iframe[src*='recaptcha']" },
+      { "kind": "captcha", "text_contains": "detected unusual traffic" },
+      { "kind": "captcha", "text_contains": "olağan dışı trafik" },
+      { "kind": "blocked", "url_contains": "/httpservice/retry/enablejs" }
+    ],
+    "post": ["google-redirect"]
+  }
+}

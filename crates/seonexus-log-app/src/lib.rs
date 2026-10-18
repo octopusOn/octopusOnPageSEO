@@ -1,4 +1,4 @@
-//! Application use-cases shared by the `snx-log` CLI and the desktop Log Analyser.
+//! Application use-cases shared by the `octopuson-log` CLI and the desktop Log Analyser.
 //!
 //! Front-ends translate user input into request structs, call a use-case and render the
 //! returned report. No use-case prints, prompts or depends on a UI toolkit.
@@ -39,5 +39,5 @@ pub use workspace::Workspace;
 pub(crate) const USER_AGENT: &str = concat!(
     "octopusSEO-LogAnalyser/",
     env!("CARGO_PKG_VERSION"),
-    " (+https://octopusseo.com)"
+    " (+https://octopuson.com)"
 );

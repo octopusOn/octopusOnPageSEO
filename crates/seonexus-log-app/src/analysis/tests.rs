@@ -195,3 +195,66 @@ fn robots_compliance_finds_bots_ignoring_disallow_rules() {
     );
     assert!(matches!(missing, Err(AnalysisError::Read { .. })));
 }
+
+#[test]
+fn robots_compliance_matches_utf8_rules_and_keeps_the_logged_url_and_rule() {
+    let fixture = Fixture::new();
+    fixture.import("encoded.log", "66.249.66.1 - - [07/Oct/2026:18:39:53 +0000] \"GET /%C3%B6zel/gizli HTTP/1.1\" 200 535 \"-\" \"Googlebot/2.1\"\n66.249.66.1 - - [07/Oct/2026:18:40:00 +0000] \"GET /%C3%B6zel/a%C3%A7%C4%B1k HTTP/1.1\" 200 535 \"-\" \"Googlebot/2.1\"\n");
+    let rules = fixture.write(
+        "utf8-robots.txt",
+        "\u{feff}User-agent: *\rDisallow: /özel/\rAllow: /özel/açık$\r",
+    );
+    let mut table = TableBuffer::default();
+    let report = robots_compliance(
+        &fixture.workspace,
+        &RobotsRequest {
+            site: "acme.com".into(),
+            robots: Some(rules.display().to_string()),
+            filter: None,
+        },
+        &mut table,
+    )
+    .unwrap();
+    assert_eq!(report.rows, 1);
+    assert_eq!(table.rows[0][0], text("/%C3%B6zel/gizli"));
+    assert_eq!(table.rows[0][6], text("Disallow: /özel/"));
+    let google = report
+        .bots
+        .iter()
+        .find(|bot| bot.bot == "googlebot-desktop")
+        .unwrap();
+    assert_eq!(google.hits, 2);
+    assert_eq!(google.disallowed_hits, 1);
+    assert_eq!(google.disallowed_urls, 1);
+}
+
+#[test]
+fn robots_compliance_preserves_shared_groups_across_ignored_records() {
+    let fixture = Fixture::new();
+    fixture.import("grouped.log", "66.249.66.1 - - [07/Oct/2026:18:39:53 +0000] \"GET /private/hidden HTTP/1.1\" 200 535 \"-\" \"Googlebot/2.1\"\n66.249.66.1 - - [07/Oct/2026:18:40:00 +0000] \"GET /private/public/page HTTP/1.1\" 200 535 \"-\" \"Googlebot/2.1\"\n");
+    let rules = fixture.write("grouped-robots.txt", "User-agent: Googlebot\nCrawl-delay: 10\nHost: acme.com\nUser-agent: Bingbot\nDisallow: /private/\nAllow: /private/public/\n");
+    let mut table = TableBuffer::default();
+    let report = robots_compliance(
+        &fixture.workspace,
+        &RobotsRequest {
+            site: "acme.com".into(),
+            robots: Some(rules.display().to_string()),
+            filter: None,
+        },
+        &mut table,
+    )
+    .unwrap();
+    assert_eq!(report.rows, 1);
+    assert_eq!(table.rows[0][0], text("/private/hidden"));
+    assert_eq!(table.rows[0][6], text("Disallow: /private/"));
+    let google = report
+        .bots
+        .iter()
+        .find(|bot| bot.bot == "googlebot-desktop")
+        .unwrap();
+    assert_eq!(google.group.as_deref(), Some("googlebot"));
+    assert_eq!(
+        (google.hits, google.disallowed_hits, google.disallowed_urls),
+        (2, 1, 1)
+    );
+}

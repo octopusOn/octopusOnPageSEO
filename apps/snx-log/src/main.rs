@@ -1,4 +1,4 @@
-//! `snx-log` — octopusSEO Log Analyser command-line interface.
+//! `octopuson-log` — OctopusOn Log Analyser command-line interface.
 
 mod cli;
 mod commands;

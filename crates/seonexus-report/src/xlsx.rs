@@ -34,10 +34,8 @@ struct Formats {
 impl<W: Write + Seek + Send> XlsxWriter<W> {
     /// Creates a workbook that is written to `out` by [`TableSink::finish`].
     pub fn new(out: W) -> Self {
-        let mut workbook = Workbook::new();
-        workbook.add_worksheet_with_constant_memory();
         Self {
-            workbook,
+            workbook: Workbook::new(),
             formats: Formats {
                 header: Format::new().set_bold(),
                 date: Format::new().set_num_format("yyyy-mm-dd"),
@@ -48,16 +46,15 @@ impl<W: Write + Seek + Send> XlsxWriter<W> {
             next_row: 0,
         }
     }
-
-    fn sheet(&mut self) -> io::Result<&mut Worksheet> {
-        self.workbook.worksheet_from_index(0).map_err(to_io)
-    }
 }
 
 impl<W: Write + Seek + Send> TableSink for XlsxWriter<W> {
     fn begin(&mut self, columns: &[Column]) -> io::Result<()> {
         let header = self.formats.header.clone();
-        let sheet = self.sheet()?;
+        let sheet = self
+            .workbook
+            .add_worksheet_with_constant_memory()
+            .map_err(to_io)?;
         // Layout must be set before the first row in constant-memory mode.
         sheet.set_freeze_panes(1, 0).map_err(to_io)?;
         for (index, column) in (0_u16..).zip(columns) {
@@ -194,6 +191,15 @@ mod tests {
             .row(&[Cell::Null, Cell::Null, Cell::Null])
             .unwrap_err();
         assert!(error.to_string().contains("CSV"));
+    }
+
+    #[test]
+    fn reports_unavailable_temporary_directory_without_panicking() {
+        let dir = tempfile::tempdir().unwrap();
+        let mut writer = XlsxWriter::new(Cursor::new(Vec::new()));
+        writer.workbook.set_tempdir(dir.path()).unwrap();
+        dir.close().unwrap();
+        assert!(writer.begin(&columns()).is_err());
     }
 
     #[test]

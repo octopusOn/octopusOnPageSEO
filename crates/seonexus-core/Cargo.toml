@@ -1,6 +1,6 @@
 [package]
 name = "seonexus-core"
-description = "Shared domain types, identifiers and error primitives for octopusSEO products."
+description = "Shared domain types, identifiers and error primitives for OctopusOn SEO products."
 version.workspace = true
 edition.workspace = true
 rust-version.workspace = true

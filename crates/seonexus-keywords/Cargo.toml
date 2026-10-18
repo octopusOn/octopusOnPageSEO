@@ -1,0 +1,26 @@
+[package]
+name = "seonexus-keywords"
+description = "OctopusOn SEO Keyword Research domain: keyword normalisation, expansion, filters and clustering."
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+repository.workspace = true
+authors.workspace = true
+publish.workspace = true
+
+[dependencies]
+regex.workspace = true
+seonexus-serp.workspace = true
+seonexus-serp-score.workspace = true
+seonexus-text.workspace = true
+serde.workspace = true
+thiserror.workspace = true
+url.workspace = true
+
+[dev-dependencies]
+proptest.workspace = true
+serde_json.workspace = true
+
+[lints]
+workspace = true

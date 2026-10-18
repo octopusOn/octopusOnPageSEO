@@ -1,0 +1,30 @@
+[package]
+name = "seonexus-serp"
+description = "Search engine result pages: queries, snapshots, declarative result mappings, Google, Bing and Yandex parsers, custom provider specs and rank matching."
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+repository.workspace = true
+authors.workspace = true
+publish.workspace = true
+
+[dependencies]
+base64.workspace = true
+ego-tree.workspace = true
+psl.workspace = true
+quick-xml.workspace = true
+regex.workspace = true
+seonexus-core.workspace = true
+scraper.workspace = true
+serde.workspace = true
+serde_json.workspace = true
+serde_json_path.workspace = true
+thiserror.workspace = true
+url.workspace = true
+
+[dev-dependencies]
+proptest.workspace = true
+
+[lints]
+workspace = true

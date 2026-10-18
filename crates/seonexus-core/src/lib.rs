@@ -1,6 +1,7 @@
-//! Shared domain types, identifiers and error primitives for octopusSEO products.
+//! Shared domain types, identifiers and error primitives for OctopusOn SEO products.
 
 mod date;
+pub mod http;
 pub mod table;
 mod time;
 

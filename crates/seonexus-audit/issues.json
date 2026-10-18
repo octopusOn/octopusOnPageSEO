@@ -1,0 +1,1999 @@
+{
+  "categories": [
+    {
+      "id": "response-codes",
+      "en": "Response codes",
+      "tr": "Yanıt kodları"
+    },
+    {
+      "id": "security",
+      "en": "Security",
+      "tr": "Güvenlik"
+    },
+    {
+      "id": "url",
+      "en": "URLs",
+      "tr": "URL'ler"
+    },
+    {
+      "id": "titles",
+      "en": "Page titles",
+      "tr": "Sayfa başlıkları"
+    },
+    {
+      "id": "meta-descriptions",
+      "en": "Meta descriptions",
+      "tr": "Meta açıklamalar"
+    },
+    {
+      "id": "headings",
+      "en": "Headings",
+      "tr": "Başlık etiketleri"
+    },
+    {
+      "id": "content",
+      "en": "Content",
+      "tr": "İçerik"
+    },
+    {
+      "id": "images",
+      "en": "Images",
+      "tr": "Görseller"
+    },
+    {
+      "id": "canonicals",
+      "en": "Canonicals",
+      "tr": "Canonical"
+    },
+    {
+      "id": "directives",
+      "en": "Directives",
+      "tr": "Yönergeler"
+    },
+    {
+      "id": "international",
+      "en": "International",
+      "tr": "Uluslararası"
+    },
+    {
+      "id": "pagination",
+      "en": "Pagination",
+      "tr": "Sayfalama"
+    },
+    {
+      "id": "links",
+      "en": "Links",
+      "tr": "Bağlantılar"
+    },
+    {
+      "id": "sitemaps",
+      "en": "Sitemaps",
+      "tr": "Site haritaları"
+    },
+    {
+      "id": "structured-data",
+      "en": "Structured data",
+      "tr": "Yapılandırılmış veri"
+    },
+    {
+      "id": "performance",
+      "en": "Performance",
+      "tr": "Performans"
+    },
+    {
+      "id": "mobile",
+      "en": "Mobile",
+      "tr": "Mobil"
+    },
+    {
+      "id": "social",
+      "en": "Social",
+      "tr": "Sosyal"
+    },
+    {
+      "id": "robots",
+      "en": "robots.txt",
+      "tr": "robots.txt"
+    },
+    {
+      "id": "ai",
+      "en": "AI readiness",
+      "tr": "Yapay zekâ hazırlığı"
+    },
+    {
+      "id": "rendering",
+      "en": "JavaScript rendering",
+      "tr": "JavaScript rendering"
+    }
+  ],
+  "issues": [
+    {
+      "id": "internal-blocked-robots",
+      "category": "response-codes",
+      "kind": "warning",
+      "priority": "medium",
+      "en": {
+        "title": "Blocked by robots.txt",
+        "description": "Internal URLs that robots.txt disallows for the crawling agent. Search engines cannot fetch them, so their content and links are not seen.",
+        "fix": "Allow URLs that should rank in robots.txt; use noindex instead of robots.txt to keep crawlable pages out of the index."
+      },
+      "tr": {
+        "title": "robots.txt ile engellenmiş",
+        "description": "Taramayı yapan ajan için robots.txt tarafından yasaklanan iç URL'ler. Arama motorları bu sayfaları çekemez; içerikleri ve bağlantıları görülmez.",
+        "fix": "Sıralanması gereken URL'lere robots.txt'de izin verin; taranabilir sayfaları dizinden çıkarmak için robots.txt yerine noindex kullanın."
+      }
+    },
+    {
+      "id": "blocked-resource",
+      "category": "response-codes",
+      "kind": "warning",
+      "priority": "medium",
+      "en": {
+        "title": "Resource blocked by robots.txt",
+        "description": "Images, stylesheets or scripts that robots.txt disallows. Google needs them to render pages and judge layout and mobile usability.",
+        "fix": "Allow CSS, JavaScript and images needed for rendering in robots.txt."
+      },
+      "tr": {
+        "title": "robots.txt ile engellenen kaynak",
+        "description": "robots.txt'nin yasakladığı görsel, stil veya betik dosyaları. Google sayfaları işlemek ve mobil uyumu değerlendirmek için bunlara ihtiyaç duyar.",
+        "fix": "Sayfanın işlenmesi için gereken CSS, JavaScript ve görsellere robots.txt'de izin verin."
+      }
+    },
+    {
+      "id": "internal-no-response",
+      "category": "response-codes",
+      "kind": "issue",
+      "priority": "high",
+      "en": {
+        "title": "Internal URL without response",
+        "description": "Internal URLs that returned no HTTP response (timeout, DNS or connection failure).",
+        "fix": "Check server availability, timeouts and firewall rules for these URLs."
+      },
+      "tr": {
+        "title": "Yanıt vermeyen iç URL",
+        "description": "HTTP yanıtı alınamayan iç URL'ler (zaman aşımı, DNS veya bağlantı hatası).",
+        "fix": "Bu URL'ler için sunucu erişilebilirliğini, zaman aşımlarını ve güvenlik duvarı kurallarını kontrol edin."
+      }
+    },
+    {
+      "id": "internal-redirect",
+      "category": "response-codes",
+      "kind": "warning",
+      "priority": "low",
+      "en": {
+        "title": "Internal HTTP redirect",
+        "description": "Internal URLs returning an automatic HTTP redirect: 301, 302, 303, 307 or 308. Other 3xx responses, including 304, are not navigation redirects in this crawler. Every followed hop costs crawl budget and slows users down.",
+        "fix": "Link directly to the final URL and keep redirects only for old, external or bookmarked addresses."
+      },
+      "tr": {
+        "title": "İç HTTP yönlendirmesi",
+        "description": "301, 302, 303, 307 veya 308 döndüren iç URL'ler. 304 dahil diğer 3xx yanıtları bu tarayıcıda başka bir adrese otomatik geçiş sayılmaz. İzlenen her adım tarama bütçesi harcar ve kullanıcıyı yavaşlatır.",
+        "fix": "Doğrudan son URL'ye bağlantı verin; yönlendirmeleri yalnızca eski, dış veya yer imi adresleri için tutun."
+      }
+    },
+    {
+      "id": "internal-redirect-temporary",
+      "category": "response-codes",
+      "kind": "warning",
+      "priority": "medium",
+      "en": {
+        "title": "Temporary redirect (302/303/307)",
+        "description": "Internal URLs that redirect temporarily. Search engines may keep the old URL indexed instead of the target.",
+        "fix": "Use 301 or 308 for permanent moves."
+      },
+      "tr": {
+        "title": "Geçici yönlendirme (302/303/307)",
+        "description": "Geçici yönlendirme yapan iç URL'ler. Arama motorları hedef yerine eski URL'yi dizinde tutabilir.",
+        "fix": "Kalıcı taşımalar için 301 veya 308 kullanın."
+      }
+    },
+    {
+      "id": "internal-client-error",
+      "category": "response-codes",
+      "kind": "issue",
+      "priority": "high",
+      "en": {
+        "title": "Internal client error (4xx)",
+        "description": "Internal URLs answering with a 4xx status such as 404 or 410.",
+        "fix": "Fix or remove the links pointing to them, or redirect them to the most relevant live page."
+      },
+      "tr": {
+        "title": "İç istemci hatası (4xx)",
+        "description": "404 veya 410 gibi 4xx durum kodu döndüren iç URL'ler.",
+        "fix": "Bu URL'lere giden bağlantıları düzeltin ya da kaldırın veya en ilgili canlı sayfaya yönlendirin."
+      }
+    },
+    {
+      "id": "internal-server-error",
+      "category": "response-codes",
+      "kind": "issue",
+      "priority": "high",
+      "en": {
+        "title": "Internal server error (5xx)",
+        "description": "Internal URLs answering with a 5xx status. Repeated server errors make search engines crawl less and drop pages.",
+        "fix": "Check server logs and capacity; make sure these URLs return 200."
+      },
+      "tr": {
+        "title": "İç sunucu hatası (5xx)",
+        "description": "5xx durum kodu döndüren iç URL'ler. Tekrarlayan sunucu hataları taramayı azaltır ve sayfaların dizinden düşmesine yol açar.",
+        "fix": "Sunucu günlüklerini ve kapasitesini kontrol edin; bu URL'lerin 200 döndürdüğünden emin olun."
+      }
+    },
+    {
+      "id": "external-no-response",
+      "category": "response-codes",
+      "kind": "warning",
+      "priority": "low",
+      "en": {
+        "title": "External URL without response",
+        "description": "Linked external URLs that returned no HTTP response.",
+        "fix": "Check the links; replace or remove links to sites that no longer exist."
+      },
+      "tr": {
+        "title": "Yanıt vermeyen dış URL",
+        "description": "Bağlantı verilen ancak HTTP yanıtı alınamayan dış URL'ler.",
+        "fix": "Bağlantıları kontrol edin; artık var olmayan sitelere giden bağlantıları değiştirin veya kaldırın."
+      }
+    },
+    {
+      "id": "external-client-error",
+      "category": "response-codes",
+      "kind": "issue",
+      "priority": "medium",
+      "en": {
+        "title": "External client error (4xx)",
+        "description": "Linked external URLs answering with a 4xx status: broken outbound links.",
+        "fix": "Update the links to working pages or remove them."
+      },
+      "tr": {
+        "title": "Dış istemci hatası (4xx)",
+        "description": "4xx durum kodu döndüren dış bağlantılar: kırık giden bağlantılar.",
+        "fix": "Bağlantıları çalışan sayfalarla güncelleyin veya kaldırın."
+      }
+    },
+    {
+      "id": "external-server-error",
+      "category": "response-codes",
+      "kind": "warning",
+      "priority": "low",
+      "en": {
+        "title": "External server error (5xx)",
+        "description": "Linked external URLs answering with a 5xx status.",
+        "fix": "Re-check later; replace links that keep failing."
+      },
+      "tr": {
+        "title": "Dış sunucu hatası (5xx)",
+        "description": "5xx durum kodu döndüren dış bağlantılar.",
+        "fix": "Daha sonra tekrar kontrol edin; hata vermeye devam eden bağlantıları değiştirin."
+      }
+    },
+    {
+      "id": "redirect-chain",
+      "category": "response-codes",
+      "kind": "issue",
+      "priority": "medium",
+      "en": {
+        "title": "Redirect chain",
+        "description": "Internal URLs that need two or more redirects to reach the final page. Google follows a limited number of hops.",
+        "fix": "Redirect each URL straight to the final destination and update internal links."
+      },
+      "tr": {
+        "title": "Yönlendirme zinciri",
+        "description": "Son sayfaya ulaşmak için iki veya daha fazla yönlendirme gereken iç URL'ler. Google sınırlı sayıda adımı takip eder.",
+        "fix": "Her URL'yi doğrudan son hedefe yönlendirin ve iç bağlantıları güncelleyin."
+      }
+    },
+    {
+      "id": "redirect-loop",
+      "category": "response-codes",
+      "kind": "issue",
+      "priority": "high",
+      "en": {
+        "title": "Redirect loop",
+        "description": "Redirects that lead back to a URL already in the chain; the page can never be reached.",
+        "fix": "Break the loop so the chain ends at a page answering 200."
+      },
+      "tr": {
+        "title": "Yönlendirme döngüsü",
+        "description": "Zincirdeki bir URL'ye geri dönen yönlendirmeler; sayfaya asla ulaşılamaz.",
+        "fix": "Zincir 200 döndüren bir sayfada bitecek şekilde döngüyü kırın."
+      }
+    },
+    {
+      "id": "redirect-to-error",
+      "category": "response-codes",
+      "kind": "issue",
+      "priority": "high",
+      "en": {
+        "title": "Redirect to an error",
+        "description": "Redirects whose recorded chain reaches an HTTP 4xx/5xx response or a failed request. Unfetched targets are inconclusive.",
+        "fix": "Point the redirect to a live, relevant page."
+      },
+      "tr": {
+        "title": "Hataya giden yönlendirme",
+        "description": "Kayıtlı zinciri HTTP 4xx/5xx yanıtına veya başarısız bir isteğe ulaşan yönlendirmeler. Taranmamış hedeflerin sonucu belirsizdir.",
+        "fix": "Yönlendirmeyi canlı ve ilgili bir sayfaya çevirin."
+      }
+    },
+    {
+      "id": "meta-refresh",
+      "category": "response-codes",
+      "kind": "warning",
+      "priority": "medium",
+      "en": {
+        "title": "Meta refresh",
+        "description": "Pages using <meta http-equiv=\"refresh\">. Search engines treat it as a weak redirect and users see a flash of the old page.",
+        "fix": "Use a server-side 301 redirect instead."
+      },
+      "tr": {
+        "title": "Meta refresh",
+        "description": "<meta http-equiv=\"refresh\"> kullanan sayfalar. Arama motorları bunu zayıf bir yönlendirme sayar; kullanıcı eski sayfayı bir an görür.",
+        "fix": "Bunun yerine sunucu tarafında 301 yönlendirmesi kullanın."
+      }
+    },
+    {
+      "id": "links-to-redirects",
+      "category": "response-codes",
+      "kind": "warning",
+      "priority": "low",
+      "en": {
+        "title": "Links to redirects",
+        "description": "Pages linking to internal URLs that redirect.",
+        "fix": "Update the links to point directly at the final URL."
+      },
+      "tr": {
+        "title": "Yönlendirmeye giden bağlantılar",
+        "description": "Yönlendirme yapan iç URL'lere bağlantı veren sayfalar.",
+        "fix": "Bağlantıları doğrudan son URL'yi gösterecek şekilde güncelleyin."
+      }
+    },
+    {
+      "id": "links-to-broken",
+      "category": "response-codes",
+      "kind": "issue",
+      "priority": "high",
+      "en": {
+        "title": "Links to broken internal URLs",
+        "description": "Pages linking to internal URLs that answer 4xx, 5xx or not at all.",
+        "fix": "Fix the link targets or remove the links."
+      },
+      "tr": {
+        "title": "Kırık iç URL'lere bağlantılar",
+        "description": "4xx, 5xx döndüren ya da hiç yanıt vermeyen iç URL'lere bağlantı veren sayfalar.",
+        "fix": "Bağlantı hedeflerini düzeltin veya bağlantıları kaldırın."
+      }
+    },
+    {
+      "id": "links-to-broken-external",
+      "category": "response-codes",
+      "kind": "warning",
+      "priority": "medium",
+      "en": {
+        "title": "Links to broken external URLs",
+        "description": "Pages linking to external URLs that answer 4xx, 5xx or not at all.",
+        "fix": "Replace or remove the broken outbound links."
+      },
+      "tr": {
+        "title": "Kırık dış URL'lere bağlantılar",
+        "description": "4xx, 5xx döndüren ya da hiç yanıt vermeyen dış URL'lere bağlantı veren sayfalar.",
+        "fix": "Kırık giden bağlantıları değiştirin veya kaldırın."
+      }
+    },
+    {
+      "id": "http-url",
+      "category": "security",
+      "kind": "issue",
+      "priority": "high",
+      "en": {
+        "title": "Internal URL over HTTP",
+        "description": "Internal URLs served over plain HTTP. Browsers mark them as not secure and HTTPS is a ranking signal.",
+        "fix": "Serve the whole site over HTTPS and redirect HTTP URLs with 301."
+      },
+      "tr": {
+        "title": "HTTP üzerinden iç URL",
+        "description": "Düz HTTP ile sunulan iç URL'ler. Tarayıcılar bunları güvensiz olarak işaretler; HTTPS bir sıralama sinyalidir.",
+        "fix": "Tüm siteyi HTTPS ile sunun ve HTTP URL'leri 301 ile yönlendirin."
+      }
+    },
+    {
+      "id": "http-links",
+      "category": "security",
+      "kind": "warning",
+      "priority": "medium",
+      "en": {
+        "title": "HTTPS page linking to HTTP",
+        "description": "HTTPS pages with internal links to HTTP URLs, which redirect or downgrade users.",
+        "fix": "Change internal links to their HTTPS addresses."
+      },
+      "tr": {
+        "title": "HTTP'ye bağlantı veren HTTPS sayfa",
+        "description": "HTTP URL'lere iç bağlantı veren HTTPS sayfalar; kullanıcı yönlendirilir veya güvenli olmayan bağlantıya düşer.",
+        "fix": "İç bağlantıları HTTPS adresleriyle değiştirin."
+      }
+    },
+    {
+      "id": "mixed-content",
+      "category": "security",
+      "kind": "issue",
+      "priority": "high",
+      "en": {
+        "title": "Mixed content",
+        "description": "HTTPS pages loading images, scripts, stylesheets or frames over HTTP. Browsers block or warn about them.",
+        "fix": "Load every resource over HTTPS."
+      },
+      "tr": {
+        "title": "Karışık içerik",
+        "description": "Görsel, betik, stil veya çerçeveleri HTTP üzerinden yükleyen HTTPS sayfalar. Tarayıcılar bunları engeller veya uyarı verir.",
+        "fix": "Tüm kaynakları HTTPS üzerinden yükleyin."
+      }
+    },
+    {
+      "id": "insecure-form",
+      "category": "security",
+      "kind": "issue",
+      "priority": "high",
+      "en": {
+        "title": "Form submitting over HTTP",
+        "description": "HTTPS pages with forms that submit to HTTP URLs, exposing user input.",
+        "fix": "Make form actions use HTTPS."
+      },
+      "tr": {
+        "title": "HTTP'ye gönderilen form",
+        "description": "Formu HTTP adresine gönderen HTTPS sayfalar; kullanıcı girdisi açığa çıkar.",
+        "fix": "Form hedeflerini HTTPS yapın."
+      }
+    },
+    {
+      "id": "missing-hsts",
+      "category": "security",
+      "kind": "warning",
+      "priority": "low",
+      "en": {
+        "title": "Missing HSTS header",
+        "description": "HTTPS pages without a Strict-Transport-Security header, so browsers may still try HTTP first.",
+        "fix": "Send Strict-Transport-Security with a long max-age once the whole site works over HTTPS."
+      },
+      "tr": {
+        "title": "HSTS başlığı yok",
+        "description": "Strict-Transport-Security başlığı göndermeyen HTTPS sayfalar; tarayıcılar önce HTTP'yi deneyebilir.",
+        "fix": "Tüm site HTTPS ile çalıştığında uzun bir max-age ile Strict-Transport-Security gönderin."
+      }
+    },
+    {
+      "id": "url-uppercase",
+      "category": "url",
+      "kind": "warning",
+      "priority": "low",
+      "en": {
+        "title": "Uppercase characters in URL",
+        "description": "URLs with uppercase letters. URLs are case-sensitive, so mixed case easily creates duplicates.",
+        "fix": "Use lowercase URLs and redirect uppercase variants."
+      },
+      "tr": {
+        "title": "URL'de büyük harf",
+        "description": "Büyük harf içeren URL'ler. URL'ler büyük/küçük harfe duyarlıdır; karışık kullanım kolayca kopya sayfa üretir.",
+        "fix": "Küçük harfli URL'ler kullanın ve büyük harfli varyantları yönlendirin."
+      }
+    },
+    {
+      "id": "url-underscores",
+      "category": "url",
+      "kind": "opportunity",
+      "priority": "low",
+      "en": {
+        "title": "Underscores in URL",
+        "description": "URLs using underscores. Google treats hyphens, not underscores, as word separators.",
+        "fix": "Prefer hyphens in new URLs."
+      },
+      "tr": {
+        "title": "URL'de alt çizgi",
+        "description": "Alt çizgi kullanan URL'ler. Google kelime ayırıcı olarak alt çizgiyi değil tireyi kullanır.",
+        "fix": "Yeni URL'lerde tire tercih edin."
+      }
+    },
+    {
+      "id": "url-non-ascii",
+      "category": "url",
+      "kind": "warning",
+      "priority": "low",
+      "en": {
+        "title": "Non-ASCII characters in URL",
+        "description": "URLs with characters outside ASCII (such as ç, ğ, ş). They are encoded and can be shared inconsistently.",
+        "fix": "Use transliterated ASCII slugs, or make sure they are always linked in one encoding."
+      },
+      "tr": {
+        "title": "URL'de ASCII dışı karakter",
+        "description": "ASCII dışı karakter (ç, ğ, ş gibi) içeren URL'ler. Kodlanırlar ve tutarsız paylaşılabilirler.",
+        "fix": "Karakterleri ASCII'ye çeviren kısa adlar kullanın veya hep aynı kodlamayla bağlantı verin."
+      }
+    },
+    {
+      "id": "url-multiple-slashes",
+      "category": "url",
+      "kind": "warning",
+      "priority": "low",
+      "en": {
+        "title": "Multiple slashes in URL",
+        "description": "URLs with consecutive slashes in the path, which usually come from broken links and create duplicates.",
+        "fix": "Fix the links and redirect these URLs to the single-slash version."
+      },
+      "tr": {
+        "title": "URL'de ardışık eğik çizgi",
+        "description": "Yolunda ardışık eğik çizgi bulunan URL'ler; genellikle hatalı bağlantılardan doğar ve kopya üretir.",
+        "fix": "Bağlantıları düzeltin ve bu URL'leri tek eğik çizgili sürüme yönlendirin."
+      }
+    },
+    {
+      "id": "url-spaces",
+      "category": "url",
+      "kind": "warning",
+      "priority": "low",
+      "en": {
+        "title": "Spaces in URL",
+        "description": "URLs containing encoded spaces (%20), which break easily when shared.",
+        "fix": "Use hyphens instead of spaces."
+      },
+      "tr": {
+        "title": "URL'de boşluk",
+        "description": "Kodlanmış boşluk (%20) içeren URL'ler; paylaşılırken kolayca bozulur.",
+        "fix": "Boşluk yerine tire kullanın."
+      }
+    },
+    {
+      "id": "url-parameters",
+      "category": "url",
+      "kind": "opportunity",
+      "priority": "low",
+      "en": {
+        "title": "Query parameters in URL",
+        "description": "Internal URLs with query strings. Parameters multiply URLs (sorting, filters, tracking) and waste crawl budget.",
+        "fix": "Keep parameterized URLs out of internal links where possible and canonicalise them to the clean URL."
+      },
+      "tr": {
+        "title": "URL'de sorgu parametresi",
+        "description": "Sorgu dizesi içeren iç URL'ler. Parametreler (sıralama, filtre, izleme) URL sayısını katlar ve tarama bütçesini harcar.",
+        "fix": "Mümkünse parametreli URL'lere iç bağlantı vermeyin ve canonical ile temiz URL'yi gösterin."
+      }
+    },
+    {
+      "id": "url-too-long",
+      "category": "url",
+      "kind": "opportunity",
+      "priority": "low",
+      "en": {
+        "title": "URL over 115 characters",
+        "description": "Long URLs are harder to read and share and are often truncated in results.",
+        "fix": "Use short, descriptive paths."
+      },
+      "tr": {
+        "title": "115 karakterden uzun URL",
+        "description": "Uzun URL'ler zor okunur ve paylaşılır; sonuçlarda sıklıkla kısaltılır.",
+        "fix": "Kısa ve açıklayıcı yollar kullanın."
+      }
+    },
+    {
+      "id": "title-missing",
+      "category": "titles",
+      "kind": "issue",
+      "priority": "high",
+      "en": {
+        "title": "Missing title",
+        "description": "Indexable pages without a <title> or with an empty one. The title is the main headline in search results.",
+        "fix": "Write a unique, descriptive title for every page."
+      },
+      "tr": {
+        "title": "Başlık (title) yok",
+        "description": "<title> etiketi olmayan veya boş olan dizine eklenebilir sayfalar. Başlık arama sonuçlarındaki ana başlıktır.",
+        "fix": "Her sayfaya benzersiz ve açıklayıcı bir başlık yazın."
+      }
+    },
+    {
+      "id": "title-multiple",
+      "category": "titles",
+      "kind": "issue",
+      "priority": "medium",
+      "en": {
+        "title": "Multiple titles",
+        "description": "Pages with more than one <title> element; search engines may pick the wrong one.",
+        "fix": "Keep exactly one <title> in the <head>."
+      },
+      "tr": {
+        "title": "Birden fazla başlık",
+        "description": "Birden fazla <title> öğesi olan sayfalar; arama motorları yanlış olanı seçebilir.",
+        "fix": "<head> içinde yalnızca bir <title> bırakın."
+      }
+    },
+    {
+      "id": "title-duplicate",
+      "category": "titles",
+      "kind": "opportunity",
+      "priority": "medium",
+      "en": {
+        "title": "Duplicate title",
+        "description": "Indexable pages sharing the same title, which makes them compete with each other.",
+        "fix": "Give each page a title that describes its own content."
+      },
+      "tr": {
+        "title": "Kopya başlık",
+        "description": "Aynı başlığı paylaşan dizine eklenebilir sayfalar; birbirleriyle rekabet ederler.",
+        "fix": "Her sayfaya kendi içeriğini anlatan bir başlık verin."
+      }
+    },
+    {
+      "id": "title-too-long",
+      "category": "titles",
+      "kind": "opportunity",
+      "priority": "medium",
+      "en": {
+        "title": "Title over 60 characters",
+        "description": "Long titles are cut off in search results.",
+        "fix": "Put the important words first and keep titles around 50–60 characters."
+      },
+      "tr": {
+        "title": "60 karakterden uzun başlık",
+        "description": "Uzun başlıklar arama sonuçlarında kesilir.",
+        "fix": "Önemli kelimeleri başa alın ve başlığı 50–60 karakter civarında tutun."
+      }
+    },
+    {
+      "id": "title-too-short",
+      "category": "titles",
+      "kind": "opportunity",
+      "priority": "medium",
+      "en": {
+        "title": "Title under 30 characters",
+        "description": "Short titles miss the chance to describe the page and match more searches.",
+        "fix": "Expand the title with the page's main topic and a distinguishing detail."
+      },
+      "tr": {
+        "title": "30 karakterden kısa başlık",
+        "description": "Kısa başlıklar sayfayı anlatma ve daha fazla aramayla eşleşme fırsatını kaçırır.",
+        "fix": "Başlığı sayfanın ana konusu ve ayırt edici bir ayrıntıyla genişletin."
+      }
+    },
+    {
+      "id": "title-too-wide",
+      "category": "titles",
+      "kind": "opportunity",
+      "priority": "medium",
+      "en": {
+        "title": "Title over 561 pixels",
+        "description": "Titles wider than about 561 pixels in the result font are truncated, whatever their character count.",
+        "fix": "Shorten the title or use narrower words; wide capitals take the most room."
+      },
+      "tr": {
+        "title": "561 pikselden geniş başlık",
+        "description": "Sonuç yazı tipinde yaklaşık 561 pikselden geniş başlıklar, karakter sayısından bağımsız olarak kesilir.",
+        "fix": "Başlığı kısaltın veya daha dar kelimeler kullanın; geniş büyük harfler en çok yeri kaplar."
+      }
+    },
+    {
+      "id": "title-same-as-h1",
+      "category": "titles",
+      "kind": "opportunity",
+      "priority": "low",
+      "en": {
+        "title": "Title identical to H1",
+        "description": "The title repeats the H1 word for word, a missed chance to target a second phrasing.",
+        "fix": "Vary the title and H1 while keeping the same topic."
+      },
+      "tr": {
+        "title": "Başlık H1 ile aynı",
+        "description": "Başlık H1'i kelimesi kelimesine tekrarlıyor; ikinci bir ifadeyi hedefleme fırsatı kaçıyor.",
+        "fix": "Aynı konuyu koruyarak başlık ile H1'i farklılaştırın."
+      }
+    },
+    {
+      "id": "description-missing",
+      "category": "meta-descriptions",
+      "kind": "opportunity",
+      "priority": "low",
+      "en": {
+        "title": "Missing meta description",
+        "description": "Indexable pages without a meta description; search engines then build a snippet from page text.",
+        "fix": "Write a description that summarises the page and invites the click."
+      },
+      "tr": {
+        "title": "Meta açıklama yok",
+        "description": "Meta açıklaması olmayan dizine eklenebilir sayfalar; arama motorları özeti sayfa metninden oluşturur.",
+        "fix": "Sayfayı özetleyen ve tıklamaya davet eden bir açıklama yazın."
+      }
+    },
+    {
+      "id": "description-multiple",
+      "category": "meta-descriptions",
+      "kind": "issue",
+      "priority": "medium",
+      "en": {
+        "title": "Multiple meta descriptions",
+        "description": "Pages with more than one meta description tag.",
+        "fix": "Keep exactly one meta description."
+      },
+      "tr": {
+        "title": "Birden fazla meta açıklama",
+        "description": "Birden fazla meta açıklama etiketi olan sayfalar.",
+        "fix": "Yalnızca bir meta açıklama bırakın."
+      }
+    },
+    {
+      "id": "description-duplicate",
+      "category": "meta-descriptions",
+      "kind": "opportunity",
+      "priority": "low",
+      "en": {
+        "title": "Duplicate meta description",
+        "description": "Indexable pages sharing the same meta description.",
+        "fix": "Write a description specific to each page."
+      },
+      "tr": {
+        "title": "Kopya meta açıklama",
+        "description": "Aynı meta açıklamayı paylaşan dizine eklenebilir sayfalar.",
+        "fix": "Her sayfaya özel bir açıklama yazın."
+      }
+    },
+    {
+      "id": "description-too-long",
+      "category": "meta-descriptions",
+      "kind": "opportunity",
+      "priority": "low",
+      "en": {
+        "title": "Meta description over 155 characters",
+        "description": "Long descriptions are truncated in results.",
+        "fix": "Keep the key message within about 150 characters."
+      },
+      "tr": {
+        "title": "155 karakterden uzun meta açıklama",
+        "description": "Uzun açıklamalar sonuçlarda kesilir.",
+        "fix": "Ana mesajı yaklaşık 150 karakter içinde tutun."
+      }
+    },
+    {
+      "id": "description-too-short",
+      "category": "meta-descriptions",
+      "kind": "opportunity",
+      "priority": "low",
+      "en": {
+        "title": "Meta description under 70 characters",
+        "description": "Very short descriptions use little of the snippet space.",
+        "fix": "Add the benefit, the offer or a call to action."
+      },
+      "tr": {
+        "title": "70 karakterden kısa meta açıklama",
+        "description": "Çok kısa açıklamalar özet alanının azını kullanır.",
+        "fix": "Faydayı, teklifi veya bir eylem çağrısını ekleyin."
+      }
+    },
+    {
+      "id": "description-too-wide",
+      "category": "meta-descriptions",
+      "kind": "opportunity",
+      "priority": "low",
+      "en": {
+        "title": "Meta description over 985 pixels",
+        "description": "Descriptions wider than about 985 pixels in the result font are truncated.",
+        "fix": "Shorten the description."
+      },
+      "tr": {
+        "title": "985 pikselden geniş meta açıklama",
+        "description": "Sonuç yazı tipinde yaklaşık 985 pikselden geniş açıklamalar kesilir.",
+        "fix": "Açıklamayı kısaltın."
+      }
+    },
+    {
+      "id": "h1-missing",
+      "category": "headings",
+      "kind": "issue",
+      "priority": "medium",
+      "en": {
+        "title": "Missing H1",
+        "description": "Indexable pages without an <h1>. The H1 tells users and search engines what the page is about.",
+        "fix": "Add one H1 that states the page's main topic."
+      },
+      "tr": {
+        "title": "H1 yok",
+        "description": "<h1> içermeyen dizine eklenebilir sayfalar. H1 sayfanın konusunu kullanıcıya ve arama motoruna söyler.",
+        "fix": "Sayfanın ana konusunu belirten bir H1 ekleyin."
+      }
+    },
+    {
+      "id": "h1-empty",
+      "category": "headings",
+      "kind": "warning",
+      "priority": "medium",
+      "en": {
+        "title": "Empty H1",
+        "description": "Pages with an <h1> element that contains no text (often an image without alt text or an empty template slot).",
+        "fix": "Put the page's main heading text in the H1."
+      },
+      "tr": {
+        "title": "Boş H1",
+        "description": "Metin içermeyen <h1> öğesi olan sayfalar (çoğunlukla alt metni olmayan görsel veya boş bir şablon alanı).",
+        "fix": "Sayfanın ana başlık metnini H1'e yazın."
+      }
+    },
+    {
+      "id": "h1-multiple",
+      "category": "headings",
+      "kind": "warning",
+      "priority": "medium",
+      "en": {
+        "title": "Multiple H1",
+        "description": "Pages with more than one <h1>, which blurs the main topic.",
+        "fix": "Keep one H1 and use H2–H6 for sections."
+      },
+      "tr": {
+        "title": "Birden fazla H1",
+        "description": "Birden fazla <h1> içeren sayfalar; ana konu bulanıklaşır.",
+        "fix": "Bir H1 bırakın, bölümler için H2–H6 kullanın."
+      }
+    },
+    {
+      "id": "h1-duplicate",
+      "category": "headings",
+      "kind": "opportunity",
+      "priority": "low",
+      "en": {
+        "title": "Duplicate H1",
+        "description": "Indexable pages sharing the same H1.",
+        "fix": "Make each page's H1 specific to its content."
+      },
+      "tr": {
+        "title": "Kopya H1",
+        "description": "Aynı H1'i paylaşan dizine eklenebilir sayfalar.",
+        "fix": "Her sayfanın H1'ini kendi içeriğine özgü yapın."
+      }
+    },
+    {
+      "id": "h1-too-long",
+      "category": "headings",
+      "kind": "opportunity",
+      "priority": "low",
+      "en": {
+        "title": "H1 over 70 characters",
+        "description": "Long H1s are hard to scan.",
+        "fix": "Keep the H1 short and move details to the introduction."
+      },
+      "tr": {
+        "title": "70 karakterden uzun H1",
+        "description": "Uzun H1'ler zor taranır.",
+        "fix": "H1'i kısa tutun, ayrıntıları giriş paragrafına taşıyın."
+      }
+    },
+    {
+      "id": "h2-missing",
+      "category": "headings",
+      "kind": "warning",
+      "priority": "low",
+      "en": {
+        "title": "Missing H2",
+        "description": "Indexable pages without any <h2>, so their structure is not visible.",
+        "fix": "Break longer content into sections with H2 headings."
+      },
+      "tr": {
+        "title": "H2 yok",
+        "description": "Hiç <h2> içermeyen dizine eklenebilir sayfalar; yapıları görünmez.",
+        "fix": "Uzun içeriği H2 başlıklı bölümlere ayırın."
+      }
+    },
+    {
+      "id": "h2-duplicate",
+      "category": "headings",
+      "kind": "opportunity",
+      "priority": "low",
+      "en": {
+        "title": "Duplicate H2",
+        "description": "Indexable pages whose first H2 is the same as on other pages, usually template text.",
+        "fix": "Use section headings that describe the page's own content."
+      },
+      "tr": {
+        "title": "Kopya H2",
+        "description": "İlk H2'si başka sayfalarla aynı olan dizine eklenebilir sayfalar; genellikle şablon metnidir.",
+        "fix": "Sayfanın kendi içeriğini anlatan bölüm başlıkları kullanın."
+      }
+    },
+    {
+      "id": "headings-non-sequential",
+      "category": "headings",
+      "kind": "warning",
+      "priority": "low",
+      "en": {
+        "title": "Non-sequential headings",
+        "description": "Pages whose headings skip levels (for example H1 followed by H3), which confuses screen readers and the outline.",
+        "fix": "Nest headings in order without skipping levels."
+      },
+      "tr": {
+        "title": "Sırasız başlıklar",
+        "description": "Başlık düzeyleri atlanan sayfalar (örneğin H1'den sonra H3); ekran okuyucuları ve sayfa yapısını karıştırır.",
+        "fix": "Başlıkları düzey atlamadan sırayla iç içe kullanın."
+      }
+    },
+    {
+      "id": "content-empty",
+      "category": "content",
+      "kind": "issue",
+      "priority": "medium",
+      "en": {
+        "title": "Page without text",
+        "description": "HTML pages with no visible text, often because content is loaded only by JavaScript.",
+        "fix": "Serve the main content in the HTML or enable JavaScript rendering to check it."
+      },
+      "tr": {
+        "title": "Metinsiz sayfa",
+        "description": "Görünür metni olmayan HTML sayfalar; çoğunlukla içerik yalnızca JavaScript ile yüklenir.",
+        "fix": "Ana içeriği HTML içinde sunun veya kontrol için JavaScript işlemeyi açın."
+      }
+    },
+    {
+      "id": "content-low",
+      "category": "content",
+      "kind": "opportunity",
+      "priority": "medium",
+      "en": {
+        "title": "Low content (under 200 words)",
+        "description": "Indexable pages with little text, which may not answer searches well.",
+        "fix": "Expand pages that should rank; merge or noindex thin pages that should not."
+      },
+      "tr": {
+        "title": "Az içerik (200 kelimeden az)",
+        "description": "Az metin içeren dizine eklenebilir sayfalar; aramalara yeterli yanıt vermeyebilir.",
+        "fix": "Sıralanması gereken sayfaları genişletin; gerekmeyen zayıf sayfaları birleştirin veya noindex yapın."
+      }
+    },
+    {
+      "id": "content-exact-duplicate",
+      "category": "content",
+      "kind": "issue",
+      "priority": "high",
+      "en": {
+        "title": "Exact duplicate content",
+        "description": "Indexable pages whose visible text is identical to another page's.",
+        "fix": "Keep one version and redirect or canonicalise the others to it."
+      },
+      "tr": {
+        "title": "Birebir kopya içerik",
+        "description": "Görünür metni başka bir sayfayla birebir aynı olan dizine eklenebilir sayfalar.",
+        "fix": "Tek sürümü koruyun, diğerlerini ona yönlendirin veya canonical ile gösterin."
+      }
+    },
+    {
+      "id": "content-near-duplicate",
+      "category": "content",
+      "kind": "opportunity",
+      "priority": "medium",
+      "en": {
+        "title": "Near duplicate content",
+        "description": "Candidates among internal, indexable 200 HTML pages with at least 200 visible words, a 64-bit SimHash distance of at most 3, and word counts within 20% of the longer page. Failed or truncated captures and identical normalized text hashes are excluded. One observed example is retained per URL; this is not a similarity percentage or proof of duplication.",
+        "fix": "Compare the recorded example with the selected page, including shared navigation and footer text. Differentiate, merge or canonicalise only after reviewing the actual content and purpose of both pages."
+      },
+      "tr": {
+        "title": "Benzer kopya içerik",
+        "description": "En az 200 görünür kelimeli dahili, indekslenebilir 200 HTML sayfalarda 64 bit SimHash farkı en çok 3 ve kelime sayıları uzun sayfanın en az %80’i olan adaylar. Başarısız/kesilmiş içerikler ve aynı normalize metin özeti dışarıda kalır. Her URL için tek örnek saklanır; sonuç bir benzerlik yüzdesi veya kesin kopya kanıtı değildir.",
+        "fix": "Kaydedilen örnekle seçili sayfayı, ortak menü ve alt bilgi metinlerini de dikkate alarak karşılaştırın. Farklılaştırma, birleştirme veya canonical kararını iki sayfanın içeriği ve amacı incelendikten sonra verin."
+      }
+    },
+    {
+      "id": "soft-404",
+      "category": "content",
+      "kind": "issue",
+      "priority": "high",
+      "en": {
+        "title": "Possible soft 404",
+        "description": "Pages answering 200 whose title or H1 says the page was not found.",
+        "fix": "Return a real 404 or 410 status for missing pages."
+      },
+      "tr": {
+        "title": "Olası soft 404",
+        "description": "200 döndürdüğü hâlde başlığı veya H1'i sayfanın bulunamadığını söyleyen sayfalar.",
+        "fix": "Olmayan sayfalar için gerçek 404 veya 410 durum kodu döndürün."
+      }
+    },
+    {
+      "id": "image-broken",
+      "category": "images",
+      "kind": "issue",
+      "priority": "high",
+      "en": {
+        "title": "Broken image",
+        "description": "Images that answer 4xx, 5xx or not at all.",
+        "fix": "Fix the image URLs or remove the images."
+      },
+      "tr": {
+        "title": "Kırık görsel",
+        "description": "4xx, 5xx döndüren ya da hiç yanıt vermeyen görseller.",
+        "fix": "Görsel URL'lerini düzeltin veya görselleri kaldırın."
+      }
+    },
+    {
+      "id": "image-missing-alt",
+      "category": "images",
+      "kind": "issue",
+      "priority": "low",
+      "en": {
+        "title": "Image without alt attribute",
+        "description": "Images missing the alt attribute. Screen readers and image search rely on it.",
+        "fix": "Describe meaningful images in alt; use alt=\"\" for decorative ones."
+      },
+      "tr": {
+        "title": "alt özniteliği olmayan görsel",
+        "description": "alt özniteliği eksik görseller. Ekran okuyucular ve görsel arama buna dayanır.",
+        "fix": "Anlamlı görselleri alt ile açıklayın; süs görselleri için alt=\"\" kullanın."
+      }
+    },
+    {
+      "id": "image-alt-too-long",
+      "category": "images",
+      "kind": "opportunity",
+      "priority": "low",
+      "en": {
+        "title": "Alt text over 100 characters",
+        "description": "Very long alt texts are tiring for screen reader users and look like keyword stuffing.",
+        "fix": "Keep alt text short and specific."
+      },
+      "tr": {
+        "title": "100 karakterden uzun alt metni",
+        "description": "Çok uzun alt metinleri ekran okuyucu kullanıcılarını yorar ve anahtar kelime doldurma gibi görünür.",
+        "fix": "Alt metnini kısa ve belirgin tutun."
+      }
+    },
+    {
+      "id": "image-too-large",
+      "category": "images",
+      "kind": "opportunity",
+      "priority": "medium",
+      "en": {
+        "title": "Image over 100 KB",
+        "description": "Large image files slow pages down, especially on mobile.",
+        "fix": "Compress images, use WebP or AVIF and serve sizes that fit the layout."
+      },
+      "tr": {
+        "title": "100 KB'tan büyük görsel",
+        "description": "Büyük görsel dosyaları sayfaları, özellikle mobilde, yavaşlatır.",
+        "fix": "Görselleri sıkıştırın, WebP veya AVIF kullanın ve düzene uygun boyutlar sunun."
+      }
+    },
+    {
+      "id": "image-missing-dimensions",
+      "category": "images",
+      "kind": "opportunity",
+      "priority": "low",
+      "en": {
+        "title": "Image without width and height",
+        "description": "Images without width and height attributes make the layout shift while loading (CLS).",
+        "fix": "Set width and height (or a CSS aspect ratio) on images."
+      },
+      "tr": {
+        "title": "Genişlik ve yüksekliği olmayan görsel",
+        "description": "width ve height öznitelikleri olmayan görseller yüklenirken düzenin kaymasına (CLS) yol açar.",
+        "fix": "Görsellere width ve height (veya CSS en-boy oranı) verin."
+      }
+    },
+    {
+      "id": "canonical-missing",
+      "category": "canonicals",
+      "kind": "warning",
+      "priority": "medium",
+      "en": {
+        "title": "Missing canonical",
+        "description": "Indexable pages without a canonical link, so parameter and protocol variants are left to guesswork.",
+        "fix": "Add a self-referencing canonical to every indexable page."
+      },
+      "tr": {
+        "title": "Canonical yok",
+        "description": "Canonical bağlantısı olmayan dizine eklenebilir sayfalar; parametreli ve protokol varyantları tahmine kalır.",
+        "fix": "Dizine eklenebilir her sayfaya kendini gösteren bir canonical ekleyin."
+      }
+    },
+    {
+      "id": "canonicalised",
+      "category": "canonicals",
+      "kind": "warning",
+      "priority": "medium",
+      "en": {
+        "title": "Canonicalised",
+        "description": "Pages whose canonical points to another URL. They will usually not be indexed themselves.",
+        "fix": "Check that this is intended and that internal links point to the canonical URL."
+      },
+      "tr": {
+        "title": "Canonical başka URL'yi gösteriyor",
+        "description": "Canonical'ı başka bir URL'yi gösteren sayfalar. Genellikle kendileri dizine eklenmez.",
+        "fix": "Bunun kasıtlı olduğunu ve iç bağlantıların canonical URL'yi gösterdiğini kontrol edin."
+      }
+    },
+    {
+      "id": "canonical-multiple",
+      "category": "canonicals",
+      "kind": "issue",
+      "priority": "medium",
+      "en": {
+        "title": "Multiple canonicals",
+        "description": "Pages declaring more than one canonical link; search engines may ignore all of them.",
+        "fix": "Keep a single canonical."
+      },
+      "tr": {
+        "title": "Birden fazla canonical",
+        "description": "Birden fazla canonical bağlantısı tanımlayan sayfalar; arama motorları hepsini yok sayabilir.",
+        "fix": "Tek bir canonical bırakın."
+      }
+    },
+    {
+      "id": "canonical-mismatch",
+      "category": "canonicals",
+      "kind": "issue",
+      "priority": "medium",
+      "en": {
+        "title": "Conflicting canonicals",
+        "description": "Pages whose canonicals disagree (different HTML values, or HTML and the HTTP Link header pointing to different URLs).",
+        "fix": "Make every canonical declaration name the same URL."
+      },
+      "tr": {
+        "title": "Çelişen canonical'lar",
+        "description": "Canonical bildirimleri birbiriyle çelişen sayfalar (farklı HTML değerleri veya HTML ile HTTP Link başlığının farklı URL göstermesi).",
+        "fix": "Tüm canonical bildirimlerinin aynı URL'yi göstermesini sağlayın."
+      }
+    },
+    {
+      "id": "canonical-to-non-200",
+      "category": "canonicals",
+      "kind": "issue",
+      "priority": "high",
+      "en": {
+        "title": "Canonical to a non-200 URL",
+        "description": "Canonicals pointing to URLs that redirect, fail or are blocked.",
+        "fix": "Point canonicals to live, indexable URLs answering 200."
+      },
+      "tr": {
+        "title": "200 olmayan URL'ye canonical",
+        "description": "Yönlendiren, hata veren veya engellenen URL'leri gösteren canonical'lar.",
+        "fix": "Canonical'ları 200 döndüren, canlı ve dizine eklenebilir URL'lere yönlendirin."
+      }
+    },
+    {
+      "id": "canonical-to-non-indexable",
+      "category": "canonicals",
+      "kind": "issue",
+      "priority": "high",
+      "en": {
+        "title": "Canonical to a non-indexable URL",
+        "description": "Canonicals pointing to URLs that are noindex or canonicalised elsewhere.",
+        "fix": "Point canonicals to the final indexable URL."
+      },
+      "tr": {
+        "title": "Dizine eklenemeyen URL'ye canonical",
+        "description": "noindex olan veya canonical'ı başka yeri gösteren URL'lere işaret eden canonical'lar.",
+        "fix": "Canonical'ları son dizine eklenebilir URL'ye yönlendirin."
+      }
+    },
+    {
+      "id": "canonical-cross-domain",
+      "category": "canonicals",
+      "kind": "warning",
+      "priority": "low",
+      "en": {
+        "title": "Canonical to another domain",
+        "description": "Pages whose canonical points to a different host.",
+        "fix": "Make sure the cross-domain canonical is intended (syndication, migrations)."
+      },
+      "tr": {
+        "title": "Başka alan adına canonical",
+        "description": "Canonical'ı farklı bir ana makineyi gösteren sayfalar.",
+        "fix": "Alan adları arası canonical'ın kasıtlı olduğundan emin olun (içerik paylaşımı, taşıma)."
+      }
+    },
+    {
+      "id": "canonical-to-http",
+      "category": "canonicals",
+      "kind": "issue",
+      "priority": "medium",
+      "en": {
+        "title": "HTTPS page canonical to HTTP",
+        "description": "HTTPS pages whose canonical points to an HTTP URL.",
+        "fix": "Use HTTPS canonical URLs."
+      },
+      "tr": {
+        "title": "HTTP'ye canonical veren HTTPS sayfa",
+        "description": "Canonical'ı HTTP URL'yi gösteren HTTPS sayfalar.",
+        "fix": "Canonical URL'lerinde HTTPS kullanın."
+      }
+    },
+    {
+      "id": "canonical-with-noindex",
+      "category": "canonicals",
+      "kind": "warning",
+      "priority": "medium",
+      "en": {
+        "title": "Noindex with canonical to another URL",
+        "description": "Pages that are noindex and also canonicalised elsewhere: two conflicting signals.",
+        "fix": "Use either noindex or a canonical to another URL, not both."
+      },
+      "tr": {
+        "title": "noindex ile başka URL'ye canonical",
+        "description": "Hem noindex olan hem de canonical'ı başka yeri gösteren sayfalar: iki çelişen sinyal.",
+        "fix": "noindex veya başka URL'ye canonical'dan yalnızca birini kullanın."
+      }
+    },
+    {
+      "id": "noindex",
+      "category": "directives",
+      "kind": "warning",
+      "priority": "high",
+      "en": {
+        "title": "Noindex",
+        "description": "Internal pages with a noindex directive (meta robots or X-Robots-Tag). They will be dropped from search results.",
+        "fix": "Remove noindex from pages that should rank."
+      },
+      "tr": {
+        "title": "noindex",
+        "description": "noindex yönergesi (meta robots veya X-Robots-Tag) olan iç sayfalar. Arama sonuçlarından düşerler.",
+        "fix": "Sıralanması gereken sayfalardan noindex'i kaldırın."
+      }
+    },
+    {
+      "id": "nofollow-page",
+      "category": "directives",
+      "kind": "warning",
+      "priority": "medium",
+      "en": {
+        "title": "Nofollow page",
+        "description": "Pages whose robots directives say nofollow, so none of their links pass signals or get discovered.",
+        "fix": "Remove nofollow unless the page's links must not be followed."
+      },
+      "tr": {
+        "title": "nofollow sayfa",
+        "description": "Robots yönergesi nofollow olan sayfalar; bağlantıları sinyal aktarmaz ve keşfedilmez.",
+        "fix": "Sayfanın bağlantıları takip edilmemeli değilse nofollow'u kaldırın."
+      }
+    },
+    {
+      "id": "snippet-restricted",
+      "category": "directives",
+      "kind": "warning",
+      "priority": "medium",
+      "en": {
+        "title": "Snippet restricted",
+        "description": "Pages with nosnippet or max-snippet:0. Search results and AI overviews can show no text from them.",
+        "fix": "Allow snippets on pages that should be quoted in results and AI answers."
+      },
+      "tr": {
+        "title": "Özet kısıtlı",
+        "description": "nosnippet veya max-snippet:0 içeren sayfalar. Arama sonuçları ve yapay zekâ özetleri bunlardan metin gösteremez.",
+        "fix": "Sonuçlarda ve yapay zekâ yanıtlarında alıntılanması gereken sayfalarda özetlere izin verin."
+      }
+    },
+    {
+      "id": "lang-missing",
+      "category": "international",
+      "kind": "opportunity",
+      "priority": "low",
+      "en": {
+        "title": "Missing lang attribute",
+        "description": "HTML pages without a lang attribute on <html>, which helps browsers, screen readers and translation.",
+        "fix": "Set <html lang> to the page's language, for example lang=\"tr\"."
+      },
+      "tr": {
+        "title": "lang özniteliği yok",
+        "description": "<html> etiketinde lang özniteliği olmayan sayfalar; tarayıcılara, ekran okuyuculara ve çeviriye yardımcı olur.",
+        "fix": "<html lang> değerini sayfanın diline ayarlayın, örneğin lang=\"tr\"."
+      }
+    },
+    {
+      "id": "hreflang-invalid-code",
+      "category": "international",
+      "kind": "issue",
+      "priority": "high",
+      "en": {
+        "title": "Invalid hreflang code",
+        "description": "hreflang values that are not a valid ISO 639-1 language with an optional ISO 3166-1 region (for example en-UK instead of en-GB).",
+        "fix": "Use codes like tr, en-GB or x-default."
+      },
+      "tr": {
+        "title": "Geçersiz hreflang kodu",
+        "description": "Geçerli bir ISO 639-1 dili ve isteğe bağlı ISO 3166-1 bölgesi olmayan hreflang değerleri (örneğin en-GB yerine en-UK).",
+        "fix": "tr, en-GB veya x-default gibi kodlar kullanın."
+      }
+    },
+    {
+      "id": "hreflang-missing-return",
+      "category": "international",
+      "kind": "issue",
+      "priority": "high",
+      "en": {
+        "title": "Missing hreflang return link",
+        "description": "Analyzed alternates without a return to the source. A verified, healthy canonical with matching language annotations can resolve duplicate source-URL absences. Status-only targets cannot establish a missing return; unusable responses are reported separately.",
+        "fix": "Verify canonical and pagination intent first; each canonical language version should list itself and its existing equivalent versions. Pages published in only one language need no invented translations."
+      },
+      "tr": {
+        "title": "Karşılıklı hreflang bağlantısı yok",
+        "description": "Analiz edilen, kaynağa dönüşü olmayan alternatifler. Sağlıklı ve dil bildirimleri eşleşen doğrulanmış canonical, kopya kaynak URL eksikliklerini çözebilir. Yalnızca HTTP durumu kontrol edilen hedefte eksik dönüş doğrulanamaz; kullanılamayan yanıtlar ayrı bildirilir.",
+        "fix": "Önce canonical ve sayfalama tercihini doğrulayın; her canonical dil sürümü kendisini ve mevcut eşdeğer sürümleri listelemeli. Tek dilde yayımlanan sayfalara çeviri eklemek gerekmez."
+      }
+    },
+    {
+      "id": "hreflang-to-non-200",
+      "category": "international",
+      "kind": "issue",
+      "priority": "high",
+      "en": {
+        "title": "hreflang to a non-200 URL",
+        "description": "hreflang alternates that redirect, fail or are blocked.",
+        "fix": "Point hreflang to live URLs answering 200."
+      },
+      "tr": {
+        "title": "200 olmayan URL'ye hreflang",
+        "description": "Yönlendiren, hata veren veya engellenen hreflang alternatifleri.",
+        "fix": "hreflang'i 200 döndüren canlı URL'lere yönlendirin."
+      }
+    },
+    {
+      "id": "hreflang-to-non-indexable",
+      "category": "international",
+      "kind": "issue",
+      "priority": "medium",
+      "en": {
+        "title": "hreflang to a non-indexable URL",
+        "description": "hreflang alternates that are noindex or canonicalised elsewhere.",
+        "fix": "Reference only the canonical, indexable version of each alternate."
+      },
+      "tr": {
+        "title": "Dizine eklenemeyen URL'ye hreflang",
+        "description": "noindex olan veya canonical'ı başka yeri gösteren hreflang alternatifleri.",
+        "fix": "Her alternatifin yalnızca canonical ve dizine eklenebilir sürümünü gösterin."
+      }
+    },
+    {
+      "id": "hreflang-missing-self",
+      "category": "international",
+      "kind": "warning",
+      "priority": "medium",
+      "en": {
+        "title": "Missing self-referencing hreflang",
+        "description": "Pages with hreflang annotations that omit their own URL and cannot be resolved through a verified canonical language cluster.",
+        "fix": "Add an hreflang entry for the page's own URL."
+      },
+      "tr": {
+        "title": "Kendini gösteren hreflang yok",
+        "description": "Kendi URL’sini hreflang içinde listelemeyen ve doğrulanan canonical dil kümesinde çözülemeyen sayfalar.",
+        "fix": "Sayfanın kendi URL'si için bir hreflang girişi ekleyin."
+      }
+    },
+    {
+      "id": "hreflang-missing-x-default",
+      "category": "international",
+      "kind": "opportunity",
+      "priority": "low",
+      "en": {
+        "title": "Missing x-default",
+        "description": "Optional x-default is absent. Existing reciprocal language annotations can still be valid; this recommendation does not reduce the score.",
+        "fix": "Add an x-default alternate, usually the language selector or main version."
+      },
+      "tr": {
+        "title": "x-default yok",
+        "description": "İsteğe bağlı x-default bulunmuyor. Mevcut karşılıklı dil bildirimleri yine geçerli olabilir; bu öneri puanı düşürmez.",
+        "fix": "Genellikle dil seçici veya ana sürüm olan bir x-default alternatifi ekleyin."
+      }
+    },
+    {
+      "id": "hreflang-lang-mismatch",
+      "category": "international",
+      "kind": "warning",
+      "priority": "low",
+      "en": {
+        "title": "hreflang and lang disagree",
+        "description": "Pages whose self-referencing hreflang language differs from their <html lang>.",
+        "fix": "Make the lang attribute and the hreflang code name the same language."
+      },
+      "tr": {
+        "title": "hreflang ile lang uyuşmuyor",
+        "description": "Kendini gösteren hreflang dili <html lang> değerinden farklı olan sayfalar.",
+        "fix": "lang özniteliği ile hreflang kodunun aynı dili göstermesini sağlayın."
+      }
+    },
+    {
+      "id": "pagination-to-non-200",
+      "category": "pagination",
+      "kind": "issue",
+      "priority": "medium",
+      "en": {
+        "title": "Pagination to a non-200 URL",
+        "description": "rel=\"next\" or rel=\"prev\" pointing to URLs that redirect, fail or are blocked.",
+        "fix": "Point pagination links to live pages."
+      },
+      "tr": {
+        "title": "200 olmayan URL'ye sayfalama",
+        "description": "Yönlendiren, hata veren veya engellenen URL'leri gösteren rel=\"next\" veya rel=\"prev\".",
+        "fix": "Sayfalama bağlantılarını canlı sayfalara yönlendirin."
+      }
+    },
+    {
+      "id": "pagination-canonicalised",
+      "category": "pagination",
+      "kind": "warning",
+      "priority": "medium",
+      "en": {
+        "title": "Paginated page canonicalised",
+        "description": "Paginated pages whose canonical points elsewhere (often to page 1), which hides the items on later pages.",
+        "fix": "Give each paginated page a self-referencing canonical."
+      },
+      "tr": {
+        "title": "Canonical'ı başka yeri gösteren sayfalanmış sayfa",
+        "description": "Canonical'ı başka yeri (çoğunlukla 1. sayfayı) gösteren sayfalanmış sayfalar; sonraki sayfalardaki öğeler gizlenir.",
+        "fix": "Her sayfalanmış sayfaya kendini gösteren bir canonical verin."
+      }
+    },
+    {
+      "id": "links-dead-end",
+      "category": "links",
+      "kind": "warning",
+      "priority": "medium",
+      "en": {
+        "title": "No internal outlinks",
+        "description": "Indexable pages that link to no other internal page, so crawlers and users hit a dead end.",
+        "fix": "Link to related pages, categories or the next step."
+      },
+      "tr": {
+        "title": "İç bağlantı vermeyen sayfa",
+        "description": "Başka hiçbir iç sayfaya bağlantı vermeyen dizine eklenebilir sayfalar; tarayıcılar ve kullanıcılar çıkmaza girer.",
+        "fix": "İlgili sayfalara, kategorilere veya bir sonraki adıma bağlantı verin."
+      }
+    },
+    {
+      "id": "links-too-many",
+      "category": "links",
+      "kind": "warning",
+      "priority": "low",
+      "en": {
+        "title": "Review link density",
+        "description": "Pages with more than 300 internal links, an application heuristic rather than a search-engine limit. Optional review without a score penalty.",
+        "fix": "Review navigation usefulness and relevance; do not remove useful links merely to meet a numeric threshold."
+      },
+      "tr": {
+        "title": "Bağlantı yoğunluğunu inceleyin",
+        "description": "300’den fazla iç bağlantı içeren sayfalar. Bu sayı arama motoru sınırı değil, uygulamanın inceleme eşiğidir. Otomatik puan kesintisi olmayan isteğe bağlı öneridir.",
+        "fix": "Gezinmenin yararını ve bağlantıların ilgisini inceleyin; sırf sayısal eşiğe uymak için yararlı bağlantıları kaldırmayın."
+      }
+    },
+    {
+      "id": "links-internal-nofollow",
+      "category": "links",
+      "kind": "warning",
+      "priority": "low",
+      "en": {
+        "title": "Internal nofollow links",
+        "description": "Pages with rel=\"nofollow\" on internal links, which stops discovery and signals to your own pages.",
+        "fix": "Remove nofollow from internal links."
+      },
+      "tr": {
+        "title": "nofollow iç bağlantılar",
+        "description": "İç bağlantılarında rel=\"nofollow\" kullanan sayfalar; kendi sayfalarınızın keşfini ve sinyal aktarımını durdurur.",
+        "fix": "İç bağlantılardan nofollow'u kaldırın."
+      }
+    },
+    {
+      "id": "anchor-empty",
+      "category": "links",
+      "kind": "warning",
+      "priority": "medium",
+      "en": {
+        "title": "Links without a descriptive label",
+        "description": "Pages containing links without observed text, image alt, an explicit ARIA name, SVG title or title fallback. An icon alone does not provide a descriptive name; static analysis does not evaluate all CSS or browser accessibility behavior.",
+        "fix": "Keep the icon and add an accurate aria-label or referenced label, descriptive image alt/SVG title, or visible link text."
+      },
+      "tr": {
+        "title": "Açıklayıcı etiketi olmayan bağlantılar",
+        "description": "Metin, görsel alt metni, açık ARIA etiketi, SVG başlığı veya title yedeği gözlenmeyen bağlantılar içeren sayfalar. Tek başına ikon açıklayıcı ad sağlamaz; statik analiz tüm CSS ve tarayıcı erişilebilirlik davranışını değerlendirmez.",
+        "fix": "İkonu koruyup açıklayıcı aria-label veya geçerli aria-labelledby, görsel alt metni/SVG başlığı ya da görünür bağlantı metni ekleyin."
+      }
+    },
+    {
+      "id": "anchor-generic",
+      "category": "links",
+      "kind": "opportunity",
+      "priority": "low",
+      "en": {
+        "title": "Non-descriptive anchor text",
+        "description": "Internal or external hyperlinks with generic text such as \"click here\", \"read more\" or \"devamı\".",
+        "fix": "Use anchor text that says what the target page is about."
+      },
+      "tr": {
+        "title": "Açıklayıcı olmayan bağlantı metni",
+        "description": "\"buraya tıklayın\", \"devamı\" veya \"read more\" gibi genel metinli iç veya dış köprü bağlantıları.",
+        "fix": "Hedef sayfanın konusunu anlatan bağlantı metinleri kullanın."
+      }
+    },
+    {
+      "id": "orphan-page",
+      "category": "links",
+      "kind": "warning",
+      "priority": "high",
+      "en": {
+        "title": "Orphan page",
+        "description": "Pages listed in sitemaps that no crawled page links to. Search engines rarely value pages without internal links.",
+        "fix": "Link to them from relevant pages, or remove them from the sitemap if they are obsolete."
+      },
+      "tr": {
+        "title": "Yetim sayfa",
+        "description": "Site haritalarında listelenen ama taranan hiçbir sayfanın bağlantı vermediği sayfalar. Arama motorları iç bağlantısı olmayan sayfalara nadiren değer verir.",
+        "fix": "İlgili sayfalardan bağlantı verin veya güncel değilse site haritasından çıkarın."
+      }
+    },
+    {
+      "id": "single-inlink",
+      "category": "links",
+      "kind": "opportunity",
+      "priority": "low",
+      "en": {
+        "title": "Only one internal inlink",
+        "description": "Indexable pages linked from a single page, which signals low importance.",
+        "fix": "Add contextual links from related content."
+      },
+      "tr": {
+        "title": "Tek iç bağlantı",
+        "description": "Yalnızca tek bir sayfadan bağlantı alan dizine eklenebilir sayfalar; düşük önem sinyali verir.",
+        "fix": "İlgili içeriklerden bağlamsal bağlantılar ekleyin."
+      }
+    },
+    {
+      "id": "deep-page",
+      "category": "links",
+      "kind": "opportunity",
+      "priority": "medium",
+      "en": {
+        "title": "Deep page (4+ clicks)",
+        "description": "Indexable pages four or more clicks from the start page. Deep pages are crawled less often.",
+        "fix": "Flatten the structure with category, hub or related-content links."
+      },
+      "tr": {
+        "title": "Derin sayfa (4+ tık)",
+        "description": "Başlangıç sayfasından dört veya daha fazla tık uzaktaki dizine eklenebilir sayfalar. Derin sayfalar daha seyrek taranır.",
+        "fix": "Kategori, merkez sayfa veya ilgili içerik bağlantılarıyla yapıyı sığlaştırın."
+      }
+    },
+    {
+      "id": "sitemap-missing",
+      "category": "sitemaps",
+      "kind": "warning",
+      "priority": "medium",
+      "en": {
+        "title": "No XML sitemap found",
+        "description": "No sitemap was listed in robots.txt and /sitemap.xml was not found.",
+        "fix": "Publish an XML sitemap and reference it in robots.txt."
+      },
+      "tr": {
+        "title": "XML site haritası bulunamadı",
+        "description": "robots.txt'de site haritası yok ve /sitemap.xml bulunamadı.",
+        "fix": "Bir XML site haritası yayınlayın ve robots.txt'de belirtin."
+      }
+    },
+    {
+      "id": "sitemap-error",
+      "category": "sitemaps",
+      "kind": "issue",
+      "priority": "high",
+      "en": {
+        "title": "Sitemap cannot be read",
+        "description": "Sitemaps that answered with an error or are not valid sitemap documents.",
+        "fix": "Fix the sitemap URL or its format."
+      },
+      "tr": {
+        "title": "Site haritası okunamıyor",
+        "description": "Hata döndüren veya geçerli site haritası belgesi olmayan site haritaları.",
+        "fix": "Site haritası URL'sini veya biçimini düzeltin."
+      }
+    },
+    {
+      "id": "sitemap-too-large",
+      "category": "sitemaps",
+      "kind": "issue",
+      "priority": "medium",
+      "en": {
+        "title": "Sitemap over 50,000 URLs",
+        "description": "Sitemaps listing more than 50,000 URLs, the protocol limit.",
+        "fix": "Split the sitemap and use a sitemap index."
+      },
+      "tr": {
+        "title": "50.000'den fazla URL içeren site haritası",
+        "description": "Protokol sınırı olan 50.000'den fazla URL listeleyen site haritaları.",
+        "fix": "Site haritasını bölün ve bir site haritası dizini kullanın."
+      }
+    },
+    {
+      "id": "sitemap-not-in-robots",
+      "category": "sitemaps",
+      "kind": "opportunity",
+      "priority": "low",
+      "en": {
+        "title": "Sitemap not in robots.txt",
+        "description": "Sitemaps were found but robots.txt does not reference any, so other crawlers may miss them.",
+        "fix": "Add a Sitemap: line to robots.txt."
+      },
+      "tr": {
+        "title": "Site haritası robots.txt'de yok",
+        "description": "Site haritası bulundu ama robots.txt hiçbirini belirtmiyor; diğer tarayıcılar kaçırabilir.",
+        "fix": "robots.txt'ye bir Sitemap: satırı ekleyin."
+      }
+    },
+    {
+      "id": "sitemap-non-indexable",
+      "category": "sitemaps",
+      "kind": "issue",
+      "priority": "high",
+      "en": {
+        "title": "Non-indexable URL in sitemap",
+        "description": "Sitemap URLs that redirect, fail, are blocked, noindex or canonicalised. Sitemaps should list only canonical, indexable URLs.",
+        "fix": "Remove these URLs from the sitemap or fix them."
+      },
+      "tr": {
+        "title": "Site haritasında dizine eklenemeyen URL",
+        "description": "Yönlendiren, hata veren, engellenen, noindex veya canonical'ı başka yeri gösteren site haritası URL'leri. Site haritaları yalnızca canonical ve dizine eklenebilir URL'ler içermeli.",
+        "fix": "Bu URL'leri site haritasından çıkarın veya düzeltin."
+      }
+    },
+    {
+      "id": "sitemap-missing-indexable",
+      "category": "sitemaps",
+      "kind": "opportunity",
+      "priority": "medium",
+      "en": {
+        "title": "Indexable page not in sitemap",
+        "description": "Indexable pages that no sitemap lists.",
+        "fix": "Add them to the sitemap so search engines find and recrawl them reliably."
+      },
+      "tr": {
+        "title": "Site haritasında olmayan dizine eklenebilir sayfa",
+        "description": "Hiçbir site haritasının listelemediği dizine eklenebilir sayfalar.",
+        "fix": "Arama motorlarının güvenilir şekilde bulup yeniden taraması için site haritasına ekleyin."
+      }
+    },
+    {
+      "id": "structured-data-invalid",
+      "category": "structured-data",
+      "kind": "issue",
+      "priority": "high",
+      "en": {
+        "title": "Invalid JSON-LD",
+        "description": "JSON-LD blocks that do not parse; search engines ignore them entirely.",
+        "fix": "Fix the JSON syntax (commas, quotes, brackets) and validate the markup."
+      },
+      "tr": {
+        "title": "Geçersiz JSON-LD",
+        "description": "Ayrıştırılamayan JSON-LD blokları; arama motorları bunları tamamen yok sayar.",
+        "fix": "JSON sözdizimini (virgül, tırnak, parantez) düzeltin ve işaretlemeyi doğrulayın."
+      }
+    },
+    {
+      "id": "schema-required-invalid",
+      "category": "structured-data",
+      "kind": "issue",
+      "priority": "high",
+      "en": {
+        "title": "Schema required-property errors",
+        "description": "The optional crawl validation found missing or invalid required properties in a supported JSON-LD profile. See the saved item, JSON path and observed value.",
+        "fix": "Correct the reported field using the page's real content. Check the saved property examples and the official guide, then recrawl with Schema validation enabled."
+      },
+      "tr": {
+        "title": "Schema zorunlu alan hataları",
+        "description": "İsteğe bağlı tarama kontrolü, desteklenen JSON-LD profilinde eksik veya hatalı zorunlu alan buldu. Kayıtlı öğeyi, JSON yolunu ve mevcut değeri inceleyin.",
+        "fix": "Bildirilen alanı sayfanın gerçek içeriğine göre düzeltin. Kayıtlı alan örneklerini ve resmi kılavuzu inceleyip Schema kontrolü açıkken yeniden tarayın."
+      }
+    },
+    {
+      "id": "schema-recommended",
+      "category": "structured-data",
+      "kind": "opportunity",
+      "priority": "low",
+      "en": {
+        "title": "Schema property warnings and advice",
+        "description": "Optional properties or local WebPage / FAQPage structure warnings could improve the markup. These observations do not deduct score.",
+        "fix": "Inspect the saved property shapes and text examples. Add optional properties only when they describe the visible content accurately."
+      },
+      "tr": {
+        "title": "Schema alan uyarıları ve öneriler",
+        "description": "İsteğe bağlı alanlar veya yerel WebPage / FAQPage yapı uyarıları işaretlemeyi geliştirebilir. Bu gözlemler puanı düşürmez.",
+        "fix": "Kayıtlı alan biçimlerini ve metin örneklerini inceleyin. İsteğe bağlı alanları yalnızca görünür içeriği doğru tanımlıyorsa ekleyin."
+      }
+    },
+    {
+      "id": "schema-unverified",
+      "category": "structured-data",
+      "kind": "warning",
+      "priority": "low",
+      "en": {
+        "title": "Schema validation incomplete or unsupported",
+        "description": "The document, format or JSON-LD context could not be fully checked locally. This is not a confirmed error and does not deduct score.",
+        "fix": "Review the recorded coverage reason. Retry incomplete rendering, or verify unsupported markup with a suitable external validator."
+      },
+      "tr": {
+        "title": "Schema kontrolü eksik veya destek dışı",
+        "description": "Belge, biçim veya JSON-LD bağlamı yerel olarak tamamen doğrulanamadı. Kesin hata sayılmaz ve puanı düşürmez.",
+        "fix": "Kayıtlı kapsam nedenini inceleyin. Eksik render işlemini tekrarlayın veya desteklenmeyen işaretlemeyi uygun harici doğrulayıcıyla kontrol edin."
+      }
+    },
+    {
+      "id": "structured-data-missing",
+      "category": "structured-data",
+      "kind": "opportunity",
+      "priority": "low",
+      "en": {
+        "title": "No structured data",
+        "description": "Indexable pages without JSON-LD, microdata or RDFa. Structured data enables rich results and helps AI systems understand entities.",
+        "fix": "Add schema.org markup that fits the page type (Organization, Product, Article, FAQ, Breadcrumb…)."
+      },
+      "tr": {
+        "title": "Yapılandırılmış veri yok",
+        "description": "JSON-LD, microdata veya RDFa içermeyen dizine eklenebilir sayfalar. Yapılandırılmış veri zengin sonuçları açar ve yapay zekâ sistemlerinin varlıkları anlamasına yardım eder.",
+        "fix": "Sayfa türüne uygun schema.org işaretlemesi ekleyin (Organization, Product, Article, FAQ, Breadcrumb…)."
+      }
+    },
+    {
+      "id": "slow-response",
+      "category": "performance",
+      "kind": "warning",
+      "priority": "medium",
+      "en": {
+        "title": "Slow response (over 1 second)",
+        "description": "HTML pages whose server took more than one second to answer. Slow responses reduce crawling and hurt users.",
+        "fix": "Add caching, optimise database queries and check hosting capacity."
+      },
+      "tr": {
+        "title": "Yavaş yanıt (1 saniyeden uzun)",
+        "description": "Sunucusunun yanıtı bir saniyeden uzun süren HTML sayfalar. Yavaş yanıtlar taramayı azaltır ve kullanıcıyı olumsuz etkiler.",
+        "fix": "Önbellek ekleyin, veritabanı sorgularını iyileştirin ve barındırma kapasitesini kontrol edin."
+      }
+    },
+    {
+      "id": "large-html",
+      "category": "performance",
+      "kind": "warning",
+      "priority": "low",
+      "en": {
+        "title": "HTML over 1 MB",
+        "description": "Very large HTML documents take long to download and render.",
+        "fix": "Remove inline data and unused markup; paginate long lists."
+      },
+      "tr": {
+        "title": "1 MB'tan büyük HTML",
+        "description": "Çok büyük HTML belgelerinin indirilmesi ve işlenmesi uzun sürer.",
+        "fix": "Satır içi verileri ve kullanılmayan işaretlemeyi kaldırın; uzun listeleri sayfalayın."
+      }
+    },
+    {
+      "id": "uncompressed",
+      "category": "performance",
+      "kind": "opportunity",
+      "priority": "medium",
+      "en": {
+        "title": "Text response without compression",
+        "description": "HTML, CSS or JavaScript sent without gzip or Brotli compression.",
+        "fix": "Enable gzip or Brotli on the server or CDN."
+      },
+      "tr": {
+        "title": "Sıkıştırılmamış metin yanıtı",
+        "description": "gzip veya Brotli sıkıştırması olmadan gönderilen HTML, CSS veya JavaScript.",
+        "fix": "Sunucuda veya CDN'de gzip ya da Brotli'yi açın."
+      }
+    },
+    {
+      "id": "truncated",
+      "category": "performance",
+      "kind": "warning",
+      "priority": "low",
+      "en": {
+        "title": "Response over the size limit",
+        "description": "Responses larger than the crawl's size limit; only the beginning was analysed.",
+        "fix": "Check why the response is so large, or raise the limit in the crawl settings."
+      },
+      "tr": {
+        "title": "Boyut sınırını aşan yanıt",
+        "description": "Taramanın boyut sınırından büyük yanıtlar; yalnızca başlangıcı incelendi.",
+        "fix": "Yanıtın neden bu kadar büyük olduğunu kontrol edin veya tarama ayarlarında sınırı artırın."
+      }
+    },
+    {
+      "id": "viewport-missing",
+      "category": "mobile",
+      "kind": "issue",
+      "priority": "high",
+      "en": {
+        "title": "Missing viewport",
+        "description": "HTML pages without <meta name=\"viewport\">; mobile browsers show them zoomed out.",
+        "fix": "Add <meta name=\"viewport\" content=\"width=device-width, initial-scale=1\">."
+      },
+      "tr": {
+        "title": "viewport yok",
+        "description": "<meta name=\"viewport\"> içermeyen HTML sayfalar; mobil tarayıcılar bunları uzaklaştırılmış gösterir.",
+        "fix": "<meta name=\"viewport\" content=\"width=device-width, initial-scale=1\"> ekleyin."
+      }
+    },
+    {
+      "id": "viewport-not-responsive",
+      "category": "mobile",
+      "kind": "warning",
+      "priority": "medium",
+      "en": {
+        "title": "Viewport without device width",
+        "description": "Viewport tags that do not set width=device-width.",
+        "fix": "Use width=device-width so the layout adapts to the screen."
+      },
+      "tr": {
+        "title": "Cihaz genişliği olmayan viewport",
+        "description": "width=device-width ayarlamayan viewport etiketleri.",
+        "fix": "Düzenin ekrana uyması için width=device-width kullanın."
+      }
+    },
+    {
+      "id": "open-graph-missing",
+      "category": "social",
+      "kind": "opportunity",
+      "priority": "low",
+      "en": {
+        "title": "Incomplete Open Graph tags",
+        "description": "Indexable pages missing og:title, og:description or og:image, so shared links show poor previews.",
+        "fix": "Add the Open Graph title, description and image."
+      },
+      "tr": {
+        "title": "Eksik Open Graph etiketleri",
+        "description": "og:title, og:description veya og:image eksik olan dizine eklenebilir sayfalar; paylaşılan bağlantılar zayıf önizleme gösterir.",
+        "fix": "Open Graph başlığı, açıklaması ve görselini ekleyin."
+      }
+    },
+    {
+      "id": "twitter-card-missing",
+      "category": "social",
+      "kind": "opportunity",
+      "priority": "low",
+      "en": {
+        "title": "Missing Twitter card",
+        "description": "Indexable pages without twitter:card, so X shows a plain link.",
+        "fix": "Add <meta name=\"twitter:card\" content=\"summary_large_image\">."
+      },
+      "tr": {
+        "title": "Twitter kartı yok",
+        "description": "twitter:card içermeyen dizine eklenebilir sayfalar; X düz bir bağlantı gösterir.",
+        "fix": "<meta name=\"twitter:card\" content=\"summary_large_image\"> ekleyin."
+      }
+    },
+    {
+      "id": "robots-txt-missing",
+      "category": "robots",
+      "kind": "opportunity",
+      "priority": "low",
+      "en": {
+        "title": "No robots.txt",
+        "description": "robots.txt returned 404 or 410, so no robots restrictions or sitemap declarations were found. HTTP 429 is reported separately as unreachable.",
+        "fix": "Publish a robots.txt with your crawl rules and Sitemap: lines."
+      },
+      "tr": {
+        "title": "robots.txt yok",
+        "description": "robots.txt 404 veya 410 döndürdü; robots kısıtı veya site haritası bildirimi bulunamadı. HTTP 429, erişim sorunu olarak ayrı raporlanır.",
+        "fix": "Tarama kurallarınız ve Sitemap: satırlarıyla bir robots.txt yayınlayın."
+      }
+    },
+    {
+      "id": "robots-txt-unreachable",
+      "category": "robots",
+      "kind": "issue",
+      "priority": "high",
+      "en": {
+        "title": "robots.txt unreachable",
+        "description": "robots.txt returned HTTP 429, a server error, an unusable redirect chain, or could not be reached. With Respect, this crawl does not fetch affected pages or in-scope browser resources. The recorded HTTP code is the last response received; it may be a redirect. A 429 response is not treated as a missing file.",
+        "fix": "Check rate limits, server availability, any Retry-After guidance and robots.txt redirects. Remove loops and invalid targets, then rerun the crawl. Serve 200 for an existing robots.txt, or a genuine 404 if it does not exist."
+      },
+      "tr": {
+        "title": "robots.txt'ye erişilemiyor",
+        "description": "robots.txt HTTP 429, sunucu hatası veya tamamlanamayan bir yönlendirme zinciri döndürdü ya da dosyaya erişilemedi. Kurallara uy modunda etkilenen sayfa ve kapsam içindeki tarayıcı kaynakları bu taramada istenmez. Kaydedilen HTTP kodu alınan son yanıttır; bir yönlendirme olabilir. 429, dosya yok olarak değerlendirilmez.",
+        "fix": "İstek limitlerini, sunucu erişimini, varsa Retry-After bilgisini ve robots.txt yönlendirmelerini kontrol edin. Döngüleri ve geçersiz hedefleri kaldırıp yeniden tarayın. Mevcut robots.txt için 200, dosya gerçekten yoksa 404 döndürün."
+      }
+    },
+    {
+      "id": "ai-search-blocked",
+      "category": "ai",
+      "kind": "warning",
+      "priority": "high",
+      "en": {
+        "title": "AI search crawlers blocked",
+        "description": "robots.txt blocks crawlers that power AI search answers (such as OAI-SearchBot, PerplexityBot or Claude-SearchBot), so the site cannot be cited there.",
+        "fix": "Allow AI search crawlers in robots.txt unless you deliberately opt out."
+      },
+      "tr": {
+        "title": "Yapay zekâ arama tarayıcıları engelli",
+        "description": "robots.txt, yapay zekâ arama yanıtlarını besleyen tarayıcıları (OAI-SearchBot, PerplexityBot, Claude-SearchBot gibi) engelliyor; site orada kaynak gösterilemez.",
+        "fix": "Bilinçli olarak çıkmak istemiyorsanız robots.txt'de yapay zekâ arama tarayıcılarına izin verin."
+      }
+    },
+    {
+      "id": "ai-assistant-blocked",
+      "category": "ai",
+      "kind": "warning",
+      "priority": "medium",
+      "en": {
+        "title": "AI assistant fetchers blocked",
+        "description": "robots.txt blocks fetchers that read pages when a user asks an AI assistant (such as ChatGPT-User or Claude-User).",
+        "fix": "Allow these user-triggered fetchers unless you deliberately opt out."
+      },
+      "tr": {
+        "title": "Yapay zekâ asistan getiricileri engelli",
+        "description": "robots.txt, kullanıcı bir yapay zekâ asistanına sorduğunda sayfaları okuyan getiricileri (ChatGPT-User, Claude-User gibi) engelliyor.",
+        "fix": "Bilinçli olarak çıkmak istemiyorsanız bu kullanıcı kaynaklı getiricilere izin verin."
+      }
+    },
+    {
+      "id": "ai-training-allowed",
+      "category": "ai",
+      "kind": "opportunity",
+      "priority": "low",
+      "en": {
+        "title": "AI training crawlers allowed",
+        "description": "robots.txt lets crawlers that collect AI training data (such as GPTBot, ClaudeBot or CCBot) fetch the site. This is a policy choice, listed so it is made deliberately.",
+        "fix": "Disallow training crawlers in robots.txt if you do not want your content used for model training."
+      },
+      "tr": {
+        "title": "Yapay zekâ eğitim tarayıcılarına izin var",
+        "description": "robots.txt, yapay zekâ eğitim verisi toplayan tarayıcıların (GPTBot, ClaudeBot, CCBot gibi) siteyi çekmesine izin veriyor. Bu bir politika tercihidir; bilinçli verilmesi için listelenir.",
+        "fix": "İçeriğinizin model eğitiminde kullanılmasını istemiyorsanız eğitim tarayıcılarını robots.txt'de engelleyin."
+      }
+    },
+    {
+      "id": "llms-txt-missing",
+      "category": "ai",
+      "kind": "opportunity",
+      "priority": "low",
+      "en": {
+        "title": "No llms.txt",
+        "description": "The site has no /llms.txt, a proposed file that points language models to the most useful content.",
+        "fix": "Publish /llms.txt with a short description and links to key pages."
+      },
+      "tr": {
+        "title": "llms.txt yok",
+        "description": "Sitede, dil modellerine en yararlı içeriği gösteren önerilmiş bir dosya olan /llms.txt yok.",
+        "fix": "Kısa bir açıklama ve önemli sayfaların bağlantılarıyla /llms.txt yayınlayın."
+      }
+    },
+    {
+      "id": "render-error",
+      "category": "rendering",
+      "kind": "issue",
+      "priority": "high",
+      "en": {
+        "title": "JavaScript rendering failed",
+        "description": "The browser could not finish rendering this page. The extracted facts use the original HTTP response instead.",
+        "fix": "Inspect the rendering error, browser path and timeout. Increase the timeout or browser concurrency budget and crawl again."
+      },
+      "tr": {
+        "title": "JavaScript rendering başarısız",
+        "description": "Tarayıcı bu sayfayı işleyemedi. Sayfa bilgileri JS öncesindeki HTTP yanıtından çıkarıldı.",
+        "fix": "Rendering hatasını, tarayıcı yolunu ve zaman aşımını inceleyin. Zaman aşımını veya tarama hızını düzenleyip yeniden tarayın."
+      }
+    },
+    {
+      "id": "render-truncated",
+      "category": "rendering",
+      "kind": "warning",
+      "priority": "medium",
+      "en": {
+        "title": "Rendered DOM exceeds size limit",
+        "description": "The serialized DOM was cut at the configured body-size limit. Content and links beyond that limit were not analyzed.",
+        "fix": "Increase limits.max_body_bytes and crawl again, or reduce excessive DOM size."
+      },
+      "tr": {
+        "title": "İşlenmiş DOM boyut sınırını aşıyor",
+        "description": "İşlenmiş DOM belirlenen gövde boyutu sınırında kesildi. Bu sınırın ötesindeki içerik ve bağlantılar analiz edilmedi.",
+        "fix": "limits.max_body_bytes değerini artırıp yeniden tarayın veya aşırı DOM boyutunu küçültün."
+      }
+    },
+    {
+      "id": "render-noindex-removed",
+      "category": "rendering",
+      "kind": "issue",
+      "priority": "high",
+      "en": {
+        "title": "JavaScript removes the initial noindex directive",
+        "description": "The original HTML/HTTP response says noindex, but the successfully rendered page no longer does. Google may skip rendering when it sees the initial noindex; the rendered result does not prove the page can be indexed.",
+        "fix": "If indexing is intended, remove noindex from the original response. Check the HTML and X-Robots-Tag header before relying on JavaScript."
+      },
+      "tr": {
+        "title": "JavaScript ilk yanıttaki noindex yönergesini kaldırıyor",
+        "description": "İlk HTML/HTTP yanıtında noindex var, başarıyla işlenmiş sayfada ise yok. Google ilk noindex nedeniyle render işlemini atlayabilir; işlenmiş sonuç sayfanın indekslenebileceğini kanıtlamaz.",
+        "fix": "İndekslenme isteniyorsa noindex yönergesini ilk yanıttan kaldırın. JavaScript’e güvenmeden önce HTML ve X-Robots-Tag başlığını kontrol edin."
+      }
+    }
+  ]
+}

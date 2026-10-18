@@ -1,0 +1,77 @@
+{
+  "version": 1,
+  "id": "serpapi",
+  "name": "SerpApi",
+  "engines": ["google", "bing", "yandex"],
+  "secrets": [{ "name": "api_key", "label": "API key" }],
+  "request": {
+    "method": "GET",
+    "url": "https://serpapi.com/search.json",
+    "query": {
+      "engine": "google",
+      "q": "{keyword}",
+      "gl": "{gl}",
+      "hl": "{hl}",
+      "location": "{location_name}",
+      "uule": "{uule}",
+      "start": "{start}",
+      "num": "{num}",
+      "device": "{device}",
+      "api_key": "{secret:api_key}"
+    }
+  },
+  "paging": { "per_page": 10, "first_page": 1 },
+  "engine_overrides": {
+    "bing": {
+      "request": {
+        "query": {
+          "engine": "bing", "gl": null, "hl": null, "uule": null, "start": null, "num": null,
+          "cc": "{gl}", "mkt": "{mkt}", "first": "{start1}", "count": "{num}"
+        }
+      }
+    },
+    "yandex": {
+      "request": {
+        "query": {
+          "engine": "yandex", "q": null, "gl": null, "hl": null, "uule": null, "start": null,
+          "num": null, "location": null, "device": null,
+          "text": "{keyword}", "yandex_domain": "{yandex_domain}", "lr": "{lr}", "lang": "{hl}", "p": "{page0}"
+        }
+      }
+    }
+  },
+  "response": {
+    "format": "json",
+    "error": "$.error",
+    "total": "$.search_information.total_results",
+    "results": {
+      "items": "$.organic_results[*]",
+      "fields": {
+        "url": "$.link",
+        "title": "$.title",
+        "snippet": "$.snippet",
+        "displayed_url": "$.displayed_link",
+        "date": "$.date",
+        "position": "$.position",
+        "sitelink_titles[]": ["$.sitelinks.inline[*].title", "$.sitelinks.expanded[*].title"],
+        "sitelink_urls[]": ["$.sitelinks.inline[*].link", "$.sitelinks.expanded[*].link"]
+      }
+    },
+    "features": [
+      { "kind": "ads-top", "items": "$.ads[?@.block_position == 'top']", "fields": { "text": "$.title", "url": "$.link" } },
+      { "kind": "ads-bottom", "items": "$.ads[?@.block_position == 'bottom']", "fields": { "text": "$.title", "url": "$.link" } },
+      { "kind": "ai-overview", "container": "$.ai_overview", "items": "$.references[*]", "fields": { "text": "$.title", "url": "$.link" } },
+      { "kind": "featured-snippet", "container": "$.answer_box", "fields": { "text": ["$.title", "$.snippet", "$.answer"], "url": "$.link" } },
+      { "kind": "people-also-ask", "items": "$.related_questions[*]", "fields": { "text": "$.question", "url": "$.link" } },
+      { "kind": "local-pack", "items": "$.local_results.places[*]", "fields": { "text": "$.title", "url": "$.links.website" } },
+      { "kind": "top-stories", "items": "$.top_stories[*]", "fields": { "text": "$.title", "url": "$.link" } },
+      { "kind": "videos", "items": "$.inline_videos[*]", "fields": { "text": "$.title", "url": "$.link" } },
+      { "kind": "images", "container": "$.inline_images" },
+      { "kind": "shopping", "items": ["$.shopping_results[*]", "$.inline_shopping_results[*]"], "fields": { "text": "$.title", "url": "$.link" } },
+      { "kind": "knowledge-panel", "container": "$.knowledge_graph", "fields": { "text": "$.title", "url": "$.website" } },
+      { "kind": "related-searches", "items": "$.related_searches[*]", "fields": { "text": "$.query", "url": "$.link" } }
+    ]
+  },
+  "cost": { "per_request_usd": 0.015 },
+  "notes": "https://serpapi.com: Google, Bing and Yandex results; about 15 USD per 1,000 searches on the Developer plan."
+}

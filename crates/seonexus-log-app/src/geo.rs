@@ -1,7 +1,7 @@
 //! IP geolocation data (DB-IP Lite country and ASN databases): download, status and the
 //! enrichment of sites' client IPs.
 //!
-//! The data is downloaded only on request (`snx-log geo update`, desktop settings) into
+//! The data is downloaded only on request (`octopuson-log geo update`, desktop settings) into
 //! `<data>/geo/`; lookups are local. DB-IP's licence (CC BY 4.0) requires showing
 //! [`ATTRIBUTION`] wherever results appear.
 

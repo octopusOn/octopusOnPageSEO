@@ -12,7 +12,7 @@ use super::output::{ignore_broken_pipe, write_json};
 use super::results::ResultArgs;
 use super::table::TextTable;
 
-/// Reference shown by `snx-log query --help`.
+/// Reference shown by `octopuson-log query --help`.
 const QUERY_HELP: &str = "\
 QUERY LANGUAGE
   Conditions are written field:value and combined with spaces (AND), OR, NOT / -, and ( ).
@@ -35,14 +35,14 @@ QUERY LANGUAGE
               sort:hits:desc   limit:500
 
 EXAMPLES
-  snx-log query acme.com 'status:5xx group:url metric:hits,last_seen'
-  snx-log query acme.com --template googlebot-daily 'date:last30d'
-  snx-log query acme.com --template client-errors -o 404s.xlsx
-  snx-log saved add \"Googlebot 404\" 'bot:googlebot* verification:verified status:404 group:url'
-  snx-log query acme.com --saved \"Googlebot 404\" 'date:last7d'
-  snx-log query acme.com 'bot:googlebot* verification:verified -status:200 date:last7d'
-  snx-log query acme.com 'bot_category:ai-* group:bot,day'
-  snx-log query acme.com 'referer_type:ai -bot:* group:day,referer_host'";
+  octopuson-log query acme.com 'status:5xx group:url metric:hits,last_seen'
+  octopuson-log query acme.com --template googlebot-daily 'date:last30d'
+  octopuson-log query acme.com --template client-errors -o 404s.xlsx
+  octopuson-log saved add \"Googlebot 404\" 'bot:googlebot* verification:verified status:404 group:url'
+  octopuson-log query acme.com --saved \"Googlebot 404\" 'date:last7d'
+  octopuson-log query acme.com 'bot:googlebot* verification:verified -status:200 date:last7d'
+  octopuson-log query acme.com 'bot_category:ai-* group:bot,day'
+  octopuson-log query acme.com 'referer_type:ai -bot:* group:day,referer_host'";
 
 #[derive(Debug, Args)]
 #[command(after_long_help = QUERY_HELP)]
@@ -55,11 +55,11 @@ pub(crate) struct QueryArgs {
     #[arg(value_name = "QUERY")]
     text: Vec<String>,
 
-    /// Start from a built-in report template (see `snx-log templates`).
+    /// Start from a built-in report template (see `octopuson-log templates`).
     #[arg(short, long, value_name = "ID", conflicts_with = "saved")]
     template: Option<String>,
 
-    /// Start from a saved query (see `snx-log saved list`).
+    /// Start from a saved query (see `octopuson-log saved list`).
     #[arg(short, long, value_name = "NAME")]
     saved: Option<String>,
 
@@ -194,7 +194,7 @@ fn log_outcome(outcome: &QueryOutcome) {
 #[error("{message}")]
 #[diagnostic(
     code(snx_log::query::syntax),
-    help("run `snx-log query --help` for the query language reference")
+    help("run `octopuson-log query --help` for the query language reference")
 )]
 struct SyntaxError {
     message: String,
@@ -215,7 +215,7 @@ fn diagnose(error: QueryError) -> miette::Report {
     }
 }
 
-/// `snx-log templates`: lists built-in reports.
+/// `octopuson-log templates`: lists built-in reports.
 pub(crate) fn list_templates(json: bool) -> miette::Result<()> {
     let templates = seonexus_log_app::query::templates();
     if json {

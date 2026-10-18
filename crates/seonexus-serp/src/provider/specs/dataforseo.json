@@ -1,0 +1,63 @@
+{
+  "version": 1,
+  "id": "dataforseo",
+  "name": "DataForSEO",
+  "engines": ["google", "bing", "yandex"],
+  "secrets": [{ "name": "credentials", "label": "login:password" }],
+  "request": {
+    "method": "POST",
+    "url": "https://api.dataforseo.com/v3/serp/{engine}/organic/live/advanced",
+    "headers": { "Authorization": "Basic {secret:credentials:base64}" },
+    "body": [
+      {
+        "keyword": "{keyword}",
+        "location_name": "{google_location}",
+        "language_code": "{hl}",
+        "device": "{device}",
+        "depth": "{depth:int}"
+      }
+    ]
+  },
+  "paging": { "per_page": 100, "first_page": 1, "max_pages": 1 },
+  "response": {
+    "format": "json",
+    "total": "$.tasks[0].result[0].se_results_count",
+    "results": {
+      "items": "$.tasks[0].result[0].items[?@.type == 'organic']",
+      "fields": {
+        "url": "$.url",
+        "title": "$.title",
+        "snippet": "$.description",
+        "displayed_url": "$.breadcrumb",
+        "position": "$.rank_group",
+        "absolute_position": "$.rank_absolute",
+        "sitelink_titles[]": "$.links[*].title",
+        "sitelink_urls[]": "$.links[*].url"
+      }
+    },
+    "features": [
+      { "kind": "ads-top", "items": "$.tasks[0].result[0].items[?@.type == 'paid']", "fields": { "text": "$.title", "url": "$.url" } },
+      { "kind": "ai-overview", "container": "$.tasks[0].result[0].items[?@.type == 'ai_overview']", "items": "$.references[*]", "fields": { "text": "$.title", "url": "$.url" } },
+      { "kind": "featured-snippet", "items": "$.tasks[0].result[0].items[?@.type == 'featured_snippet']", "fields": { "text": "$.title", "url": "$.url" } },
+      { "kind": "people-also-ask", "container": "$.tasks[0].result[0].items[?@.type == 'people_also_ask']", "items": "$.items[*]", "fields": { "text": "$.title" } },
+      { "kind": "local-pack", "items": "$.tasks[0].result[0].items[?@.type == 'local_pack']", "fields": { "text": "$.title", "url": "$.url" } },
+      { "kind": "top-stories", "container": "$.tasks[0].result[0].items[?@.type == 'top_stories']", "items": "$.items[*]", "fields": { "text": "$.title", "url": "$.url" } },
+      { "kind": "videos", "container": "$.tasks[0].result[0].items[?@.type == 'video']", "items": "$.items[*]", "fields": { "text": "$.title", "url": "$.url" } },
+      { "kind": "images", "container": "$.tasks[0].result[0].items[?@.type == 'images']" },
+      { "kind": "shopping", "container": "$.tasks[0].result[0].items[?@.type == 'shopping']", "items": "$.items[*]", "fields": { "text": "$.title", "url": "$.url" } },
+      { "kind": "knowledge-panel", "container": "$.tasks[0].result[0].items[?@.type == 'knowledge_graph']", "fields": { "text": "$.title", "url": "$.url" } },
+      { "kind": "related-searches", "container": "$.tasks[0].result[0].items[?@.type == 'related_searches']", "items": "$.items[*]", "fields": { "text": "" } }
+    ]
+  },
+  "status": {
+    "path": ["$.tasks[0].status_code", "$.status_code"],
+    "message": ["$.tasks[0].status_message", "$.status_message"],
+    "ok": ["20000"],
+    "auth": ["40100", "40101", "40102", "40103", "40104"],
+    "quota": ["40200", "40210"],
+    "rate_limited": ["40202", "40209"]
+  },
+  "usage": { "cost_usd": "$.cost" },
+  "cost": { "per_request_usd": 0.002 },
+  "notes": "https://dataforseo.com: Google, Bing and Yandex results in one live request per query, priced by depth."
+}

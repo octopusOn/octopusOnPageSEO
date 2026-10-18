@@ -8,6 +8,8 @@
 //! - Among matching rules the longest pattern wins; on equal length `allow` wins. `*` matches
 //!   any sequence and a trailing `$` anchors the end. `/robots.txt` is always allowed.
 
+mod encoding;
+
 /// One `allow` / `disallow` line.
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct RobotsRule {
@@ -20,7 +22,14 @@ pub struct RobotsRule {
 #[derive(Debug, Clone, Default, PartialEq, Eq)]
 struct Group {
     agents: Vec<String>,
-    rules: Vec<RobotsRule>,
+    rules: Vec<CompiledRule>,
+}
+
+/// Keep display text intact and normalize each rule once, rather than for every URL.
+#[derive(Debug, Clone, PartialEq, Eq)]
+struct CompiledRule {
+    original: RobotsRule,
+    pattern: String,
 }
 
 /// A parsed robots.txt.
@@ -45,7 +54,7 @@ pub struct RobotsDecision<'a> {
 pub struct AgentRules<'a> {
     /// Agent token of the group used (`*` for the default group); `None` without a group.
     pub group: Option<&'a str>,
-    rules: Option<&'a [RobotsRule]>,
+    rules: Option<&'a [CompiledRule]>,
 }
 
 impl Robots {
@@ -54,7 +63,7 @@ impl Robots {
         let mut robots = Self::default();
         let mut current: Option<Group> = None;
         let mut last_was_agent = false;
-        for line in text.lines() {
+        for line in text.trim_start_matches('\u{feff}').split(['\r', '\n']) {
             let line = line.split('#').next().unwrap_or("").trim();
             let Some((key, value)) = line.split_once(':') else {
                 continue;
@@ -78,18 +87,20 @@ impl Robots {
                     if let Some(group) = current.as_mut()
                         && !value.is_empty()
                     {
-                        group.rules.push(RobotsRule {
-                            allow: rule == "allow",
-                            pattern: value.to_owned(),
+                        group.rules.push(CompiledRule {
+                            original: RobotsRule {
+                                allow: rule == "allow",
+                                pattern: value.to_owned(),
+                            },
+                            pattern: encoding::normalize(value).into_owned(),
                         });
                     }
                 }
-                "sitemap" => {
-                    if !value.is_empty() {
-                        robots.sitemaps.push(value.to_owned());
-                    }
+                "sitemap" if !value.is_empty() => {
+                    robots.sitemaps.push(value.to_owned());
                 }
-                _ => last_was_agent = false,
+                // Ignored extension records must not split consecutive user-agent lines.
+                _ => {}
             }
         }
         if let Some(group) = current {
@@ -169,25 +180,28 @@ impl<'a> AgentRules<'a> {
         let Some(rules) = self.rules else {
             return allowed;
         };
+        let target = encoding::normalize(target);
         if target == "/robots.txt" {
             return allowed;
         }
-        let mut best: Option<&RobotsRule> = None;
+        let mut best: Option<&CompiledRule> = None;
         for rule in rules {
-            if !pattern_matches(&rule.pattern, target) {
+            if !pattern_matches(&rule.pattern, &target) {
                 continue;
             }
             let better = best.is_none_or(|current| {
                 rule.pattern.len() > current.pattern.len()
-                    || (rule.pattern.len() == current.pattern.len() && rule.allow && !current.allow)
+                    || (rule.pattern.len() == current.pattern.len()
+                        && rule.original.allow
+                        && !current.original.allow)
             });
             if better {
                 best = Some(rule);
             }
         }
         RobotsDecision {
-            allowed: best.is_none_or(|rule| rule.allow),
-            rule: best,
+            allowed: best.is_none_or(|rule| rule.original.allow),
+            rule: best.map(|rule| &rule.original),
         }
     }
 
@@ -332,5 +346,157 @@ Sitemap: https://example.com/sitemap.xml
         assert!(!decide(&robots, &["any"], "/x/y"));
         assert!(Robots::parse("").is_empty());
         assert!(decide(&Robots::parse(""), &["any"], "/x"));
+    }
+
+    #[test]
+    fn ignored_extension_records_do_not_split_a_shared_agent_header() {
+        let robots = Robots::parse(
+            "User-agent: Googlebot\nCrawl-delay: 10\nHost: example.com\n\
+             User-agent: Bingbot\nDisallow: /private/\nAllow: /private/public/\n",
+        );
+        for agent in ["googlebot", "bingbot"] {
+            let rules = robots.group_for(&[agent], true);
+            assert!(!rules.decide("/private/hidden").allowed, "{agent}");
+            assert!(rules.decide("/private/public/page").allowed, "{agent}");
+            assert_eq!(
+                rules.decide("/private/hidden").rule.unwrap().pattern,
+                "/private/"
+            );
+        }
+    }
+
+    #[test]
+    fn ignored_records_never_change_groups_at_any_insertion_point() {
+        let lines = [
+            "User-agent: Googlebot",
+            "User-agent: Bingbot",
+            "Disallow: /private/",
+            "Allow: /private/public/",
+            "User-agent: GPTBot",
+            "User-agent: CCBot",
+            "Disallow: /",
+            "User-agent: *",
+            "Disallow: /default/",
+        ];
+        let expected = Robots::parse(&lines.join("\n"));
+        for record in [
+            "Crawl-delay: 10",
+            "Host: example.com",
+            "Request-rate: 1/10",
+            "Noindex: /secret",
+            "X-custom: value:with:colons",
+            "Unknown:",
+            "broken line",
+            "# comment",
+            "",
+        ] {
+            for index in 0..=lines.len() {
+                let mut modified = lines.to_vec();
+                modified.insert(index, record);
+                assert_eq!(
+                    Robots::parse(&modified.join("\n")),
+                    expected,
+                    "{record:?} at {index}"
+                );
+            }
+        }
+    }
+
+    #[test]
+    fn real_rules_still_end_agent_headers_even_when_the_path_is_empty() {
+        for rule in ["Allow:", "Disallow:", "Disallow: /first/"] {
+            let robots = Robots::parse(&format!(
+                "User-agent: Googlebot\n{rule}\nCrawl-delay: 10\nUser-agent: Bingbot\nDisallow: /second/\n"
+            ));
+            assert!(decide(&robots, &["googlebot"], "/second/page"));
+            assert!(!decide(&robots, &["bingbot"], "/second/page"));
+            assert_eq!(
+                decide(&robots, &["googlebot"], "/first/page"),
+                rule != "Disallow: /first/"
+            );
+        }
+    }
+
+    #[test]
+    fn utf8_rules_and_encoded_targets_have_the_same_decision() {
+        let robots = Robots::parse("User-agent: *\nDisallow: /özel/\nAllow: /özel/açık$\n");
+        for path in ["/özel/gizli", "/%C3%B6zel/gizli", "/%c3%b6zel/gizli"] {
+            assert!(!decide(&robots, &["any"], path), "{path}");
+        }
+        for path in [
+            "/özel/açık",
+            "/%C3%B6zel/a%C3%A7%C4%B1k",
+            "/%c3%b6zel/a%c3%a7%c4%b1k",
+        ] {
+            assert!(decide(&robots, &["any"], path), "{path}");
+        }
+        let encoded = Robots::parse("User-agent: *\nDisallow: /%c3%b6zel/\n");
+        assert!(!decide(&encoded, &["any"], "/özel/gizli"));
+        assert!(!decide(&encoded, &["any"], "/%C3%B6zel/gizli"));
+    }
+
+    #[test]
+    fn unreserved_octets_normalize_once_without_decoding_path_or_query_separators() {
+        let robots = Robots::parse(
+            "User-agent: *\nDisallow: /~private/a\nDisallow: /encoded%2fsegment$\nDisallow: /query%3fhidden$\nDisallow: /literal%2a$\n",
+        );
+        assert!(!decide(&robots, &["any"], "/%7eprivate/%61"));
+        assert!(!decide(&robots, &["any"], "/encoded%2Fsegment"));
+        assert!(decide(&robots, &["any"], "/encoded/segment"));
+        assert!(decide(&robots, &["any"], "/encoded%252Fsegment"));
+        assert!(!decide(&robots, &["any"], "/query%3Fhidden"));
+        assert!(decide(&robots, &["any"], "/query?hidden"));
+        assert!(!decide(&robots, &["any"], "/literal%2A"));
+        assert!(decide(&robots, &["any"], "/literal-anything"));
+        let encoded = Robots::parse("User-agent: *\nDisallow: /%7Eprivate/%61\n");
+        assert!(!decide(&encoded, &["any"], "/~private/a"));
+        assert!(decide(&encoded, &["any"], "/~Private/a"));
+    }
+
+    #[test]
+    fn specificity_uses_normalized_patterns_but_reports_the_original_rule() {
+        for text in [
+            "User-agent: *\nDisallow: /caf%C3%A9\nAllow: /café\n",
+            "User-agent: *\nAllow: /caf%C3%A9\nDisallow: /café\n",
+            "User-agent: *\nDisallow: /%7Eprivate\nAllow: /~private\n",
+        ] {
+            let robots = Robots::parse(text);
+            let rules = robots.group_for(&["any"], true);
+            let path = if text.contains("private") {
+                "/~private"
+            } else {
+                "/caf%C3%A9"
+            };
+            assert!(rules.decide(path).allowed, "{text}");
+        }
+        let robots = Robots::parse("User-agent: *\nDisallow: /özel/\nAllow: /özel/açık$\n");
+        let rules = robots.group_for(&["any"], true);
+        assert_eq!(
+            rules.decide("/%C3%B6zel/gizli").rule.unwrap().pattern,
+            "/özel/"
+        );
+        assert_eq!(
+            rules
+                .decide("/%C3%B6zel/a%C3%A7%C4%B1k")
+                .rule
+                .unwrap()
+                .pattern,
+            "/özel/açık$"
+        );
+    }
+
+    #[test]
+    fn utf8_bom_and_every_supported_line_ending_preserve_the_first_group() {
+        for newline in ["\n", "\r\n", "\r"] {
+            let text = [
+                "\u{feff}User-agent: *",
+                "Disallow: /private",
+                "Sitemap: https://example.com/map.xml",
+            ]
+            .join(newline);
+            let robots = Robots::parse(&text);
+            assert!(!decide(&robots, &["any"], "/private/page"), "{newline:?}");
+            assert_eq!(robots.sitemaps, ["https://example.com/map.xml"]);
+        }
     }
 }

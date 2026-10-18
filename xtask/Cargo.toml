@@ -1,6 +1,6 @@
 [package]
 name = "xtask"
-description = "Developer automation for the octopusSEO workspace."
+description = "Developer automation for the OctopusOn SEO workspace."
 version.workspace = true
 edition.workspace = true
 rust-version.workspace = true

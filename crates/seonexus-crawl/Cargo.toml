@@ -1,0 +1,26 @@
+[package]
+name = "seonexus-crawl"
+description = "The OctopusOn SEO Crawler crawl engine: scope, frontier, robots.txt, redirects, sitemaps and parallel fetching."
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+repository.workspace = true
+authors.workspace = true
+publish.workspace = true
+
+[dependencies]
+flate2.workspace = true
+quick-xml.workspace = true
+regex.workspace = true
+seonexus-html.workspace = true
+seonexus-url.workspace = true
+serde.workspace = true
+thiserror.workspace = true
+url.workspace = true
+
+[dev-dependencies]
+serde_json.workspace = true
+
+[lints]
+workspace = true

@@ -1,0 +1,74 @@
+{
+  "id": "yandex-html",
+  "revision": 1,
+  "engine": "yandex",
+  "mapping": {
+    "format": "html",
+    "total": [".serp-adv__found"],
+    "results": {
+      "items": ["#search-result > li.serp-item", "ul#search-result > li", "li.serp-item"],
+      "fields": {
+        "url": ["a.OrganicTitle-Link @href", "a.organic__url @href", "h2 a @href", "a.Link @href"],
+        "title": [".OrganicTitleContentSpan", "h2", ".organic__title"],
+        "snippet": [".OrganicTextContentSpan", ".TextContainer", ".Organic-ContentWrapper", ".organic__content-wrapper"],
+        "displayed_url": [".Path", ".organic__path", ".OrganicHost"],
+        "sitelink_titles[]": [".Sitelinks-Item", ".sitelinks__item"],
+        "sitelink_urls[]": [".Sitelinks-Item @href", ".sitelinks__item a @href"]
+      },
+      "exclude_within": ["li[data-fast-name='direct']", "li[data-fast-wzrd]"],
+      "skip_urls": [
+        "https://yandex.com.tr/search", "https://yandex.ru/search", "https://yandex.com/search",
+        "https://yandex.kz/search", "https://yandex.by/search", "https://yandex.uz/search",
+        "https://yabs.yandex."
+      ]
+    },
+    "features": [
+      {
+        "kind": "ads-top",
+        "container": ["#search-result > li[data-fast-name='direct']", "li.serp-item[data-fast-name='direct']"],
+        "fields": { "text": [".OrganicTitleContentSpan", "h2"], "url": ["a.OrganicTitle-Link @href", "h2 a @href"] }
+      },
+      {
+        "kind": "ai-overview",
+        "container": ["li[data-fast-wzrd='neuro_answer']", "li[data-fast-wzrd]", "div[data-fast-wzrd]"],
+        "anchors": ["Нейро", "Yandex Neuro", "Alice", "Алиса"],
+        "items": ["a[href^='http']"],
+        "fields": { "url": ["@href"], "text": ["::text"] }
+      },
+      {
+        "kind": "videos",
+        "container": ["li[data-fast-wzrd='videowiz']", "li[data-fast-wzrd='video-unisearch']"],
+        "items": ["a[href^='http']"],
+        "fields": { "url": ["@href"], "text": ["::text"] }
+      },
+      {
+        "kind": "images",
+        "container": ["li[data-fast-wzrd='images']", "li[data-fast-wzrd='images-unisearch']"]
+      },
+      {
+        "kind": "local-pack",
+        "container": ["li[data-fast-wzrd='companies']", "li[data-fast-wzrd='geo_org']"],
+        "items": [".OrgmnCard", ".OrgsList-Item", "li"],
+        "fields": { "text": [".OrgmnCard-Title", "::text"], "url": ["a @href"] }
+      },
+      {
+        "kind": "related-searches",
+        "container": ["div.related", "div.RelatedBottom", "li[data-fast-wzrd='related_discovery']", "div[data-fast-name='related_discovery']"],
+        "items": ["a"],
+        "fields": { "text": ["::text"], "url": ["@href"] }
+      },
+      {
+        "kind": "knowledge-panel",
+        "container": ["li[data-fast-wzrd='entity_search']", "div.entity-search", "div[data-fast-wzrd='entity_search']"],
+        "fields": { "text": [".EntityTitle", "h2", "::text"] }
+      }
+    ],
+    "challenges": [
+      { "kind": "captcha", "url_contains": "/showcaptcha" },
+      { "kind": "captcha", "url_contains": "/checkcaptcha" },
+      { "kind": "captcha", "selector": "form#checkbox-captcha-form" },
+      { "kind": "captcha", "selector": ".CheckboxCaptcha" },
+      { "kind": "captcha", "selector": ".AdvancedCaptcha" }
+    ]
+  }
+}

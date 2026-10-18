@@ -12,7 +12,7 @@ use seonexus_log_app::analysis::{
 use super::output::{write_json, write_text};
 use super::results::{ResultArgs, emit};
 
-/// `snx-log overview`.
+/// `octopuson-log overview`.
 #[derive(Debug, Args)]
 pub(crate) struct OverviewArgs {
     /// Site to summarize.
@@ -134,7 +134,7 @@ fn render_overview(out: &mut dyn Write, report: &SiteCrawlOverview) -> io::Resul
     Ok(())
 }
 
-/// `snx-log compare-urls`.
+/// `octopuson-log compare-urls`.
 #[derive(Debug, Args)]
 #[allow(
     clippy::struct_excessive_bools,
@@ -221,7 +221,7 @@ pub(crate) fn compare_urls(workspace: &Workspace, args: &CompareUrlsArgs) -> mie
     }
 }
 
-/// `snx-log robots`.
+/// `octopuson-log robots`.
 #[derive(Debug, Args)]
 pub(crate) struct RobotsArgs {
     /// Site whose bot requests are checked.
@@ -287,7 +287,7 @@ fn render_robots(out: &mut dyn Write, report: &RobotsReport) -> io::Result<()> {
     Ok(())
 }
 
-/// `snx-log compare-periods`.
+/// `octopuson-log compare-periods`.
 #[derive(Debug, Args)]
 pub(crate) struct ComparePeriodsArgs {
     /// Site to analyse.

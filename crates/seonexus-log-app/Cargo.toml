@@ -1,6 +1,6 @@
 [package]
 name = "seonexus-log-app"
-description = "Application use-cases shared by the snx-log CLI and the desktop Log Analyser."
+description = "Application use-cases shared by the octopuson-log CLI and the desktop Log Analyser."
 version.workspace = true
 edition.workspace = true
 rust-version.workspace = true

@@ -1,0 +1,52 @@
+{
+  "version": 1,
+  "id": "serper",
+  "name": "Serper.dev",
+  "engines": ["google"],
+  "devices": ["desktop"],
+  "secrets": [{ "name": "api_key", "label": "API key" }],
+  "request": {
+    "method": "POST",
+    "url": "https://google.serper.dev/search",
+    "headers": { "X-API-KEY": "{secret:api_key}" },
+    "body": {
+      "q": "{keyword}",
+      "gl": "{gl}",
+      "hl": "{hl}",
+      "location": "{location_name}",
+      "page": "{page:int}",
+      "num": "{num:int}"
+    }
+  },
+  "paging": { "per_page": 10, "first_page": 1 },
+  "response": {
+    "format": "json",
+    "error": "$.message",
+    "results": {
+      "items": "$.organic[*]",
+      "fields": {
+        "url": "$.link",
+        "title": "$.title",
+        "snippet": "$.snippet",
+        "date": "$.date",
+        "position": "$.position",
+        "sitelink_titles[]": "$.sitelinks[*].title",
+        "sitelink_urls[]": "$.sitelinks[*].link"
+      }
+    },
+    "features": [
+      { "kind": "featured-snippet", "container": "$.answerBox", "fields": { "text": ["$.title", "$.snippet", "$.answer"], "url": "$.link" } },
+      { "kind": "people-also-ask", "items": "$.peopleAlsoAsk[*]", "fields": { "text": "$.question", "url": "$.link" } },
+      { "kind": "knowledge-panel", "container": "$.knowledgeGraph", "fields": { "text": "$.title", "url": "$.website" } },
+      { "kind": "top-stories", "items": "$.topStories[*]", "fields": { "text": "$.title", "url": "$.link" } },
+      { "kind": "local-pack", "items": "$.places[*]", "fields": { "text": "$.title", "url": "$.website" } },
+      { "kind": "videos", "items": "$.videos[*]", "fields": { "text": "$.title", "url": "$.link" } },
+      { "kind": "images", "items": "$.images[*]", "fields": { "text": "$.title", "url": "$.link" } },
+      { "kind": "shopping", "items": "$.shopping[*]", "fields": { "text": "$.title", "url": "$.link" } },
+      { "kind": "related-searches", "items": "$.relatedSearches[*]", "fields": { "text": "$.query" } }
+    ]
+  },
+  "usage": { "credits": "$.credits" },
+  "cost": { "per_request_usd": 0.001, "per_credit_usd": 0.001 },
+  "notes": "https://serper.dev: Google results, about 1 USD per 1,000 searches; no ads, desktop only."
+}

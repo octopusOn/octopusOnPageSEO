@@ -1,15 +1,15 @@
 [workspace]
 resolver = "3"
-members = ["crates/*", "apps/snx-log", "apps/desktop/src-tauri", "xtask"]
-default-members = ["crates/*", "apps/snx-log"]
+members = ["crates/*", "apps/snx-log", "apps/snx-spider", "apps/snx-finder", "apps/snx-serp", "apps/snx-kw", "apps/desktop/src-tauri", "apps/spider/src-tauri", "apps/finder/src-tauri", "apps/serp/src-tauri", "apps/keywords/src-tauri", "xtask"]
+default-members = ["crates/*", "apps/snx-log", "apps/snx-spider", "apps/snx-finder", "apps/snx-serp", "apps/snx-kw"]
 
 [workspace.package]
 version = "0.1.0"
 edition = "2024"
 rust-version = "1.90"
 license = "MIT OR Apache-2.0"
-repository = "https://github.com/sabri-kocabas/octopusseo-log-analyser"
-homepage = "https://octopusseo.com"
+repository = "https://github.com/octopusOn/octopusOnPageSEO"
+homepage = "https://octopuson.com"
 authors = ["octopusSEO"]
 publish = false
 
@@ -26,36 +26,75 @@ seonexus-report = { path = "crates/seonexus-report" }
 seonexus-log-app = { path = "crates/seonexus-log-app" }
 seonexus-net = { path = "crates/seonexus-net" }
 seonexus-geo = { path = "crates/seonexus-geo" }
+seonexus-html = { path = "crates/seonexus-html" }
+seonexus-audit = { path = "crates/seonexus-audit" }
+seonexus-crawl = { path = "crates/seonexus-crawl" }
+seonexus-crawl-store = { path = "crates/seonexus-crawl-store" }
+seonexus-spider-app = { path = "crates/seonexus-spider-app" }
+seonexus-opportunities = { path = "crates/seonexus-opportunities" }
+seonexus-finder = { path = "crates/seonexus-finder" }
+
+seonexus-render = { path = "crates/seonexus-render" }
+seonexus-serp = { path = "crates/seonexus-serp" }
+seonexus-text = { path = "crates/seonexus-text" }
+seonexus-domain-intel = { path = "crates/seonexus-domain-intel" }
+seonexus-serp-score = { path = "crates/seonexus-serp-score" }
+seonexus-keyword-sources = { path = "crates/seonexus-keyword-sources" }
+seonexus-keywords = { path = "crates/seonexus-keywords" }
+seonexus-kw-app = { path = "crates/seonexus-kw-app" }
+seonexus-kw-store = { path = "crates/seonexus-kw-store" }
+seonexus-oauth = { path = "crates/seonexus-oauth" }
+seonexus-secrets = { path = "crates/seonexus-secrets" }
+seonexus-cloud = { path = "crates/seonexus-cloud" }
+seonexus-serp-store = { path = "crates/seonexus-serp-store" }
+seonexus-serp-app = { path = "crates/seonexus-serp-app" }
 
 # External crates
 anyhow = "1"
+base64 = "0.23"
 blake3 = "1.8"
 bzip2 = "0.6"
 directories = "6"
 dns-lookup = "4"
-duckdb = { version = "1.10506.0", features = ["bundled", "parquet", "appender-arrow"] }
+duckdb = { version = "1.10506.1", features = ["bundled", "parquet", "appender-arrow"] }
+ego-tree = "0.11"
+encoding_rs = "0.8"
 rayon = "1.11"
 xxhash-rust = { version = "0.8", features = ["xxh3"] }
 clap = { version = "4", features = ["derive", "env", "wrap_help"] }
+ctrlc = "3.5"
 criterion = "0.8"
 flate2 = "1.1"
+getrandom = "0.3"
+quick-xml = "0.42.0"
 insta = "1.49"
+# OS credential stores; platform backends are enabled per target by the crates using it.
+keyring = { version = "3.6", default-features = false }
 memchr = "2.8"
 miette = { version = "7", features = ["fancy"] }
 proptest = "1.12"
+psl = "2.1"
 regex = "1.13"
-rust_xlsxwriter = { version = "0.99", default-features = false, features = ["constant_memory"] }
+rust-stemmers = "1.2"
+scraper = { version = "0.27", default-features = false }
+# Published 0.99.1 requires vulnerable zip 8; pin the official ZIP 9 fix until a release includes it.
+rust_xlsxwriter = { git = "https://github.com/jmcnamara/rust_xlsxwriter", rev = "ade0a017439d169b2a9c4848fe1cb66919c0ca3d", default-features = false, features = ["constant_memory"] }
 serde = { version = "1", features = ["derive"] }
 serde_json = "1"
+serde_json_path = "0.7"
+sha2 = "0.10"
 tauri = { version = "2.12", features = [] }
 tauri-build = { version = "2.7", features = [] }
 tauri-plugin-dialog = "2.8"
 tempfile = "3"
+time = { version = "0.3", features = ["parsing", "formatting"] }
 thiserror = "2"
 tracing = "0.1"
 tracing-subscriber = { version = "0.3", features = ["env-filter", "fmt"] }
+tungstenite = { version = "0.28", default-features = false, features = ["handshake"] }
 ureq = "3.4"
-zip = { version = "9", default-features = false, features = ["deflate"] }
+url = "2.5"
+zip = { version = "9.0.4", default-features = false, features = ["deflate"] }
 zstd = "0.14"
 
 [workspace.lints.rust]
@@ -84,3 +123,10 @@ strip = "symbols"
 
 [profile.bench]
 debug = true
+
+# Bundled DuckDB C++ debug symbols otherwise add several GiB per build variant.
+[profile.dev.package.libduckdb-sys]
+debug = false
+
+[profile.test.package.libduckdb-sys]
+debug = false

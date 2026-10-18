@@ -26,7 +26,7 @@ pub(crate) struct ImportArgs {
     samples: usize,
 
     /// Skip reverse/forward DNS verification of bots (offline use); affected bots stay
-    /// unverified until `snx-log bots verify`.
+    /// unverified until `octopuson-log bots verify`.
     #[arg(long)]
     no_dns: bool,
 

@@ -1,0 +1,22 @@
+[package]
+name = "seonexus-html"
+description = "SEO facts of an HTML document: titles, directives, canonicals, hreflang, headings, links, images, structured data and content fingerprints."
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+repository.workspace = true
+authors.workspace = true
+publish.workspace = true
+
+[dependencies]
+ego-tree.workspace = true
+encoding_rs.workspace = true
+scraper.workspace = true
+serde.workspace = true
+serde_json.workspace = true
+url.workspace = true
+xxhash-rust.workspace = true
+
+[lints]
+workspace = true

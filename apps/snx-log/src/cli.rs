@@ -13,9 +13,9 @@ use crate::commands::query::QueryArgs;
 use crate::commands::saved::SavedArgs;
 use crate::commands::site::SiteArgs;
 
-/// octopusSEO Log Analyser — SEO-focused server log analysis.
+/// OctopusOn Log Analyser — SEO-focused server log analysis.
 #[derive(Debug, Parser)]
-#[command(name = "snx-log", version, about, long_about = None)]
+#[command(name = "octopuson-log", version, about, long_about = None)]
 pub(crate) struct Cli {
     #[command(flatten)]
     pub(crate) global: GlobalArgs,
@@ -114,7 +114,7 @@ mod tests {
     #[test]
     fn verbosity_flags_map_to_levels() {
         let parse = |flags: &[&str]| {
-            let argv = [&["snx-log"], flags, &["inspect", "a.log"]].concat();
+            let argv = [&["octopuson-log"], flags, &["inspect", "a.log"]].concat();
             Cli::parse_from(argv).global.verbosity()
         };
         assert_eq!(parse(&[]), Level::INFO);
@@ -125,20 +125,33 @@ mod tests {
 
     #[test]
     fn query_words_are_collected() {
-        let cli = Cli::parse_from(["snx-log", "query", "acme.com", "status:404", "group:url"]);
+        let cli = Cli::parse_from([
+            "octopuson-log",
+            "query",
+            "acme.com",
+            "status:404",
+            "group:url",
+        ]);
         assert!(matches!(cli.command, Command::Query(_)));
-        let saved =
-            Cli::try_parse_from(["snx-log", "query", "a", "--saved", "x", "--template", "y"]);
+        let saved = Cli::try_parse_from([
+            "octopuson-log",
+            "query",
+            "a",
+            "--saved",
+            "x",
+            "--template",
+            "y",
+        ]);
         assert!(saved.is_err(), "--saved and --template exclude each other");
         let export_with_csv =
-            Cli::try_parse_from(["snx-log", "query", "a", "x:1", "-o", "f.csv", "--csv"]);
+            Cli::try_parse_from(["octopuson-log", "query", "a", "x:1", "-o", "f.csv", "--csv"]);
         assert!(export_with_csv.is_err());
     }
 
     #[test]
     fn custom_formats_conflict() {
         let result = Cli::try_parse_from([
-            "snx-log",
+            "octopuson-log",
             "inspect",
             "a.log",
             "--nginx-format",

@@ -3,9 +3,11 @@ allow-expect-in-tests = true
 allow-panic-in-tests = true
 allow-print-in-tests = true
 doc-valid-idents = [
-    "DuckDB", "SEONexus", "octopusSEO", "Traefik", "Googlebot", "Bingbot", "GPTBot", "ClaudeBot",
+    "DuckDB", "SEONexus", "octopusSEO", "OctopusOn", "Traefik", "Googlebot", "Bingbot", "GPTBot", "ClaudeBot",
     "PerplexityBot", "YandexBot", "CCBot", "AdsBot", "DuckDuckBot", "DuckAssistBot",
     "AhrefsBot", "AhrefsSiteAudit", "OpenAI", "ChatGPT", "OAI-SearchBot", "ChatGPT-User",
     "CloudFront", "HAProxy", "BigQuery", "DataStream", "Logpush", "DuckDuckGo",
+    "SimHash", "RDFa", "DevTools", "PageSpeed", "JavaScript",
+    "DataForSEO", "SerpApi", "JSONPath", "PageRank", "OpenPageRank",
     "..",
 ]

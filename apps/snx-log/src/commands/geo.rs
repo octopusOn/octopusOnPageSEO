@@ -42,7 +42,10 @@ pub(crate) fn run(workspace: &Workspace, args: &GeoArgs) -> miette::Result<()> {
                         "Country data {}, ASN data {} (downloaded {})",
                         release.country, release.asn, release.fetched_at
                     )?,
-                    None => writeln!(out, "No IP geolocation data; run `snx-log geo update`.")?,
+                    None => writeln!(
+                        out,
+                        "No IP geolocation data; run `octopuson-log geo update`."
+                    )?,
                 }
                 writeln!(out, "{}", status.attribution)
             })

@@ -9,8 +9,8 @@ const MAX_BODY_BYTES: u64 = 32 * 1024 * 1024;
 #[derive(Debug, thiserror::Error)]
 #[error("cannot download `{url}`: {message}")]
 pub struct NetError {
-    url: String,
-    message: String,
+    pub(crate) url: String,
+    pub(crate) message: String,
 }
 
 /// Blocking HTTP client for small text documents.

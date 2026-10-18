@@ -1,4 +1,4 @@
-//! Storage adapter of the octopusSEO Log Analyser.
+//! Storage adapter of the OctopusOn Log Analyser.
 //!
 //! - [`Catalog`] stores clients, sites and saved queries (`catalog.duckdb`).
 //! - [`SiteStore`] owns one site: a DuckDB database with dimensions, rollups and import

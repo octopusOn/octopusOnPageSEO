@@ -24,7 +24,7 @@ enum SavedCommand {
         #[arg(long)]
         json: bool,
     },
-    /// Save a query under a name (run it later with `snx-log query SITE --saved NAME`).
+    /// Save a query under a name (run it later with `octopuson-log query SITE --saved NAME`).
     Add {
         /// Name of the saved query.
         name: String,

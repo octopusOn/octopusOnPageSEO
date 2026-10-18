@@ -1,0 +1,23 @@
+[package]
+name = "seonexus-serp-score"
+description = "Explainable, versioned scores of the SERP Checker: page content, technical health, site strength, keyword difficulty, opportunity, search intent and recommendations."
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+repository.workspace = true
+authors.workspace = true
+publish.workspace = true
+
+[dependencies]
+seonexus-audit.workspace = true
+seonexus-serp.workspace = true
+seonexus-text.workspace = true
+serde.workspace = true
+serde_json.workspace = true
+
+[dev-dependencies]
+proptest.workspace = true
+
+[lints]
+workspace = true

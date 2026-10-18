@@ -12,8 +12,11 @@ publish.workspace = true
 [dependencies]
 dns-lookup.workspace = true
 seonexus-botverify.workspace = true
+seonexus-core.workspace = true
+seonexus-crawl.workspace = true
 thiserror.workspace = true
 ureq.workspace = true
+url.workspace = true
 
 [lints]
 workspace = true
