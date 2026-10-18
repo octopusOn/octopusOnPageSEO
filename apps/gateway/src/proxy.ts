@@ -105,7 +105,7 @@ export async function forward(
   const url = new URL(request.url);
   const loaded = await deps.registry.connector(connectorId);
   if (!loaded || (loaded.connector.status === "test" && owner.role !== "admin")) {
-    return problem(503, "connector_unavailable", "This source is not available with octopusSEO credits right now.");
+    return problem(503, "connector_unavailable", "This source is not available with OctopusOn SEO credits right now.");
   }
   const { connector, secrets } = loaded;
   const method = request.method.toUpperCase();
@@ -113,11 +113,11 @@ export async function forward(
   const path = normalizePath(raw);
   if (!path) return problem(400, "invalid_path", "The path is not allowed.");
   if (!routeAllowed(connector.routes, connector.deny, method, path)) {
-    return problem(403, "route_not_allowed", `${method} ${path} is not open through octopusSEO credits.`);
+    return problem(403, "route_not_allowed", `${method} ${path} is not open through OctopusOn SEO credits.`);
   }
   if (secretNames(connector).some((name) => !secrets[name])) {
     deps.log({ level: "error", event: "connector_secret_missing", connector: connector.id });
-    return problem(503, "connector_unavailable", "This source is not available with octopusSEO credits right now.");
+    return problem(503, "connector_unavailable", "This source is not available with OctopusOn SEO credits right now.");
   }
 
   let body: Uint8Array | null = null;
@@ -161,7 +161,7 @@ export async function forward(
       }));
     } catch (error) {
       if (error instanceof InsufficientFunds) {
-        return problem(402, "insufficient_credits", "Not enough octopusSEO credits.", {}, {
+        return problem(402, "insufficient_credits", "Not enough OctopusOn SEO credits.", {}, {
           available_usd: microsToUsd(error.availableMicros),
           needed_usd: microsToUsd(holdMicros),
         });
@@ -234,7 +234,7 @@ export async function forward(
       ms: now() - started,
     });
     const charge = { [CHARGE_HEADER]: usd(outcome.chargeMicros), [AVAILABLE_HEADER]: usd(wallet.availableMicros) };
-    if (ours) return problem(503, "upstream_unavailable", "This source is not available with octopusSEO credits right now.", charge);
+    if (ours) return problem(503, "upstream_unavailable", "This source is not available with OctopusOn SEO credits right now.", charge);
     if (redirected) return problem(502, "upstream_redirect", "The source answered with a redirect.", charge);
 
     const headers = new Headers({ "cache-control": "no-store", ...charge });

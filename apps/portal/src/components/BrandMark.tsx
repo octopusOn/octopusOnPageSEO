@@ -1,4 +1,4 @@
-// The octopusSEO mark: three white glass blocks turning around a centre (packages/design/brand).
+// The OctopusOn SEO mark: three white glass blocks turning around a centre (packages/design/brand).
 
 /** The three blocks, in a 64-unit square. */
 const PIECES = [

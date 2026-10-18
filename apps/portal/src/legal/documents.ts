@@ -16,20 +16,20 @@ export function legalDocuments(c: Company): LegalDocument[] {
   return [
     {
       slug: "kredi-kosullari",
-      title: "octopusSEO kredi kullanım koşulları",
+      title: "OctopusOn SEO kredi kullanım koşulları",
       sections: [
         {
           heading: "1. Kredi nedir?",
           body: [
-            "octopusSEO kredisi, octopusSEO masaüstü programlarında (SERP Finder, Keyword Miner ve ileride eklenecekler) ücretli veri kaynaklarına (ör. arama sonucu, arama hacmi, backlink verisi) octopusSEO hesabı üzerinden erişmek için kullanılan, hesaba yüklenmiş bir kullanım bakiyesidir.",
-            "Kredi yalnızca octopusSEO hizmetleri içinde kullanılabilir. Başka bir kişiye devredilemez, satılamaz, nakde veya başka bir ödeme aracına çevrilemez; elektronik para veya ödeme aracı değildir.",
+            "OctopusOn SEO kredisi, OctopusOn SEO masaüstü programlarında (OctopusOn SERP Checker, OctopusOn SEO Keyword Research ve ileride eklenecekler) ücretli veri kaynaklarına (ör. arama sonucu, arama hacmi, backlink verisi) OctopusOn SEO hesabı üzerinden erişmek için kullanılan, hesaba yüklenmiş bir kullanım bakiyesidir.",
+            "Kredi yalnızca OctopusOn SEO hizmetleri içinde kullanılabilir. Başka bir kişiye devredilemez, satılamaz, nakde veya başka bir ödeme aracına çevrilemez; elektronik para veya ödeme aracı değildir.",
             "Programlar kendi API anahtarlarınızla krediye ihtiyaç duymadan ücretsiz çalışmaya devam eder. Kredi kullanımı isteğe bağlıdır.",
           ],
         },
         {
           heading: "2. Fiyat ve kullanım",
           body: [
-            "Her kredili istekte, ilgili veri sağlayıcısının o istek için uyguladığı maliyete octopusSEO hizmet bedeli eklenerek hesaplanan tutar bakiyenizden düşülür. Kaynak bazında güncel fiyat çarpanı programlarda ve hesabınızda gösterilir.",
+            "Her kredili istekte, ilgili veri sağlayıcısının o istek için uyguladığı maliyete OctopusOn SEO hizmet bedeli eklenerek hesaplanan tutar bakiyenizden düşülür. Kaynak bazında güncel fiyat çarpanı programlarda ve hesabınızda gösterilir.",
             "İstek gönderilmeden önce tahmini en yüksek tutar ayrılır; yanıt geldiğinde gerçek tutar düşülür ve kalan serbest bırakılır. Sağlayıcının hata ile yanıtladığı isteklerden ücret alınmaz.",
             "Kredi, ödeme anındaki Türkiye Cumhuriyet Merkez Bankası döviz satış kuru ve hesap ekranında belirtilen kur payı esas alınarak Türk lirası ile satılır. Fiyatlara KDV dahildir.",
           ],
@@ -49,7 +49,7 @@ export function legalDocuments(c: Company): LegalDocument[] {
         {
           heading: "5. Gizlilik",
           body: [
-            "Kendi anahtarlarınızla yaptığınız işlemler bilgisayarınızda kalır. Kredili modda istekleriniz yalnızca ilgili veri sağlayıcısına iletilmek üzere octopusSEO ağ geçidinden geçer; istek ve yanıt içerikleri (anahtar kelimeler, sonuçlar) saklanmaz. Faturalama ve güvenlik için yalnızca kaynak, uç nokta türü, durum, süre ve tutar kaydedilir. Ayrıntılar KVKK aydınlatma metnindedir.",
+            "Kendi anahtarlarınızla yaptığınız işlemler bilgisayarınızda kalır. Kredili modda istekleriniz yalnızca ilgili veri sağlayıcısına iletilmek üzere OctopusOn SEO ağ geçidinden geçer; istek ve yanıt içerikleri (anahtar kelimeler, sonuçlar) saklanmaz. Faturalama ve güvenlik için yalnızca kaynak, uç nokta türü, durum, süre ve tutar kaydedilir. Ayrıntılar KVKK aydınlatma metnindedir.",
           ],
         },
         { heading: "6. Satıcı", body: [seller(c)] },
@@ -63,14 +63,14 @@ export function legalDocuments(c: Company): LegalDocument[] {
         {
           heading: "2. Hizmetin temel nitelikleri",
           body: [
-            "Hizmet: octopusSEO hesabına kredi yüklenmesi. Kredi, octopusSEO programlarında ücretli veri kaynaklarına erişim için kullanılır (bkz. kredi kullanım koşulları).",
+            "Hizmet: OctopusOn SEO hesabına kredi yüklenmesi. Kredi, OctopusOn SEO programlarında ücretli veri kaynaklarına erişim için kullanılır (bkz. kredi kullanım koşulları).",
             "Satın alınan kredi miktarı, KDV dahil toplam fiyat ve kullanılan döviz kuru ödeme sayfasında ve sipariş özetinde gösterilir.",
           ],
         },
         {
           heading: "3. Fiyat ve ödeme",
           body: [
-            "Fiyatlar Türk lirası cinsinden olup KDV dahildir. Ödeme, lisanslı ödeme kuruluşu aracılığıyla kredi kartı veya banka kartı ile tek çekim olarak alınır; kart bilgileriniz octopusSEO tarafından görülmez ve saklanmaz.",
+            "Fiyatlar Türk lirası cinsinden olup KDV dahildir. Ödeme, lisanslı ödeme kuruluşu aracılığıyla kredi kartı veya banka kartı ile tek çekim olarak alınır; kart bilgileriniz OctopusOn SEO tarafından görülmez ve saklanmaz.",
           ],
         },
         {
@@ -95,11 +95,11 @@ export function legalDocuments(c: Company): LegalDocument[] {
       slug: "mesafeli-satis",
       title: "Mesafeli satış sözleşmesi",
       sections: [
-        { heading: "1. Taraflar", body: [`Satıcı: ${seller(c)}`, "Alıcı: octopusSEO hesabının sahibi; ad, adres ve iletişim bilgileri fatura bilgilerinde belirtilen kişi veya kuruluş."] },
+        { heading: "1. Taraflar", body: [`Satıcı: ${seller(c)}`, "Alıcı: OctopusOn SEO hesabının sahibi; ad, adres ve iletişim bilgileri fatura bilgilerinde belirtilen kişi veya kuruluş."] },
         {
           heading: "2. Konu",
           body: [
-            "Bu sözleşme, alıcının satıcıya ait my.octopuson.com üzerinden elektronik ortamda satın aldığı octopusSEO kredisinin satışı ve ifasına ilişkin olarak 6502 sayılı Tüketicinin Korunması Hakkında Kanun ve Mesafeli Sözleşmeler Yönetmeliği uyarınca tarafların hak ve yükümlülüklerini düzenler.",
+            "Bu sözleşme, alıcının satıcıya ait my.octopuson.com üzerinden elektronik ortamda satın aldığı OctopusOn SEO kredisinin satışı ve ifasına ilişkin olarak 6502 sayılı Tüketicinin Korunması Hakkında Kanun ve Mesafeli Sözleşmeler Yönetmeliği uyarınca tarafların hak ve yükümlülüklerini düzenler.",
           ],
         },
         {

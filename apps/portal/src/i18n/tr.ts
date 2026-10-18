@@ -2,8 +2,8 @@
 
 export const tr = {
   meta: {
-    title: "octopusSEO hesabı",
-    description: "octopusSEO kredileri, cihazlar ve kullanım.",
+    title: "OctopusOn SEO hesabı",
+    description: "OctopusOn SEO kredileri, cihazlar ve kullanım.",
   },
   nav: {
     account: "Hesap",
@@ -26,10 +26,10 @@ export const tr = {
     legal: "Yasal",
   },
   auth: {
-    signInTitle: "octopusSEO hesabınıza girin",
+    signInTitle: "OctopusOn SEO hesabınıza girin",
     signInLead: "Kredileriniz ve bağlı programlarınız tek bir hesapta.",
-    signUpTitle: "octopusSEO hesabı açın",
-    signUpLead: "Programlar kendi anahtarlarınızla ücretsiz. Hesap, ücretli kaynakları octopusSEO kredisiyle kullanmak içindir.",
+    signUpTitle: "OctopusOn SEO hesabı açın",
+    signUpLead: "Programlar kendi anahtarlarınızla ücretsiz. Hesap, ücretli kaynakları OctopusOn SEO kredisiyle kullanmak içindir.",
     email: "E-posta",
     password: "Şifre",
     passwordHint: "En az 10 karakter.",
@@ -69,14 +69,14 @@ export const tr = {
     spent30: "Son 30 günde harcanan",
     requests30: "Son 30 günde istek",
     credits: "kredi",
-    noCredits: "Henüz krediniz yok. Kredi yükleyin; programlar ücretli kaynakları octopusSEO hesabınızla kullansın.",
+    noCredits: "Henüz krediniz yok. Kredi yükleyin; programlar ücretli kaynakları OctopusOn SEO hesabınızla kullansın.",
     lowBalance: "Bakiyeniz azaldı. Kredi bitince programlar kendi anahtarınıza ya da sıradaki kaynağa geçer.",
     buy: "Kredi yükle",
     bySource: "Kaynağa göre (son 30 gün)",
     recent: "Son istekler",
-    empty: "Henüz kredili istek yok. Programda Ayarlar → octopusSEO hesabı → Bağlan ile başlayın.",
+    empty: "Henüz kredili istek yok. Programda Kaynaklar → OctopusOn SEO hesabı → Hesaba bağlan ile başlayın.",
     howTitle: "Programlarda nasıl kullanılır?",
-    how: "SERP Finder ya da Keyword Miner'da Ayarlar → octopusSEO hesabı → Bağlan'a basın, açılan sayfada kodu onaylayın. Ardından ücretli kaynak için \"octopusSEO kredisi\"ni seçin. Kendi anahtarlarınızla kullanım ücretsiz kalır.",
+    how: "OctopusOn SERP Checker ya da OctopusOn SEO Keyword Research'te Kaynaklar → OctopusOn SEO hesabı → Hesaba bağlan'a basın, açılan sayfada kodu onaylayın. Ardından ücretli kaynak için \"Kredi\"yi seçin. Kendi anahtarlarınızla kullanım ücretsiz kalır.",
   },
   table: {
     source: "Kaynak",
@@ -100,7 +100,7 @@ export const tr = {
   },
   buy: {
     title: "Kredi yükle",
-    lead: "Kredi, ücretli kaynakları (SERP, hacim, backlink) octopusSEO üzerinden kullanmanızı sağlar. Kredi yalnızca octopusSEO programlarında kullanılır; devredilemez ve nakde çevrilemez.",
+    lead: "Kredi, ücretli kaynakları (SERP, hacim, backlink) OctopusOn SEO üzerinden kullanmanızı sağlar. Kredi yalnızca OctopusOn SEO programlarında kullanılır; devredilemez ve nakde çevrilemez.",
     vatIncluded: "KDV dahil",
     approx: "yaklaşık",
     rateNote: "Kredi karşılığı ödeme anındaki TCMB dolar kuru ve %{buffer} kur payı ile hesaplanır.",

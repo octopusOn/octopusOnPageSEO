@@ -36,7 +36,7 @@ export function Shell({ user, t, children }: { user: SessionUser; t: Dictionary;
           <BrandMark />
           <div>
             <div className="oc-brand-name">
-              octopus<span>SEO</span>
+              OctopusOn <span>SEO</span>
             </div>
             <div className="oc-brand-product">{t.nav.account}</div>
           </div>

@@ -2,7 +2,7 @@
   "name": "@octopusseo/portal",
   "private": true,
   "version": "0.1.0",
-  "description": "my.octopuson.com: octopusSEO accounts, credits, device sign-in and the admin panel.",
+  "description": "my.octopuson.com: OctopusOn SEO accounts, credits, device sign-in and the admin panel.",
   "license": "MIT OR Apache-2.0",
   "type": "module",
   "scripts": {

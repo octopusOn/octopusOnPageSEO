@@ -10,7 +10,7 @@ export const dynamic = "force-dynamic";
 export async function generateMetadata(): Promise<Metadata> {
   const { t } = await getDictionary();
   return {
-    title: { default: t.meta.title, template: `%s · octopusSEO` },
+    title: { default: t.meta.title, template: `%s · OctopusOn SEO` },
     description: t.meta.description,
     robots: { index: false, follow: false },
   };

@@ -21,6 +21,11 @@ a.oc-btn {
   text-decoration: none;
 }
 
+/* "OctopusOn SEO", with a lighter SEO as in the programs' sidebars. */
+.oc-brand-name span {
+  font-weight: 450;
+}
+
 .portal-shell {
   min-height: 100vh;
   height: auto;

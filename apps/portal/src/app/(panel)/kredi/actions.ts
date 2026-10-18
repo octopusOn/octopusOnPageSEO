@@ -56,7 +56,7 @@ export async function pay(_: ActionResult, form: FormData): Promise<ActionResult
     quote: quote(amountKurus, settings, rate.rate),
     buyerIp: ip,
   });
-  const itemName = "octopusSEO kredi";
+  const itemName = "OctopusOn SEO kredi";
   let next: string;
   try {
     if (provider.kind === "iyzico") {

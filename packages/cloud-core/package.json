@@ -2,7 +2,7 @@
   "name": "@octopusseo/cloud-core",
   "private": true,
   "version": "0.1.0",
-  "description": "octopusSEO credits: database schema, wallet ledger, connector plugins and pricing shared by the gateway and the account portal.",
+  "description": "OctopusOn SEO credits: database schema, wallet ledger, connector plugins and pricing shared by the gateway and the account portal.",
   "license": "MIT OR Apache-2.0",
   "type": "module",
   "exports": {

@@ -1,4 +1,4 @@
-// octopusSEO credits: shared by the gateway (api.octopuson.com) and the portal (my.octopuson.com).
+// OctopusOn SEO credits: shared by the gateway (api.octopuson.com) and the portal (my.octopuson.com).
 
 export * from "./accounts.ts";
 export * from "./admin.ts";

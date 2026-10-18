@@ -13,7 +13,7 @@ import { sendMail } from "./mail";
 
 function createAuth() {
   return betterAuth({
-    appName: "octopusSEO",
+    appName: "OctopusOn SEO",
     baseURL: process.env.BETTER_AUTH_URL,
     secret: process.env.BETTER_AUTH_SECRET,
     database: drizzleAdapter(db(), {
@@ -34,7 +34,7 @@ function createAuth() {
       sendResetPassword: async ({ user, url }) => {
         await sendMail(
           user.email,
-          "octopusSEO şifre yenileme / password reset",
+          "OctopusOn SEO şifre yenileme / password reset",
           `Şifrenizi yenilemek için bu bağlantıyı açın (1 saat geçerli):\n${url}\n\nTo reset your password, open this link (valid for 1 hour).\n\nBu isteği siz yapmadıysanız bu e-postayı yok sayın.`,
         );
       },
@@ -45,15 +45,15 @@ function createAuth() {
       sendVerificationEmail: async ({ user, url }) => {
         await sendMail(
           user.email,
-          "octopusSEO hesabınızı doğrulayın / verify your account",
-          `Hesabınızı doğrulamak için bu bağlantıyı açın:\n${url}\n\nTo verify your octopusSEO account, open this link.`,
+          "OctopusOn SEO hesabınızı doğrulayın / verify your account",
+          `Hesabınızı doğrulamak için bu bağlantıyı açın:\n${url}\n\nTo verify your OctopusOn SEO account, open this link.`,
         );
       },
     },
     session: { expiresIn: 60 * 60 * 24 * 30, updateAge: 60 * 60 * 24 },
     rateLimit: { enabled: true, window: 60, max: 30 },
     advanced: { ipAddress: { ipAddressHeaders: ["x-forwarded-for"] } },
-    plugins: [admin(), twoFactor({ issuer: "octopusSEO" }), nextCookies()],
+    plugins: [admin(), twoFactor({ issuer: "OctopusOn SEO" }), nextCookies()],
     databaseHooks: {
       user: {
         create: {

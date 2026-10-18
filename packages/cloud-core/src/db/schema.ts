@@ -1,4 +1,4 @@
-// The octopusSEO credits database (PostgreSQL). Amounts are micro-dollars (`*Micros`) or
+// The OctopusOn SEO credits database (PostgreSQL). Amounts are micro-dollars (`*Micros`) or
 // kuruş (`*Kurus`), always integers.
 
 import { sql } from "drizzle-orm";

@@ -10,7 +10,7 @@ export default function AuthLayout({ children }: { children: ReactNode }) {
         <div className="oc-brand auth-brand">
           <BrandMark />
           <div className="oc-brand-name">
-            octopus<span>SEO</span>
+            OctopusOn <span>SEO</span>
           </div>
         </div>
         <div className="oc-card auth-card">{children}</div>

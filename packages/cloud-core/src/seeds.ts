@@ -27,7 +27,7 @@ export const SEED_CONNECTORS: ConnectorInput[] = [
       error: { path: "$.tasks[0].status_code", ok: [20000] },
     },
     limits: { rpm: 120, concurrency: 6, timeout_s: 120, max_body_kb: 512 },
-    terms: { confirmed: false, note: "Ask DataForSEO to confirm in writing that reselling through octopusSEO credits is allowed." },
+    terms: { confirmed: false, note: "Ask DataForSEO to confirm in writing that reselling through OctopusOn SEO credits is allowed." },
     status: "draft",
     test: {
       method: "POST",

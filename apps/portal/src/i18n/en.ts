@@ -2,8 +2,8 @@ import type { Dictionary } from "./tr";
 
 export const en: Dictionary = {
   meta: {
-    title: "octopusSEO account",
-    description: "octopusSEO credits, devices and usage.",
+    title: "OctopusOn SEO account",
+    description: "OctopusOn SEO credits, devices and usage.",
   },
   nav: {
     account: "Account",
@@ -26,10 +26,10 @@ export const en: Dictionary = {
     legal: "Legal",
   },
   auth: {
-    signInTitle: "Sign in to octopusSEO",
+    signInTitle: "Sign in to OctopusOn SEO",
     signInLead: "Your credits and connected programs in one account.",
-    signUpTitle: "Create an octopusSEO account",
-    signUpLead: "The programs are free with your own keys. The account is for using paid sources with octopusSEO credits.",
+    signUpTitle: "Create an OctopusOn SEO account",
+    signUpLead: "The programs are free with your own keys. The account is for using paid sources with OctopusOn SEO credits.",
     email: "E-mail",
     password: "Password",
     passwordHint: "At least 10 characters.",
@@ -69,14 +69,14 @@ export const en: Dictionary = {
     spent30: "Spent in 30 days",
     requests30: "Requests in 30 days",
     credits: "credits",
-    noCredits: "You have no credits yet. Buy some so the programs can use paid sources through your octopusSEO account.",
+    noCredits: "You have no credits yet. Buy some so the programs can use paid sources through your OctopusOn SEO account.",
     lowBalance: "Your balance is low. When credits run out, the programs switch to your own key or the next source.",
     buy: "Buy credits",
     bySource: "By source (last 30 days)",
     recent: "Recent requests",
-    empty: "No credit requests yet. In a program, open Settings → octopusSEO account → Connect.",
+    empty: "No credit requests yet. In a program, open Sources → OctopusOn SEO account → Connect account.",
     howTitle: "How to use it in the programs",
-    how: "In SERP Finder or Keyword Miner, open Settings → octopusSEO account → Connect and approve the code on the page that opens. Then choose \"octopusSEO credits\" for a paid source. Using your own keys stays free.",
+    how: "In OctopusOn SERP Checker or OctopusOn SEO Keyword Research, open Sources → OctopusOn SEO account → Connect account and approve the code on the page that opens. Then choose \"Credits\" for a paid source. Using your own keys stays free.",
   },
   table: {
     source: "Source",
@@ -100,7 +100,7 @@ export const en: Dictionary = {
   },
   buy: {
     title: "Buy credits",
-    lead: "Credits let you use paid sources (SERPs, volumes, backlinks) through octopusSEO. Credits work only in octopusSEO programs; they cannot be transferred or cashed out.",
+    lead: "Credits let you use paid sources (SERPs, volumes, backlinks) through OctopusOn SEO. Credits work only in OctopusOn SEO programs; they cannot be transferred or cashed out.",
     vatIncluded: "VAT included",
     approx: "about",
     rateNote: "Credits are priced at the Central Bank of Turkey's USD rate at payment time plus a {buffer}% exchange margin.",

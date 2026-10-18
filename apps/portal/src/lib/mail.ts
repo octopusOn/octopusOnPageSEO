@@ -16,5 +16,5 @@ export async function sendMail(to: string, subject: string, text: string): Promi
     console.log(`[mail] to ${to}: ${subject}\n${text}`);
     return;
   }
-  await smtp.sendMail({ from: process.env.MAIL_FROM || "octopusSEO <hesap@octopuson.com>", to, subject, text });
+  await smtp.sendMail({ from: process.env.MAIL_FROM || "OctopusOn SEO <hesap@octopuson.com>", to, subject, text });
 }

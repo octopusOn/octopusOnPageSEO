@@ -211,7 +211,7 @@ export async function issueInvoice(db: Db, parasut: Parasut, orderId: string, ch
       const invoice = await parasut.createSalesInvoice(
         {
           item_type: "invoice",
-          description: "octopusSEO kredi",
+          description: "OctopusOn SEO kredi",
           issue_date: day,
           due_date: day,
           currency: "TRL",
@@ -230,7 +230,7 @@ export async function issueInvoice(db: Db, parasut: Parasut, orderId: string, ch
             quantity: 1,
             unit_price: netKurus / 100,
             vat_rate: Math.round(channel.vatRate * 100),
-            description: `octopusSEO kredi (sipariş ${order.conversationId})`,
+            description: `OctopusOn SEO kredi (sipariş ${order.conversationId})`,
           },
         ],
       );

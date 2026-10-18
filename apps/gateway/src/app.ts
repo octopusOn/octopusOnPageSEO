@@ -48,8 +48,8 @@ async function owner(c: Context<Env>, db: Db): Promise<TokenOwner | null> {
 }
 
 function unauthorized(): Response {
-  return problem(401, "invalid_token", "Sign in to your octopusSEO account again.", {
-    "www-authenticate": 'Bearer realm="octopusSEO"',
+  return problem(401, "invalid_token", "Sign in to your OctopusOn SEO account again.", {
+    "www-authenticate": 'Bearer realm="OctopusOn SEO"',
   });
 }
 
@@ -76,7 +76,7 @@ export function createApp(deps: AppDeps): Hono<Env> {
     const wait = deps.limiter.take(`device-code:${clientIp(c, deps.trustProxy)}`, 10);
     if (wait > 0) return problem(429, "rate_limited", "Too many sign-in attempts.", { "retry-after": String(wait) });
     const body = (await c.req.json().catch(() => ({}))) as { client?: unknown };
-    const client = typeof body.client === "string" && body.client.trim() ? body.client.trim() : "octopusSEO app";
+    const client = typeof body.client === "string" && body.client.trim() ? body.client.trim() : "OctopusOn SEO app";
     const started = await startDevice(db, client.replace(/[^\w./ ()-]/g, ""));
     const verification = `${deps.portalUrl}/cihaz`;
     return c.json({

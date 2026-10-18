@@ -130,7 +130,7 @@ describe("iyzico", () => {
         orderId: "order-1",
         conversationId: "OCT1",
         amountKurus: 25_000,
-        itemName: "octopusSEO kredi",
+        itemName: "OctopusOn SEO kredi",
         callbackUrl: "https://my.octopuson.com/api/odeme/iyzico",
         locale: "tr",
         billingName: "Ada Lovelace",
@@ -163,7 +163,7 @@ describe("iyzico", () => {
     expect(result).toEqual({ token: "tok-1", paymentPageUrl: "https://sandbox-cpp.iyzipay.com?token=tok-1" });
     expect(sent).toMatchObject({ price: "250.0", paidPrice: "250.0", currency: "TRY", basketId: "order-1", enabledInstallments: [1] });
     expect(sent.basketItems).toEqual([
-      { id: "order-1", name: "octopusSEO kredi", category1: "Software services", itemType: "VIRTUAL", price: "250.0" },
+      { id: "order-1", name: "OctopusOn SEO kredi", category1: "Software services", itemType: "VIRTUAL", price: "250.0" },
     ]);
   });
 
@@ -208,7 +208,7 @@ describe("PayTR", () => {
       merchantOid: "OCT1",
       email: "ada@example.com",
       amountKurus: 25_000,
-      itemName: "octopusSEO kredi",
+      itemName: "OctopusOn SEO kredi",
       userIp: "203.0.113.9",
       userName: "Ada Lovelace",
       userAddress: "Kadıköy",
@@ -219,7 +219,7 @@ describe("PayTR", () => {
     });
     const text = `123456203.0.113.9OCT1ada@example.com25000${fields.user_basket}10TL1salt`;
     expect(fields.paytr_token).toBe(createHmac("sha256", "key").update(text).digest("base64"));
-    expect(JSON.parse(Buffer.from(fields.user_basket!, "base64").toString())).toEqual([["octopusSEO kredi", "250.00", 1]]);
+    expect(JSON.parse(Buffer.from(fields.user_basket!, "base64").toString())).toEqual([["OctopusOn SEO kredi", "250.00", 1]]);
   });
 
   it("checks notification hashes", () => {

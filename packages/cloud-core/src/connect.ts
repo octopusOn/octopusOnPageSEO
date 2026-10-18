@@ -36,7 +36,7 @@ export function parseConnectRequest(params: URLSearchParams): ConnectRequest | n
   if (!match || port < 1024 || port > 65_535) return null;
   if (params.get("code_challenge_method") !== "S256" || !/^[A-Za-z0-9_-]{43}$/.test(challenge)) return null;
   if (!/^[A-Za-z0-9_-]{8,128}$/.test(state)) return null;
-  const client = (params.get("client") ?? "octopusSEO").replace(/[^\w./ ()-]/g, "").slice(0, 120) || "octopusSEO";
+  const client = (params.get("client") ?? "OctopusOn SEO").replace(/[^\w./ ()-]/g, "").slice(0, 120) || "OctopusOn SEO";
   return { redirectUri, state, challenge, client };
 }
 

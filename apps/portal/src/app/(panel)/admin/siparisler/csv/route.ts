@@ -62,7 +62,7 @@ export async function GET(request: NextRequest): Promise<Response> {
   return new NextResponse(`﻿${[header.join(","), ...lines].join("\r\n")}\r\n`, {
     headers: {
       "content-type": "text/csv; charset=utf-8",
-      "content-disposition": `attachment; filename="octopusseo-siparisler-${month}.csv"`,
+      "content-disposition": `attachment; filename="octopuson-siparisler-${month}.csv"`,
       "cache-control": "no-store",
     },
   });

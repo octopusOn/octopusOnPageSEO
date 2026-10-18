@@ -7,7 +7,7 @@ import { legalDocuments } from "@/legal/documents";
 
 export async function generateMetadata({ params }: { params: Promise<{ slug: string }> }) {
   const { slug } = await params;
-  return { title: legalDocuments(company()).find((doc) => doc.slug === slug)?.title ?? "octopusSEO" };
+  return { title: legalDocuments(company()).find((doc) => doc.slug === slug)?.title ?? "OctopusOn SEO" };
 }
 
 export default async function Legal({ params }: { params: Promise<{ slug: string }> }) {
@@ -21,7 +21,7 @@ export default async function Legal({ params }: { params: Promise<{ slug: string
         <Link href="/" className="oc-brand legal-brand">
           <BrandMark />
           <span className="oc-brand-name">
-            octopus<span>SEO</span>
+            OctopusOn <span>SEO</span>
           </span>
         </Link>
         {!legalApproved() ? (
