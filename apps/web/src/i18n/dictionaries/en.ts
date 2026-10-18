@@ -60,8 +60,8 @@ export const en = {
       linux: "AppImage: make it executable (chmod +x) and run it — or install the .deb or .rpm package.",
     },
     macOpen: {
-      title: "Opening the app on a Mac",
-      text: "The Mac version is not notarized by Apple yet, so on first launch macOS says Apple could not verify the app is free of malware. Drag the app to Applications, run this command once in Terminal, then open the app again:",
+      title: "Important: opening the app on a Mac",
+      text: "The Mac version is not notarized by Apple yet, so on first launch macOS says Apple could not verify the app is free of malware (or that the app “is damaged”). It is not damaged. Drag the app to Applications, run this command once in Terminal, then open the app again:",
       alternative: "Without Terminal: close the message, open System Settings → Privacy & Security and click “Open Anyway”.",
     },
     arch: {

@@ -58,8 +58,8 @@ export const de: Dictionary = {
       linux: "AppImage: ausführbar machen (chmod +x) und starten – oder das .deb- bzw. .rpm-Paket installieren.",
     },
     macOpen: {
-      title: "Die App auf dem Mac öffnen",
-      text: "Die Mac-Version ist noch nicht von Apple notarisiert. Deshalb meldet macOS beim ersten Start, Apple könne nicht überprüfen, ob die App frei von Schadsoftware ist. Ziehen Sie die App in den Ordner „Programme“, führen Sie diesen Befehl einmal im Terminal aus und öffnen Sie die App erneut:",
+      title: "Wichtig: Die App auf dem Mac öffnen",
+      text: "Die Mac-Version ist noch nicht von Apple notarisiert. Deshalb meldet macOS beim ersten Start, Apple könne nicht überprüfen, ob die App frei von Schadsoftware ist (oder dass die App „beschädigt“ sei). Sie ist nicht beschädigt. Ziehen Sie die App in den Ordner „Programme“, führen Sie diesen Befehl einmal im Terminal aus und öffnen Sie die App erneut:",
       alternative: "Ohne Terminal: Meldung schließen, Systemeinstellungen → Datenschutz & Sicherheit öffnen und auf „Dennoch öffnen“ klicken.",
     },
     arch: {

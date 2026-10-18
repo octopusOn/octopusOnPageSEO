@@ -58,8 +58,8 @@ export const tr: Dictionary = {
       linux: "AppImage: dosyayı çalıştırılabilir yapın (chmod +x) ve açın — ya da .deb veya .rpm paketini kurun.",
     },
     macOpen: {
-      title: "Uygulamayı Mac'te açmak",
-      text: "Mac sürümü henüz Apple onayından (notarization) geçmedi; bu yüzden macOS ilk açılışta “Apple, uygulamanın kötü amaçlı yazılım içermediğini doğrulayamadı” der. Uygulamayı Uygulamalar klasörüne sürükleyin, Terminal'de bu komutu bir kez çalıştırın ve uygulamayı yeniden açın:",
+      title: "Önemli: Uygulamayı Mac'te açmak",
+      text: "Mac sürümü henüz Apple onayından (notarization) geçmedi; bu yüzden macOS ilk açılışta “Apple, uygulamanın kötü amaçlı yazılım içermediğini doğrulayamadı” der (ya da uygulamanın “hasarlı” olduğunu söyler). Uygulama hasarlı değildir. Uygulamayı Uygulamalar klasörüne sürükleyin, Terminal'de bu komutu bir kez çalıştırın ve uygulamayı yeniden açın:",
       alternative: "Terminal kullanmadan: uyarıyı kapatın, Sistem Ayarları → Gizlilik ve Güvenlik'i açın ve “Yine de Aç”a tıklayın.",
     },
     arch: {

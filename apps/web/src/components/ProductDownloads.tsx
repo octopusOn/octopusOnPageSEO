@@ -1,4 +1,4 @@
-import { Apple, Download, Terminal as TerminalIcon } from "lucide-react";
+import { Apple, Download, Terminal as TerminalIcon, TriangleAlert } from "lucide-react";
 
 import { CopyButton } from "@/components/CopyButton";
 import { WindowsIcon } from "@/components/icons";
@@ -93,7 +93,7 @@ export function ProductDownloads({
           {mac && (
             <aside id={`${id}-macos`} className="card mac-open" aria-labelledby={`${id}-macos-title`}>
               <h4 id={`${id}-macos-title`}>
-                <Apple size={18} aria-hidden="true" /> {d.macOpen.title}
+                <TriangleAlert size={20} aria-hidden="true" /> {d.macOpen.title}
               </h4>
               <p>{d.macOpen.text}</p>
               <div className="code-block">

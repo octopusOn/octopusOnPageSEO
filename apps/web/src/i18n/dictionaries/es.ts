@@ -58,8 +58,8 @@ export const es: Dictionary = {
       linux: "AppImage: hazlo ejecutable (chmod +x) y ábrelo, o instala el paquete .deb o .rpm.",
     },
     macOpen: {
-      title: "Abrir la app en un Mac",
-      text: "La versión para Mac aún no está notarizada por Apple, así que en el primer inicio macOS dice que Apple no ha podido verificar que la app esté libre de software malicioso. Arrastra la app a Aplicaciones, ejecuta este comando una vez en Terminal y vuelve a abrirla:",
+      title: "Importante: abrir la app en un Mac",
+      text: "La versión para Mac aún no está notarizada por Apple, así que en el primer inicio macOS dice que Apple no ha podido verificar que la app esté libre de software malicioso (o que la app «está dañada»). No está dañada. Arrastra la app a Aplicaciones, ejecuta este comando una vez en Terminal y vuelve a abrirla:",
       alternative: "Sin Terminal: cierra el aviso, abre Ajustes del Sistema → Privacidad y seguridad y pulsa «Abrir igualmente».",
     },
     arch: {
