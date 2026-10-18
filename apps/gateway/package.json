@@ -1,0 +1,26 @@
+{
+  "name": "@octopusseo/gateway",
+  "private": true,
+  "version": "0.1.0",
+  "description": "api.octopuson.com: forwards the desktop apps' paid-source requests with our provider accounts and charges credits.",
+  "license": "MIT OR Apache-2.0",
+  "type": "module",
+  "scripts": {
+    "start": "node --env-file-if-exists=.env.local src/main.ts",
+    "dev": "node --env-file-if-exists=.env.local --watch src/main.ts",
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run",
+    "check": "tsc --noEmit && vitest run"
+  },
+  "dependencies": {
+    "@hono/node-server": "2.1.3",
+    "@octopusseo/cloud-core": "workspace:*",
+    "hono": "4.13.12"
+  },
+  "devDependencies": {
+    "@electric-sql/pglite": "0.5.10",
+    "@types/node": "24.13.6",
+    "typescript": "5.9.3",
+    "vitest": "5.0.2"
+  }
+}

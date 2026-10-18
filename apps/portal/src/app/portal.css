@@ -1,0 +1,599 @@
+/* my.octopuson.com: the Deep Sea glass of the programs (from @octopusseo/design), laid out for
+   a browser window: the sidebar scrolls with the page on wide screens and becomes a top bar on
+   narrow ones. */
+
+html,
+body {
+  min-height: 100%;
+  margin: 0;
+}
+
+body {
+  background: var(--ground-2);
+  color: var(--ink);
+}
+
+a {
+  color: var(--accent);
+}
+
+a.oc-btn {
+  text-decoration: none;
+}
+
+.portal-shell {
+  min-height: 100vh;
+  height: auto;
+}
+
+.portal-shell .oc-rail {
+  position: sticky;
+  top: 0;
+  height: 100vh;
+  overflow-y: auto;
+  padding-top: var(--space-6);
+}
+
+.portal-shell .oc-nav + .oc-nav {
+  margin-top: var(--space-4);
+}
+
+.nav-heading {
+  padding: var(--space-2) var(--space-3);
+}
+
+.oc-nav-item {
+  text-decoration: none;
+}
+
+.rail-user {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  padding: 0 var(--space-2) var(--space-3);
+  min-width: 0;
+}
+
+.rail-user span {
+  color: var(--ink-faint);
+  font-size: 12px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.rail-actions {
+  display: flex;
+  gap: var(--space-2);
+  flex-wrap: wrap;
+}
+
+.page {
+  padding: var(--space-10);
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-6);
+  max-width: 1200px;
+  width: 100%;
+  box-sizing: border-box;
+}
+
+/* The page pads itself; the design's page header padding is for app windows. */
+.page .oc-pagehead {
+  padding: 0;
+}
+
+.muted {
+  color: var(--ink-muted);
+}
+
+.small {
+  font-size: 13px;
+}
+
+.mono,
+.oc-code {
+  font-family: var(--font-mono);
+}
+
+.oc-cards.two {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(340px, 1fr));
+  gap: var(--space-4);
+}
+
+.oc-card.narrow {
+  max-width: 560px;
+}
+
+.section-title {
+  margin: var(--space-6) 0 var(--space-2);
+  font-size: 15px;
+  font-weight: 600;
+}
+
+.facts {
+  display: grid;
+  grid-template-columns: max-content 1fr;
+  gap: var(--space-1) var(--space-4);
+  margin: var(--space-3) 0;
+  font-size: 13px;
+}
+
+.facts dt {
+  color: var(--ink-faint);
+}
+
+.facts dd {
+  margin: 0;
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+
+/* Forms */
+
+.form {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+}
+
+.form-inline {
+  display: flex;
+  align-items: flex-end;
+  gap: var(--space-3);
+  flex-wrap: wrap;
+  margin-top: var(--space-3);
+}
+
+.form-inline .form-foot {
+  margin: 0;
+}
+
+.form-foot {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  flex-wrap: wrap;
+}
+
+.form-error {
+  color: var(--critical);
+  margin: 0;
+  white-space: pre-line;
+  font-size: 13px;
+}
+
+.form-ok {
+  color: var(--good);
+  margin: 0;
+  font-size: 13px;
+}
+
+.field-row {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+  gap: var(--space-3);
+}
+
+.field-row .grow {
+  grid-column: span 2;
+}
+
+.oc-code.once {
+  user-select: all;
+  overflow-wrap: anywhere;
+  white-space: pre-wrap;
+  padding: var(--space-3);
+}
+
+.link-button {
+  background: none;
+  border: 0;
+  padding: 0;
+  color: var(--accent);
+  cursor: pointer;
+  font: inherit;
+}
+
+.search-row {
+  display: flex;
+  gap: var(--space-3);
+  max-width: 520px;
+}
+
+/* Sign-in screens */
+
+.auth-ground {
+  min-height: 100vh;
+  display: grid;
+  place-items: center;
+  padding: var(--space-6) var(--space-4);
+  box-sizing: border-box;
+}
+
+.auth-box {
+  width: 100%;
+  max-width: 440px;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-5);
+}
+
+.auth-brand {
+  justify-content: center;
+}
+
+.auth-title {
+  margin: 0;
+  font-size: 26px;
+  line-height: 32px;
+  font-weight: 600;
+  letter-spacing: -0.02em;
+}
+
+.auth-lead {
+  margin: 0;
+  color: var(--ink-muted);
+}
+
+.auth-links {
+  display: flex;
+  justify-content: space-between;
+  gap: var(--space-3);
+  flex-wrap: wrap;
+  margin: 0;
+  font-size: 13px;
+  color: var(--ink-muted);
+}
+
+.auth-fine {
+  margin: 0;
+  font-size: 12px;
+  color: var(--ink-faint);
+}
+
+/* Device sign-in */
+
+.device-card {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+}
+
+.device-code {
+  font-size: clamp(24px, 8vw, 34px);
+  white-space: nowrap;
+  letter-spacing: 0.12em;
+  margin: 0;
+}
+
+.device-input {
+  font-size: 22px;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+}
+
+.device-actions {
+  display: flex;
+  gap: var(--space-3);
+  align-items: center;
+  flex-wrap: wrap;
+}
+
+/* Credits */
+
+.packages {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: var(--space-4);
+}
+
+.package {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+}
+
+.package-price {
+  font-size: 30px;
+  font-weight: 600;
+  letter-spacing: -0.02em;
+}
+
+/* Two-step set-up */
+
+.qr {
+  background: #fff;
+  border-radius: var(--radius-sm);
+  padding: var(--space-2);
+  width: 192px;
+  height: 192px;
+}
+
+.secret-uri {
+  overflow-wrap: anywhere;
+}
+
+.backup-codes pre {
+  columns: 2;
+}
+
+/* Admin */
+
+.status-card {
+  display: flex;
+  align-items: center;
+  gap: var(--space-4);
+  flex-wrap: wrap;
+}
+
+.status-buttons {
+  display: flex;
+  gap: var(--space-2);
+  flex-wrap: wrap;
+}
+
+.status-buttons .form-inline {
+  margin: 0;
+}
+
+.secret-row {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+  padding: var(--space-3) 0;
+  border-bottom: 1px solid var(--line);
+}
+
+.secret-name {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+}
+
+.secret-row .form-inline {
+  margin-top: var(--space-1);
+}
+
+.textarea-wrap,
+.config {
+  width: 100%;
+  min-height: 420px;
+  font-size: 12.5px;
+  line-height: 1.5;
+  box-sizing: border-box;
+}
+
+.probe {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+}
+
+.probe-value {
+  font-size: 28px;
+  font-weight: 600;
+  margin: 0;
+}
+
+.preview {
+  max-height: 260px;
+  overflow: auto;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+  font-size: 12px;
+  padding: var(--space-3);
+}
+
+.oc-chip {
+  text-decoration: none;
+  display: inline-flex;
+  gap: var(--space-2);
+  align-items: center;
+}
+
+/* Narrow windows: the sidebar becomes a bar above the page. */
+
+@media (max-width: 860px) {
+  .portal-shell {
+    grid-template-columns: 1fr;
+  }
+
+  .portal-shell .oc-rail {
+    position: static;
+    height: auto;
+    padding: var(--space-4);
+  }
+
+  .portal-shell .oc-nav {
+    flex: none;
+    flex-direction: row;
+    flex-wrap: wrap;
+    gap: var(--space-1);
+    overflow: visible;
+  }
+
+  .portal-shell .nav-heading {
+    width: 100%;
+  }
+
+  .page {
+    padding: var(--space-6) var(--space-4);
+  }
+
+  .portal-shell .oc-nav-item {
+    width: auto;
+    min-height: 38px;
+    font-size: 14px;
+  }
+
+  .portal-shell .oc-nav-item .oc-tile {
+    width: 24px;
+    height: 24px;
+  }
+
+  .page .oc-pagehead {
+    flex-direction: column;
+    gap: var(--space-3);
+  }
+
+  .oc-pagehead-title {
+    font-size: 32px;
+    line-height: 38px;
+  }
+
+  .oc-pagehead-lead {
+    font-size: 16px;
+    line-height: 23px;
+  }
+
+  .oc-pagehead-actions {
+    padding-top: 0;
+  }
+
+  .oc-cards.two {
+    grid-template-columns: 1fr;
+  }
+
+  .field-row .grow {
+    grid-column: auto;
+  }
+}
+
+/* Payments */
+
+.package-credits {
+  font-size: 15px;
+  color: var(--ink-muted);
+}
+
+.facts.large {
+  font-size: 15px;
+  gap: var(--space-2) var(--space-6);
+}
+
+.payment-frame {
+  width: 100%;
+  min-height: 640px;
+  border: 0;
+  border-radius: var(--radius-lg);
+  background: #fff;
+}
+
+.row-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-1);
+}
+
+.row-actions .form-inline {
+  margin: 0;
+}
+
+.oc-segmented input {
+  position: absolute;
+  opacity: 0;
+  pointer-events: none;
+}
+
+.oc-chip.active {
+  background: var(--surface-3);
+  border-color: var(--line-strong);
+}
+
+.rail-legal {
+  padding: var(--space-2) var(--space-3);
+}
+
+.rail-legal a {
+  color: var(--ink-faint);
+  text-decoration: none;
+}
+
+/* Legal pages */
+
+.legal-ground {
+  min-height: 100vh;
+  padding: var(--space-10) var(--space-4);
+  box-sizing: border-box;
+}
+
+.legal {
+  max-width: 760px;
+  margin: 0 auto;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+  line-height: 1.6;
+}
+
+.legal h1 {
+  font-size: 34px;
+  line-height: 40px;
+  letter-spacing: -0.02em;
+  margin: var(--space-4) 0 0;
+}
+
+.legal h2 {
+  font-size: 18px;
+  margin: var(--space-4) 0 var(--space-1);
+}
+
+.legal p {
+  margin: 0 0 var(--space-2);
+  color: var(--ink-muted);
+}
+
+.legal-brand {
+  text-decoration: none;
+  color: var(--ink);
+}
+
+.legal-nav {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2) var(--space-4);
+  border-top: 1px solid var(--line);
+  padding-top: var(--space-4);
+  margin-top: var(--space-6);
+}
+
+.legal-nav a[aria-current="page"] {
+  color: var(--ink);
+}
+
+/* The segmented control with radio inputs (the design styles buttons). */
+.oc-segmented label {
+  display: inline-flex;
+  align-items: center;
+  height: 30px;
+  padding: 0 14px;
+  border: 1px solid transparent;
+  border-radius: var(--radius-sm);
+  color: var(--ink-muted);
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.oc-segmented label.active {
+  background: var(--surface-3);
+  border-color: var(--line-strong);
+  color: var(--ink);
+}
+
+.oc-segmented label:has(input:focus-visible) {
+  outline: 2px solid #fff;
+  outline-offset: 2px;
+}
+
+.auth-legal {
+  display: flex;
+  justify-content: center;
+  flex-wrap: wrap;
+  gap: var(--space-3);
+  font-size: 12px;
+}
+
+.auth-legal a {
+  color: var(--ink-faint);
+}

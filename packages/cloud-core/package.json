@@ -1,0 +1,35 @@
+{
+  "name": "@octopusseo/cloud-core",
+  "private": true,
+  "version": "0.1.0",
+  "description": "octopusSEO credits: database schema, wallet ledger, connector plugins and pricing shared by the gateway and the account portal.",
+  "license": "MIT OR Apache-2.0",
+  "type": "module",
+  "exports": {
+    ".": "./src/index.ts",
+    "./schema": "./src/db/schema.ts",
+    "./testing": "./src/testing.ts",
+    "./migrate": "./src/db/migrate.ts"
+  },
+  "scripts": {
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run",
+    "check": "tsc --noEmit && vitest run",
+    "generate": "drizzle-kit generate",
+    "db:migrate": "node src/cli.ts migrate",
+    "db:seed": "node src/cli.ts seed"
+  },
+  "dependencies": {
+    "drizzle-orm": "0.45.4",
+    "pg": "8.23.1",
+    "zod": "4.6.7"
+  },
+  "devDependencies": {
+    "@electric-sql/pglite": "0.5.10",
+    "@types/node": "24.13.6",
+    "@types/pg": "8.23.1",
+    "drizzle-kit": "0.31.11",
+    "typescript": "5.9.3",
+    "vitest": "5.0.2"
+  }
+}
