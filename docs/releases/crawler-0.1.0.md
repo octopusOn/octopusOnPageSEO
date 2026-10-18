@@ -2,7 +2,7 @@ First release of the OctopusOn SEO Crawler: a desktop app and the `octopuson-cra
 
 ## Highlights
 
-- **Spider and URL-list crawls** with parallel requests, rate limits, user-agent presets, robots.txt, sitemaps, scope patterns and query-parameter removal. No built-in URL limit.
+- **Spider-mode and URL-list crawls** with parallel requests, rate limits, user-agent presets, robots.txt, sitemaps, scope patterns and query-parameter removal. No built-in URL limit.
 - **JavaScript rendering** through an installed Chrome, Chromium or Edge, with raw versus rendered comparisons and explicit per-page rendering errors.
 - **More than 100 technical checks**: response codes, redirect chains and loops, titles and descriptions, headings, canonical and hreflang relationships, images, links, orphan pages, structured data, security, response times, and AI crawler access including `llms.txt`.
 - **An explainable SEO score**, broken down system by system, with every deduction leading back to its findings and URLs.
