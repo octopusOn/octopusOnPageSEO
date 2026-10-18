@@ -1510,8 +1510,8 @@ pre {
   }
 }
 
-@media (max-width: 420px) {
-  /* Logo, GitHub star, language, download and menu share a 375px phone's width. */
+@media (max-width: 480px) {
+  /* Logo, GitHub star, language, download and menu share a phone's width. */
   .nav {
     gap: 8px;
   }
