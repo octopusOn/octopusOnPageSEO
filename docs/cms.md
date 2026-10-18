@@ -134,16 +134,53 @@ it up from there.
 
 New icons go in `config/cms.php` (`icons`) and `apps/web/src/components/blocks/icons.tsx`. Then run `pnpm --filter @octopusseo/cms icons`.
 
-## Deploying (Contabo, Docker Compose, Caddy)
+## Deploying
 
-Not set up yet. A starting point:
-- **CMS container.** Use `dunglas/frankenphp` or `php:8.4-fpm` with the code and `composer install --no-dev --optimize-autoloader`. Build the assets in a Node stage with `pnpm --filter @octopusseo/cms build`, because they need `packages/design` from the monorepo.
-  - Run `php artisan migrate --force`, `config:cache`, `route:cache` and `view:cache` on start.
-  - Persist `storage/` (uploads in `storage/app/public`).
-- **Database.** `DB_CONNECTION=pgsql` with its own database (`octopus_cms`) on the existing Postgres.
-- **Caddy.** Serve `cms.octopuson.com` (admin, API and `/storage` media) from the CMS container and `octopuson.com` from `apps/web`. The CMS trusts the proxy's forwarded headers.
-- **Environment.**
-  - CMS: `APP_URL=https://cms.octopuson.com`, `CMS_WEB_URL=https://octopuson.com`, and `CMS_REVALIDATE_URL=http://web:3000/api/revalidate` (the internal address).
-  - Web: `CMS_API_URL=http://cms:8000` (internal).
-  - Both: the same `CMS_REVALIDATE_SECRET` and `CMS_PREVIEW_SECRET`.
-- **Backups.** Back up the Postgres database and `storage/app/public`.
+The live site runs on the Contabo server (207.180.209.30), which CloudPanel manages alongside other sites. Cloudflare sits in front of it with SSL mode "Full", so the origin's self-signed CloudPanel certificate is enough.
+
+| Part | Where |
+|---|---|
+| Code | `/home/octopuson/octopusOnPageSEO`, a clone of this repository owned by the CloudPanel site user `octopuson` |
+| Website | `octopuson-web.service` (systemd) runs `next start` on `127.0.0.1:3000`; `apps/web/.env.production.local` holds its settings |
+| octopuson.com | The CloudPanel vhost `/etc/nginx/sites-enabled/octopuson.com.conf` proxies `/` to port 3000 and serves `/storage/` (uploads) from the CMS. The original is in `/root/nginx-backup/` |
+| CMS | `/etc/nginx/sites-enabled/cms.octopuson.com.conf`, a hand-written vhost and not a CloudPanel site. It uses the `octopuson` PHP 8.5 FPM pool (`127.0.0.1:20028`) and also listens on `127.0.0.1:8095`, where the website reads the API |
+| Database | SQLite, `apps/cms/database/database.sqlite`, with WAL mode and a 5 s busy timeout |
+| Uploads | `apps/cms/storage/app/public`, published as `https://octopuson.com/storage/…` (`CMS_MEDIA_URL`) |
+
+Production settings in `apps/cms/.env`, besides the secrets:
+- `APP_ENV=production`, `APP_DEBUG=false`, `APP_URL=https://cms.octopuson.com`
+- `CMS_WEB_URL=https://octopuson.com`, `CMS_REVALIDATE_URL=http://127.0.0.1:3000/api/revalidate`
+- `CMS_MEDIA_URL=https://octopuson.com/storage`
+- `CACHE_STORE=file`, because the API's rate limiter writes to the cache on every request.
+
+The website's `.env.production.local` has `CMS_API_URL=http://127.0.0.1:8095` and the same `CMS_REVALIDATE_SECRET` and `CMS_PREVIEW_SECRET`.
+
+To update both apps after pushing to `main`, run on the server as root:
+
+```bash
+bash /home/octopuson/octopusOnPageSEO/scripts/deploy-website.sh
+```
+
+The script pulls, installs dependencies, migrates the CMS, rebuilds both apps and restarts the website.
+
+Things to know:
+- **Admin accounts.** Create one with `php8.5 artisan cms:admin you@example.com --name="…"`, run as the `octopuson` user in `apps/cms`. It asks for the password.
+- **CloudPanel and the vhost.** Saving octopuson.com's vhost in CloudPanel can bring back its PHP template. The 443 server block needs these two locations instead of the template's `location /` and static-file location, then `nginx -t && systemctl reload nginx`:
+
+  ```nginx
+  location ^~ /storage/ {
+    alias /home/octopuson/octopusOnPageSEO/apps/cms/storage/app/public/;
+    expires 30d;
+    access_log off;
+  }
+
+  location / {
+    proxy_pass http://127.0.0.1:3000;
+    proxy_set_header X-Forwarded-Proto https;
+    proxy_set_header Host $host;
+    proxy_set_header X-Forwarded-Host $host;
+    proxy_set_header X-Real-IP $remote_addr;
+    proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+  }
+  ```
+- **Backups.** Back up `apps/cms/database/database.sqlite` (with its `-wal` file) and `apps/cms/storage/app/public`.
