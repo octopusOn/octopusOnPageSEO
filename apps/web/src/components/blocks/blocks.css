@@ -4,6 +4,8 @@
 
 .block-stack {
   display: grid;
+  /* Long code lines scroll inside their block instead of widening the page. */
+  grid-template-columns: minmax(0, 1fr);
   gap: 48px;
   max-width: 980px;
   padding-top: 24px;
