@@ -1,0 +1,32 @@
+# my.octopuson.com: the account portal (apps/portal), Next.js standalone server.
+# Installed as /etc/systemd/system/octopuson-portal.service; see docs/cloud.md, "Deploying".
+# scripts/deploy-account.sh copies each build to /home/octopuson/portal-releases/<time> and
+# points `current` at it, so a build never disturbs the running server.
+[Unit]
+Description=OctopusOn SEO account portal (my.octopuson.com, apps/portal)
+After=network.target postgresql.service
+Wants=postgresql.service
+
+[Service]
+Type=simple
+User=octopuson
+Group=octopuson
+WorkingDirectory=/home/octopuson/portal-releases/current/apps/portal
+# DATABASE_URL and OCTOPUS_MASTER_KEY, shared with the gateway.
+EnvironmentFile=/etc/octopuson/cloud.env
+# BETTER_AUTH_SECRET, SMTP_URL, payment, Paraşüt and company settings.
+EnvironmentFile=/etc/octopuson/portal.env
+Environment=NODE_ENV=production
+Environment=NEXT_TELEMETRY_DISABLED=1
+Environment=HOSTNAME=127.0.0.1
+Environment=PORT=3030
+Environment=BETTER_AUTH_URL=https://my.octopuson.com
+ExecStart=/opt/node-v22.23.3-linux-x64/bin/node server.js
+Restart=always
+RestartSec=3
+NoNewPrivileges=true
+PrivateTmp=true
+ProtectSystem=full
+
+[Install]
+WantedBy=multi-user.target
