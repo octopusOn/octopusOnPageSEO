@@ -9,8 +9,8 @@ use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 
 /**
- * Read-only JSON for apps/web. Public, except that a request with the preview secret as its
- * bearer token also sees drafts.
+ * Read-only JSON for apps/web and, for the legal texts, apps/portal. Public, except that a
+ * request with the preview secret as its bearer token also sees drafts.
  */
 class ContentController extends Controller
 {
@@ -43,6 +43,23 @@ class ContentController extends Controller
         }
 
         return response()->json(isset($result['redirect']) ? ['redirect' => $result['redirect']] : ['data' => $result['page']]);
+    }
+
+    /** The account site's legal texts in a language: keys, slugs and titles. */
+    public function legal(Request $request): JsonResponse
+    {
+        $request->validate(['locale' => ['required', 'string', 'max:12']]);
+
+        return response()->json(['data' => $this->content($request)->legal($request->query('locale'))]);
+    }
+
+    /** One legal text by its slug (or key) in a language. */
+    public function legalDocument(Request $request, string $slug): JsonResponse
+    {
+        $request->validate(['locale' => ['required', 'string', 'max:12']]);
+        $document = $this->content($request)->legalDocument($request->query('locale'), $slug);
+
+        return $document ? response()->json(['data' => $document]) : response()->json(['message' => 'Not found'], 404);
     }
 
     public function sitemap(Request $request): JsonResponse

@@ -40,8 +40,14 @@ class TranslationController extends Controller
             'parentUrl' => $parentUrl,
             'definitions' => Blocks::definitions(),
             'media' => Media::query()->whereIn('id', $mediaIds)->get()->map(fn (Media $m) => $m->toApi() + ['filename' => $m->filename])->values(),
-            'previewUrl' => $translation->exists ? Preview::url($translation) : null,
-            'liveUrl' => $translation->exists && $translation->isLive() ? config('cms.web_url').$translation->url() : null,
+            // Legal texts live on the account site, which has no previews; it sends `/legal/…` to
+            // its own name for the section in that language.
+            'previewUrl' => $translation->exists && $page->type !== PageType::Legal ? Preview::url($translation) : null,
+            'liveUrl' => match (true) {
+                ! $translation->exists || ! $translation->isLive() => null,
+                $page->type === PageType::Legal => config('cms.account_url')."/{$language->code}/legal/{$translation->slug}",
+                default => config('cms.web_url').$translation->url(),
+            },
         ]);
     }
 

@@ -11,6 +11,7 @@ enum PageType: string
     case Product = 'product';
     case Post = 'post';
     case Doc = 'doc';
+    case Legal = 'legal';
 
     public function label(): string
     {
@@ -21,6 +22,7 @@ enum PageType: string
             self::Product => 'Ürün',
             self::Post => 'Yazı',
             self::Doc => 'Doküman',
+            self::Legal => 'Yasal metin',
         };
     }
 
@@ -33,6 +35,7 @@ enum PageType: string
             self::Product => 'Bir OctopusOn SEO programının sayfası; indirme ve ürün kartlarında kullanılır.',
             self::Post => 'Blog yazısı; kategorisinde yayın tarihine göre listelenir.',
             self::Doc => 'Doküman sayfası; kategorisinde sırasına göre listelenir.',
+            self::Legal => 'Hesap sitesinin (my.octopuson.com) yasal metni; web sitesinde yayınlanmaz. {{company.title}} gibi alanları hesap sitesi kendi ayarlarından doldurur.',
         };
     }
 
@@ -44,6 +47,7 @@ enum PageType: string
             self::Product => 'product',
             self::Post => 'info',
             self::Doc => 'good',
+            self::Legal => 'warning',
             self::Page => '',
         };
     }

@@ -12,8 +12,9 @@ use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Support\Collection;
 
 /**
- * What the website reads: languages, menus, a page by its address, the sitemap. Only live
- * translations of active languages are visible, unless `$drafts` is set for a preview.
+ * What the website reads: languages, menus, a page by its address, the sitemap; and the account
+ * site's legal texts, which the website never shows. Only live translations of active languages
+ * are visible, unless `$drafts` is set for a preview.
  */
 class Content
 {
@@ -35,7 +36,7 @@ class Content
     /** Header links and footer columns of a language. */
     public function navigation(string $locale): array
     {
-        $translations = $this->visible()
+        $translations = $this->website()
             ->where('locale', $locale)
             ->whereHas('page', fn (Builder $q) => $q->where(fn (Builder $q) => $q->where('in_header', true)->orWhereNotNull('footer_column')))
             ->with('page')
@@ -62,7 +63,7 @@ class Content
             // Every program's page, for the header's program menu.
             'programs' => $this->products($locale),
             // The header's download button leads to the page with every program's downloads.
-            'download' => $this->visible()->where('locale', $locale)->get(['locale', 'path', 'blocks'])
+            'download' => $this->website()->where('locale', $locale)->get(['locale', 'path', 'blocks'])
                 ->first(fn (PageTranslation $t) => collect($t->blocks)->contains('type', 'downloads'))?->url(),
         ];
     }
@@ -97,7 +98,7 @@ class Content
     public function sitemap(): array
     {
         $active = Language::query()->active()->pluck('code')->all();
-        $all = $this->visible()->whereIn('locale', $active)->with('page')->get()->groupBy('page_id');
+        $all = $this->website()->whereIn('locale', $active)->with('page')->get()->groupBy('page_id');
         $urls = [];
         foreach ($all as $translations) {
             $alternates = $translations->mapWithKeys(fn (PageTranslation $t) => [$t->locale => $t->url()])->all();
@@ -159,9 +160,75 @@ class Content
         ];
     }
 
+    /**
+     * The account site's legal texts, in page order: each in `$locale`, else in the default
+     * language, else in any language it has.
+     *
+     * @return list<array<string, mixed>>
+     */
+    public function legal(string $locale): array
+    {
+        return $this->legalTranslations()
+            ->map(fn (Collection $translations) => $this->legalSummary($this->pick($translations, $locale)))
+            ->values()->all();
+    }
+
+    /**
+     * One legal text for `/{locale}/…/{slug}`: found by its slug in `$locale`, by its key, or by
+     * its slug in another language, and returned in `$locale` when it exists there.
+     */
+    public function legalDocument(string $locale, string $slug): ?array
+    {
+        $groups = $this->legalTranslations();
+        $translations = $groups->first(fn (Collection $ts) => $ts->contains(fn (PageTranslation $t) => $t->locale === $locale && $t->slug === $slug))
+            ?? $groups->first(fn (Collection $ts) => $ts->first()?->page->key === $slug)
+            ?? $groups->first(fn (Collection $ts) => $ts->contains('slug', $slug));
+        if (! $translations) {
+            return null;
+        }
+        $translation = $this->pick($translations, $locale);
+
+        return $this->legalSummary($translation) + [
+            'excerpt' => $translation->excerpt,
+            'alternates' => $translations->map(fn (PageTranslation $t) => ['locale' => $t->locale, 'slug' => $t->slug])->values()->all(),
+            'blocks' => $this->blocks($translation->blocks ?? [], $translation->locale),
+        ];
+    }
+
+    /** @return Collection<int, Collection<int, PageTranslation>> visible translations of the legal pages, by page */
+    private function legalTranslations(): Collection
+    {
+        return $this->visible()
+            ->whereIn('locale', Language::query()->active()->pluck('code'))
+            ->whereHas('page', fn (Builder $q) => $q->where('type', PageType::Legal))
+            ->with('page')->get()
+            ->sortBy(fn (PageTranslation $t) => [$t->page->position, $t->page_id])
+            ->groupBy('page_id')
+            ->values();
+    }
+
+    /** @param  Collection<int, PageTranslation>  $translations */
+    private function pick(Collection $translations, string $locale): PageTranslation
+    {
+        return $translations->firstWhere('locale', $locale)
+            ?? $translations->firstWhere('locale', Language::defaultCode())
+            ?? $translations->first();
+    }
+
+    private function legalSummary(PageTranslation $translation): array
+    {
+        return [
+            'key' => $translation->page->key,
+            'locale' => $translation->locale,
+            'slug' => $translation->slug,
+            'title' => $translation->title,
+            'updated_at' => $translation->updated_at?->toIso8601String(),
+        ];
+    }
+
     private function find(string $locale, string $path): ?PageTranslation
     {
-        return $this->visible()->where('locale', $locale)->where('path', $path)->first();
+        return $this->website()->where('locale', $locale)->where('path', $path)->first();
     }
 
     private function visible(): Builder
@@ -172,6 +239,12 @@ class Content
         }
 
         return $query;
+    }
+
+    /** Visible translations of the website's pages: everything but the account site's legal texts. */
+    private function website(): Builder
+    {
+        return $this->visible()->whereHas('page', fn (Builder $q) => $q->where('type', '!=', PageType::Legal));
     }
 
     private function languageVisible(string $locale): bool
@@ -191,7 +264,7 @@ class Content
         $redirect = Redirect::query()->whereIn('from_path', $candidates)->with('translation')->get()
             ->sortBy(fn (Redirect $r) => array_search($r->from_path, $candidates, true))->first();
         $to = $redirect?->destination($this->drafts);
-        if (! $to) {
+        if (! $to || $redirect->translation?->page?->type === PageType::Legal) {
             return null;
         }
         if (! $this->drafts) {
@@ -234,6 +307,7 @@ class Content
             ->where('page_translations.locale', $translation->locale)
             ->join('pages', 'pages.id', '=', 'page_translations.page_id')
             ->where('pages.parent_id', $translation->page_id)
+            ->where('pages.type', '!=', PageType::Legal->value)
             ->select('page_translations.*')
             ->orderBy('pages.position')
             ->orderByDesc('page_translations.published_at')
@@ -303,7 +377,7 @@ class Content
     /** Pages that present a program, in this language: the product cards and download sections. */
     private function products(string $locale): array
     {
-        return $this->visible()->where('locale', $locale)
+        return $this->website()->where('locale', $locale)
             ->whereHas('page', fn (Builder $q) => $q->whereNotNull('product'))
             ->with('page')->get()
             ->sortBy(fn (PageTranslation $t) => [$t->page->position, $t->page_id])

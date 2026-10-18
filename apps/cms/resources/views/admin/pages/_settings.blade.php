@@ -9,12 +9,15 @@
         <small class="oc-field-hint" x-text="descriptions[type]"></small>
     </x-field>
     <x-field name="parent_id" label="Üst sayfa" hint="Kategori altına koyduğunuz sayfa o kategoride listelenir ve adresi kategorinin altına girer.">
-        <select class="oc-select" name="parent_id" :disabled="type === 'home'">
+        <select class="oc-select" name="parent_id" :disabled="type === 'home' || type === 'legal'">
             <option value="">— En üst düzey —</option>
             @foreach ($parents as $option)
                 <option value="{{ $option['id'] }}" @selected((int) old('parent_id', $page->parent_id) === $option['id'])>{{ $option['label'] }} ({{ $option['type']->label() }})</option>
             @endforeach
         </select>
+    </x-field>
+    <x-field name="key" label="Anahtar" hint="Hesap sitesi bu yasal metni bu adla bulur ve bağlantı verir: credit-terms, pre-contract-information, distance-sales, privacy, cookies." x-show="type === 'legal'">
+        <input class="oc-input font-mono" name="key" value="{{ old('key', $page->key) }}" maxlength="40" placeholder="privacy">
     </x-field>
     <x-field name="product" label="Program" hint="Ürün kartlarında ve indirmelerde bu sayfa o programı temsil eder.">
         <select class="oc-select" name="product">

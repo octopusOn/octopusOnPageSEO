@@ -170,8 +170,16 @@ class PageController extends Controller
             'icon' => ['nullable', Rule::in(config('cms.icons'))],
             'in_header' => ['boolean'],
             'footer_column' => ['nullable', Rule::in(array_keys(config('cms.footer_columns')))],
+            'key' => ['nullable', 'string', 'max:40', 'regex:/^[a-z0-9]+(-[a-z0-9]+)*$/', Rule::unique('pages', 'key')->ignore($page?->id)],
+        ], [
+            'key.regex' => 'Anahtar yalnızca küçük harf, rakam ve tire içerebilir: privacy, credit-terms.',
+            'key.unique' => 'Bu anahtar başka bir sayfada kullanılıyor.',
         ]);
         $data['parent_id'] = $data['parent_id'] ?? null;
+        $data['key'] = $data['key'] ?? null;
+        if ($data['type'] === PageType::Legal->value && $data['parent_id']) {
+            throw ValidationException::withMessages(['parent_id' => 'Yasal metinler en üst düzeyde durur; üst sayfa seçmeyin.']);
+        }
         $data['in_header'] = $request->boolean('in_header');
         if ($page && $data['parent_id'] && in_array((int) $data['parent_id'], $page->descendantIds(), true)) {
             throw ValidationException::withMessages(['parent_id' => 'Bir sayfa kendisinin ya da alt sayfasının altına taşınamaz.']);
@@ -214,7 +222,7 @@ class PageController extends Controller
             PageType::Home => ['hero', 'feature_grid', 'cta'],
             PageType::Category, PageType::Page => ['page_header'],
             PageType::Product => ['page_header', 'sections', 'product_downloads'],
-            PageType::Post, PageType::Doc => ['rich_text'],
+            PageType::Post, PageType::Doc, PageType::Legal => ['rich_text'],
         };
         $blocks = array_map(fn (string $t) => ['id' => 'b'.strtolower(str()->random(10)), 'type' => $t, 'data' => Blocks::blank($t)], $types);
         foreach ($blocks as &$block) {

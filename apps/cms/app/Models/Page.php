@@ -15,6 +15,7 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
  * @property int $id
  * @property int|null $parent_id
  * @property PageType $type
+ * @property string|null $key
  * @property string|null $product
  * @property string|null $icon
  * @property int $position
@@ -26,7 +27,7 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
  */
 class Page extends Model
 {
-    protected $fillable = ['parent_id', 'type', 'product', 'icon', 'position', 'in_header', 'footer_column'];
+    protected $fillable = ['parent_id', 'type', 'key', 'product', 'icon', 'position', 'in_header', 'footer_column'];
 
     protected function casts(): array
     {

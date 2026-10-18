@@ -1,0 +1,7 @@
+[
+  { "key": "credit-terms", "slugs": { "tr": "kredi-kosullari", "en": "credit-terms", "de": "kreditbedingungen", "es": "condiciones-de-los-creditos" } },
+  { "key": "pre-contract-information", "slugs": { "tr": "on-bilgilendirme", "en": "pre-contract-information", "de": "vorvertragliche-informationen", "es": "informacion-precontractual" } },
+  { "key": "distance-sales", "slugs": { "tr": "mesafeli-satis", "en": "distance-sales-contract", "de": "fernabsatzvertrag", "es": "contrato-de-venta-a-distancia" } },
+  { "key": "privacy", "slugs": { "tr": "kvkk", "en": "privacy-notice", "de": "datenschutzhinweise", "es": "aviso-de-privacidad" } },
+  { "key": "cookies", "slugs": { "tr": "cerezler", "en": "cookie-policy", "de": "cookie-richtlinie", "es": "politica-de-cookies" } }
+]
