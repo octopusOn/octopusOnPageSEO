@@ -191,7 +191,7 @@ export const en: Dictionary = {
     setLimit: "Save limit",
     limitHint: "Credits; empty for no limit.",
     createTitle: "Token for the command line",
-    createLead: "Create a token by hand for snx-kw or snx-serp. It is shown only once.",
+    createLead: "Create a token by hand for octopuson-keywords or octopuson-serp. It is shown only once.",
     create: "Create token",
     created: "Copy this token now; it will not be shown again:",
     empty: "No connected devices yet.",

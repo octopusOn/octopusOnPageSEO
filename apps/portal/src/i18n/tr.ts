@@ -191,7 +191,7 @@ export const tr = {
     setLimit: "Sınırı kaydet",
     limitHint: "Kredi; boş bırakılırsa sınırsız.",
     createTitle: "Komut satırı için jeton",
-    createLead: "snx-kw ya da snx-serp için elle jeton oluşturun. Jeton yalnızca bir kez gösterilir.",
+    createLead: "octopuson-keywords ya da octopuson-serp için elle jeton oluşturun. Jeton yalnızca bir kez gösterilir.",
     create: "Jeton oluştur",
     created: "Bu jetonu şimdi kopyalayın; bir daha gösterilmeyecek:",
     empty: "Henüz bağlı cihaz yok.",

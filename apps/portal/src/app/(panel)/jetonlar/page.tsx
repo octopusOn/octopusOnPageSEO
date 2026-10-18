@@ -59,7 +59,7 @@ export default async function Tokens() {
         <ActionForm action={create} submit={t.tokens.create}>
           <label className="oc-field">
             <span className="type-label">{t.table.name}</span>
-            <input className="oc-input" name="name" maxLength={80} placeholder="snx-kw · MacBook" />
+            <input className="oc-input" name="name" maxLength={80} placeholder="octopuson-keywords · MacBook" />
           </label>
         </ActionForm>
       </section>
