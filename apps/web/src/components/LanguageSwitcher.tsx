@@ -4,13 +4,33 @@ import { useEffect, useRef, useState } from "react";
 import { usePathname } from "next/navigation";
 import { Check, Globe } from "lucide-react";
 
-import { LOCALE_COOKIE, localeNames, locales, type Locale } from "@/i18n/config";
+import { LOCALE_COOKIE } from "@/i18n/config";
+import type { Language } from "@/lib/cms";
 
-/** Switches the language of the current page and remembers the choice. */
-export function LanguageSwitcher({ current, label }: { current: Locale; label: string }) {
+/**
+ * Switches to the current page in another language and remembers the choice. Translated pages
+ * have their own slugs (`/en/features` ↔ `/tr/ozellikler`), so the targets come from the page's
+ * hreflang links; a language without this page leads to its home page.
+ */
+export function LanguageSwitcher({ current, label, languages }: { current: string; label: string; languages: Language[] }) {
   const pathname = usePathname();
   const [open, setOpen] = useState(false);
+  const [targets, setTargets] = useState<Record<string, string>>({});
   const root = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    const found: Record<string, string> = {};
+    document.querySelectorAll<HTMLLinkElement>('link[rel="alternate"][hreflang]').forEach((link) => {
+      const code = link.hreflang;
+      if (code === "x-default") return;
+      try {
+        found[code] = new URL(link.href).pathname;
+      } catch {
+        // Ignore malformed links.
+      }
+    });
+    setTargets(found);
+  }, [pathname, open]);
 
   useEffect(() => {
     if (!open) return undefined;
@@ -26,9 +46,8 @@ export function LanguageSwitcher({ current, label }: { current: Locale; label: s
     };
   }, [open]);
 
-  const hrefFor = (locale: Locale) => pathname.replace(/^\/[a-z]{2}(?=\/|$)/, `/${locale}`);
-  const remember = (locale: Locale) => {
-    document.cookie = `${LOCALE_COOKIE}=${locale}; path=/; max-age=31536000; samesite=lax`;
+  const remember = (code: string) => {
+    document.cookie = `${LOCALE_COOKIE}=${code}; path=/; max-age=31536000; samesite=lax`;
   };
 
   return (
@@ -46,11 +65,16 @@ export function LanguageSwitcher({ current, label }: { current: Locale; label: s
       </button>
       {open && (
         <ul className="lang-menu" role="listbox" aria-label={label}>
-          {locales.map((locale) => (
-            <li key={locale} role="option" aria-selected={locale === current}>
-              <a href={hrefFor(locale)} hrefLang={locale} lang={locale} onClick={() => remember(locale)}>
-                <span>{localeNames[locale]}</span>
-                {locale === current && <Check size={15} aria-hidden="true" />}
+          {languages.map((language) => (
+            <li key={language.code} role="option" aria-selected={language.code === current}>
+              <a
+                href={language.code === current ? pathname : (targets[language.code] ?? `/${language.code}`)}
+                hrefLang={language.code}
+                lang={language.code}
+                onClick={() => remember(language.code)}
+              >
+                <span>{language.native_name}</span>
+                {language.code === current && <Check size={15} aria-hidden="true" />}
               </a>
             </li>
           ))}

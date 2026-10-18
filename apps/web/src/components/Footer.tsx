@@ -1,12 +1,37 @@
 import Link from "next/link";
 
-import type { Locale } from "@/i18n/config";
 import type { Dictionary } from "@/i18n";
+import type { Navigation, NavLink } from "@/lib/cms";
 import { format } from "@/lib/format";
 import { githubUrl, site } from "@/lib/site";
 import { Logo } from "./Logo";
 
-export function Footer({ lang, dict }: { lang: Locale; dict: Dictionary }) {
+function Column({ title, links, extra }: { title: string; links: NavLink[]; extra?: { href: string; label: string }[] }) {
+  const external = extra ?? [];
+  if (links.length === 0 && external.length === 0) return null;
+  return (
+    <div>
+      <h2>{title}</h2>
+      <ul>
+        {links.map((link) => (
+          <li key={link.url}>
+            <Link href={link.url}>{link.label}</Link>
+          </li>
+        ))}
+        {external.map((link) => (
+          <li key={link.href}>
+            <a href={link.href} rel={link.href.startsWith("mailto:") ? undefined : "noopener"}>
+              {link.label}
+            </a>
+          </li>
+        ))}
+      </ul>
+    </div>
+  );
+}
+
+/** The CMS's footer columns, plus GitHub, contact and issue links from the site settings. */
+export function Footer({ dict, navigation }: { lang: string; dict: Dictionary; navigation: Navigation }) {
   const f = dict.footer;
   const github = githubUrl();
   const issues = githubUrl("/issues");
@@ -17,59 +42,16 @@ export function Footer({ lang, dict }: { lang: Locale; dict: Dictionary }) {
           <Logo />
           <p>{f.tagline}</p>
         </div>
-        <div>
-          <h2>{f.product}</h2>
-          <ul>
-            <li>
-              <Link href={`/${lang}/features`}>{f.logAnalyser}</Link>
-            </li>
-            <li>
-              <span className="muted">
-                {f.spider} <span className="pill">{f.comingSoon}</span>
-              </span>
-            </li>
-            <li>
-              <Link href={`/${lang}/download`}>{dict.nav.download}</Link>
-            </li>
-          </ul>
-        </div>
-        <div>
-          <h2>{f.resources}</h2>
-          <ul>
-            <li>
-              <Link href={`/${lang}/docs`}>{dict.nav.docs}</Link>
-            </li>
-            <li>
-              <Link href={`/${lang}/changelog`}>{dict.nav.changelog}</Link>
-            </li>
-            {github && (
-              <li>
-                <a href={github} rel="noopener">
-                  {dict.nav.github}
-                </a>
-              </li>
-            )}
-          </ul>
-        </div>
-        {(site.email || issues) && (
-          <div>
-            <h2>{f.company}</h2>
-            <ul>
-              {site.email && (
-                <li>
-                  <a href={`mailto:${site.email}`}>{f.contact}</a>
-                </li>
-              )}
-              {issues && (
-                <li>
-                  <a href={issues} rel="noopener">
-                    {f.issues}
-                  </a>
-                </li>
-              )}
-            </ul>
-          </div>
-        )}
+        <Column title={f.product} links={navigation.footer.product} />
+        <Column title={f.resources} links={navigation.footer.resources} extra={github ? [{ href: github, label: dict.nav.github }] : []} />
+        <Column
+          title={f.company}
+          links={navigation.footer.company}
+          extra={[
+            ...(site.email ? [{ href: `mailto:${site.email}`, label: f.contact }] : []),
+            ...(issues ? [{ href: issues, label: f.issues }] : []),
+          ]}
+        />
       </div>
       <div className="container footer-bottom">
         <span>{format(f.rights, { year: new Date().getFullYear() })}</span>

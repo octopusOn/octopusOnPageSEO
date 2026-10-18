@@ -1,20 +1,25 @@
 import { ImageResponse } from "next/og";
 
-import { hasLocale, locales } from "@/i18n/config";
-import { getDictionary } from "@/i18n";
+import { fallbackLanguages } from "@/i18n/config";
+import { getLanguages, resolvePage } from "@/lib/cms";
 
-export const alt = "octopusSEO Log Analyser";
+export const alt = "OctopusOn SEO";
 export const size = { width: 1200, height: 630 };
 export const contentType = "image/png";
 
-export function generateStaticParams() {
-  return locales.map((lang) => ({ lang }));
+export async function generateStaticParams() {
+  try {
+    return (await getLanguages()).map((language) => ({ lang: language.code }));
+  } catch {
+    return fallbackLanguages.map((language) => ({ lang: language.code }));
+  }
 }
 
-/** Social card per language: brand, headline and the main promise. */
+/** Social card per language: brand, the home page's title and description from the CMS. */
 export default async function Image({ params }: { params: Promise<{ lang: string }> }) {
   const { lang } = await params;
-  const dict = getDictionary(hasLocale(lang) ? lang : "en");
+  const home = await resolvePage(lang, "").catch(() => null);
+  const page = home && "page" in home ? home.page : null;
   return new ImageResponse(
     (
       <div
@@ -25,29 +30,24 @@ export default async function Image({ params }: { params: Promise<{ lang: string
           flexDirection: "column",
           justifyContent: "space-between",
           padding: 72,
-          color: "white",
-          background: "linear-gradient(135deg, #1e1b4b 0%, #4c1d95 55%, #0f766e 100%)",
+          color: "#f5f5f7",
+          background: "#0a0a0c",
           fontFamily: "sans-serif",
         }}
       >
         <div style={{ display: "flex", alignItems: "center", gap: 20, fontSize: 40, fontWeight: 700 }}>
           <svg width="76" height="76" viewBox="0 0 64 64">
-            <path
-              d="M32 6c-12.2 0-21 8.6-21 20.2 0 6.4 2.7 11.3 6.6 14.6L13 52c-.7 1.6.9 3.2 2.5 2.4l5.9-3.1 2.4 6.3c.6 1.7 3 1.7 3.6 0L32 47l4.6 10.6c.6 1.7 3 1.7 3.6 0l2.4-6.3 5.9 3.1c1.6.8 3.2-.8 2.5-2.4l-4.6-11.2C50.3 37.5 53 32.6 53 26.2 53 14.6 44.2 6 32 6z"
-              fill="#a78bfa"
-            />
-            <circle cx="24.5" cy="25" r="4.4" fill="#fff" />
-            <circle cx="39.5" cy="25" r="4.4" fill="#fff" />
-            <circle cx="25.4" cy="25.9" r="2.1" fill="#1e1b4b" />
-            <circle cx="40.4" cy="25.9" r="2.1" fill="#1e1b4b" />
+            <path d="M31.95 3.93 L46.21 12.70 L46.21 28.72 L60.73 37.39 L49.34 43.59 L34.02 34.57 L34.07 18.85 L20.96 10.63 Z" fill="#eef1f6" />
+            <path d="M17.69 12.39 L29.83 19.80 L29.83 34.67 L13.65 44.25 L13.71 59.01 L1.81 51.66 L1.86 38.05 L17.69 28.47 Z" fill="#eef1f6" />
+            <path d="M31.95 38.10 L48.48 47.98 L62.19 40.27 L62.19 51.66 L48.08 60.07 L31.90 50.80 L16.28 59.62 L16.33 47.27 Z" fill="#eef1f6" />
           </svg>
-          octopusSEO
+          OctopusOn SEO
         </div>
         <div style={{ display: "flex", flexDirection: "column", gap: 24 }}>
-          <div style={{ fontSize: 64, fontWeight: 800, lineHeight: 1.08, maxWidth: 1000 }}>
-            {`${dict.hero.title} ${dict.hero.highlight}`}
+          <div style={{ fontSize: 64, fontWeight: 700, lineHeight: 1.08, letterSpacing: -2, maxWidth: 1000 }}>
+            {page?.seo.title ?? "OctopusOn SEO"}
           </div>
-          <div style={{ fontSize: 30, opacity: 0.85 }}>{dict.hero.note}</div>
+          <div style={{ fontSize: 30, color: "#a1a1a6" }}>{page?.seo.description ?? ""}</div>
         </div>
       </div>
     ),

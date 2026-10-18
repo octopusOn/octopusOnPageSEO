@@ -2,12 +2,13 @@ import { de } from "./dictionaries/de";
 import { en, type Dictionary } from "./dictionaries/en";
 import { es } from "./dictionaries/es";
 import { tr } from "./dictionaries/tr";
-import type { Locale } from "./config";
+import { hasLocale } from "./config";
 
-const dictionaries: Record<Locale, Dictionary> = { en, tr, de, es };
+const dictionaries = { en, tr, de, es };
 
-export function getDictionary(locale: Locale): Dictionary {
-  return dictionaries[locale];
+/** Interface texts of a language; English for languages without their own dictionary. */
+export function getDictionary(code: string): Dictionary {
+  return hasLocale(code) ? dictionaries[code] : en;
 }
 
 export type { Dictionary };

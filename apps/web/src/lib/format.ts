@@ -22,3 +22,12 @@ export function formatDate(iso: string, locale: string): string {
 export function formatNumber(value: number, locale: string): string {
   return new Intl.NumberFormat(locale).format(value);
 }
+
+/** Short count for badges: `1.2K`, `12K`. */
+export function formatCompact(value: number, locale: string): string {
+  try {
+    return new Intl.NumberFormat(locale, { notation: "compact", maximumFractionDigits: 1 }).format(value);
+  } catch {
+    return String(value);
+  }
+}

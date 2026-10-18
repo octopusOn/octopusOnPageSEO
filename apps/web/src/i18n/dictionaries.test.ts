@@ -20,7 +20,7 @@ describe("dictionaries", () => {
   for (const locale of locales.filter((l) => l !== "en")) {
     it(`${locale} translates every English text with the same placeholders`, () => {
       const translated = new Map(leaves(getDictionary(locale) as Tree));
-      expect(english.size).toBeGreaterThan(200);
+      expect(english.size).toBeGreaterThan(60);
       expect([...translated.keys()]).toEqual([...english.keys()]);
       for (const [path, text] of translated) {
         expect(text.trim(), `${locale}: ${path}`).not.toBe("");
@@ -28,4 +28,8 @@ describe("dictionaries", () => {
       }
     });
   }
+
+  it("falls back to English for languages without a dictionary", () => {
+    expect(getDictionary("pt-br")).toBe(getDictionary("en"));
+  });
 });

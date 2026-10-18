@@ -1,0 +1,76 @@
+/* Product family cards, product pages and per-product downloads. Colors and type come from the
+   site's tokens (globals.css and @octopusseo/design). */
+
+.product-card {
+  display: flex;
+  flex-direction: column;
+  text-decoration: none;
+  color: inherit;
+}
+
+.product-card .product-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  margin-top: auto;
+  padding-top: 12px;
+  font-weight: 600;
+}
+
+.product-card:hover .product-link svg {
+  transform: translateX(3px);
+}
+
+.product-card .product-link svg {
+  transition: transform 160ms ease;
+}
+
+.product-downloads {
+  display: grid;
+  gap: 20px;
+  padding-bottom: 36px;
+  margin-bottom: 36px;
+  border-bottom: 1px solid var(--border, rgba(127, 127, 127, 0.2));
+  scroll-margin-top: 96px;
+}
+
+.product-downloads-head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 16px 32px;
+}
+
+.product-downloads-head h2 {
+  margin: 0 0 6px;
+}
+
+.product-downloads-head p {
+  margin: 0;
+  max-width: 640px;
+}
+
+.downloads-title {
+  margin: 8px 0 14px;
+}
+
+.product-note {
+  margin-top: 8px;
+}
+
+.product-note h2 {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.feature-grid.product-family {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+
+@media (max-width: 860px) {
+  .feature-grid.product-family {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}

@@ -2,13 +2,18 @@
 
 import { useEffect, useState } from "react";
 
-const SCRIPT: { command: string; output: string[] }[] = [
+export interface TerminalStep {
+  command: string;
+  output: string[];
+}
+
+const LOG_SCRIPT: TerminalStep[] = [
   {
-    command: "snx-log import acme.com /var/log/nginx/",
+    command: "octopuson-log import acme.com /var/log/nginx/",
     output: ["Format       combined (detected)", "Hits         4,812,330 stored · 0 duplicates", "Throughput   768,104 lines/s"],
   },
   {
-    command: "snx-log query acme.com --template googlebot-errors 'date:last7d'",
+    command: "octopuson-log query acme.com --template googlebot-errors 'date:last7d'",
     output: [
       "url                      status  hits  last_seen",
       "/old-category/shoes        404   1,204  2026-10-12",
@@ -16,13 +21,14 @@ const SCRIPT: { command: string; output: string[] }[] = [
     ],
   },
   {
-    command: "snx-log robots acme.com",
+    command: "octopuson-log robots acme.com",
     output: ["bot           group   blocked  disallowed  verified", "gptbot        gptbot  yes         24,320    24,320", "googlebot     *                       12         0"],
   },
 ];
 
 /** A terminal replaying a short CLI session; static for visitors who prefer reduced motion. */
-export function Terminal() {
+export function Terminal({ script = LOG_SCRIPT, label = "octopuson-log command line session", compact = false }: { script?: TerminalStep[]; label?: string; compact?: boolean }) {
+  const SCRIPT = script;
   const [step, setStep] = useState(SCRIPT.length);
   const [typed, setTyped] = useState(0);
 
@@ -45,10 +51,10 @@ export function Terminal() {
       }
     }, delay);
     return () => window.clearTimeout(timer);
-  }, [step, typed]);
+  }, [step, typed, SCRIPT]);
 
   return (
-    <div className="terminal" role="img" aria-label="snx-log command line session">
+    <div className={`terminal ${compact ? "compact" : ""}`} role="img" aria-label={label}>
       <div className="terminal-bar">
         <span />
         <span />
@@ -65,7 +71,7 @@ export function Terminal() {
               {command}
               {current && <span className="caret" />}
               {"\n"}
-              {!current && entry.output.map((line) => <span key={line} className="out">{line + "\n"}</span>)}
+              {!current && entry.output.map((line, i) => <span key={`${i}${line}`} className="out">{line + "\n"}</span>)}
             </span>
           );
         })}

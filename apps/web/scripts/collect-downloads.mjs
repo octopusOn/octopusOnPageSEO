@@ -1,13 +1,15 @@
-// Copies the desktop installers and snx-log binaries built on this machine into
-// public/downloads/v<version>/ and records them in public/downloads/releases.json. The site
-// offers these files while no GitHub repository with releases is configured.
+// Copies the desktop installers and command-line binaries of one product built on this
+// machine into public/downloads/<tag>/ and records them in public/downloads/releases.json. The
+// site offers these files while no GitHub repository with releases is configured.
 //
-//   pnpm --filter @octopusseo/web downloads [--notes <file.md>]
+//   pnpm --filter @octopusseo/web downloads [--product log-analyser|spider|serp-finder|keyword-miner] [--notes <file.md>]
 //
-// Build first: `pnpm desktop:build` (add `-- --target universal-apple-darwin` on a Mac for
-// both Apple Silicon and Intel) and `cargo build --release -p snx-log --target <triple>`;
-// CLI binaries are only taken from such explicit-target builds, whose triple names the archive.
-// Next.js only serves files that exist when the site is built, so collect before `next build`.
+// Build first, e.g. for the Log Analyser: `pnpm desktop:build` (add `-- --target
+// universal-apple-darwin` on a Mac for both Apple Silicon and Intel) and `cargo build --release
+// -p snx-log --target <triple>`; CLI binaries are only taken from such explicit-target builds,
+// whose triple names the archive. The products, their apps, CLIs and tag prefixes are listed in
+// src/lib/products.json. Next.js only serves files that exist when the site is built, so collect
+// before `next build`.
 
 import { execFileSync } from "node:child_process";
 import { createHash } from "node:crypto";
@@ -19,10 +21,20 @@ const target = path.join(root, "target");
 const downloads = path.resolve(import.meta.dirname, "../public/downloads");
 const manifestFile = path.join(downloads, "releases.json");
 
+const products = JSON.parse(fs.readFileSync(path.resolve(import.meta.dirname, "../src/lib/products.json"), "utf8"));
+const option = (name) => {
+  const flag = process.argv.indexOf(name);
+  return flag > 0 ? process.argv[flag + 1] : undefined;
+};
+const product = products.find((item) => item.id === (option("--product") ?? "log-analyser"));
+if (!product) {
+  console.error(`Unknown product; use one of: ${products.map((item) => item.id).join(", ")}`);
+  process.exit(1);
+}
 const { version, productName } = JSON.parse(
-  fs.readFileSync(path.join(root, "apps/desktop/src-tauri/tauri.conf.json"), "utf8"),
+  fs.readFileSync(path.join(root, product.app, "src-tauri/tauri.conf.json"), "utf8"),
 );
-const tag = `v${version}`;
+const tag = `${product.tagPrefix}${version}`;
 const destination = path.join(downloads, tag);
 
 const INSTALLER = /\.(dmg|msi|exe|appimage|deb|rpm)$/i;
@@ -56,7 +68,7 @@ function sha256(file) {
 const publicName = (name) => name.replaceAll(" ", ".");
 
 function cliArchive(binary, triple) {
-  const name = `snx-log-${tag}-${triple}`;
+  const name = `${product.cli}-${tag}-${triple}`;
   const staging = fs.mkdtempSync(path.join(downloads, ".staging-"));
   try {
     const folder = path.join(staging, name);
@@ -74,9 +86,10 @@ function cliArchive(binary, triple) {
   }
 }
 
+/** docs/releases/<version>.md for the Log Analyser, docs/releases/spider-<version>.md for the Spider. */
 function releaseNotes() {
-  const flag = process.argv.indexOf("--notes");
-  const file = flag > 0 ? process.argv[flag + 1] : path.join(root, "docs/releases", `${version}.md`);
+  const prefix = product.tagPrefix.replace(/v$/, "");
+  const file = option("--notes") ?? path.join(root, "docs/releases", `${prefix}${version}.md`);
   return file && fs.existsSync(file) ? fs.readFileSync(file, "utf8").trim() : "";
 }
 
@@ -94,7 +107,7 @@ for (const { dir, triple } of releaseDirs()) {
     fs.copyFileSync(file, copy);
     collected.push(copy);
   }
-  const binary = ["snx-log", "snx-log.exe"].map((name) => path.join(dir, name)).find((file) => fs.existsSync(file));
+  const binary = [product.cli, `${product.cli}.exe`].map((name) => path.join(dir, name)).find((file) => fs.existsSync(file));
   if (binary && triple && CLI_TARGET.test(triple) && isCurrent(binary)) collected.push(cliArchive(binary, triple));
 }
 
@@ -114,11 +127,12 @@ function isCurrent(binary) {
 
 if (collected.length === 0) {
   fs.rmSync(destination, { recursive: true, force: true });
-  console.error(`No ${productName} ${version} installers or snx-log binaries found under ${target}.`);
+  console.error(`No ${productName} ${version} installers or ${product.cli} binaries found under ${target}.`);
   process.exit(1);
 }
 
 const entry = {
+  product: product.id,
   version,
   name: `${productName} ${version}`,
   date: new Date().toISOString(),
@@ -128,7 +142,10 @@ const entry = {
     .sort((a, b) => a.name.localeCompare(b.name)),
 };
 const manifest = fs.existsSync(manifestFile) ? JSON.parse(fs.readFileSync(manifestFile, "utf8")) : { releases: [] };
-manifest.releases = [entry, ...manifest.releases.filter((release) => release.version !== version)];
+manifest.releases = [
+  entry,
+  ...manifest.releases.filter((release) => release.version !== version || (release.product ?? "log-analyser") !== product.id),
+];
 fs.writeFileSync(manifestFile, `${JSON.stringify(manifest, null, 2)}\n`);
 
 for (const asset of entry.assets) {

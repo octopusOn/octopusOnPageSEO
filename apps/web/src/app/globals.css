@@ -1,49 +1,24 @@
-/* octopusSEO website — design tokens, layout and components. */
+/* OctopusOn SEO website — design tokens, layout and components. */
 
+/* Colors, fonts and themes come from @octopusseo/design (tokens.css, loaded first); the names
+   below are the site's aliases for them. */
 :root {
-  --bg: #ffffff;
-  --bg-soft: #f7f5ff;
-  --ink: #16132e;
-  --muted: #5e5a7d;
-  --border: #e8e4f6;
-  --card: #ffffff;
-  --brand: #7c3aed;
-  --brand-strong: #6d28d9;
-  --brand-2: #0d9488;
-  --brand-soft: #f1ebff;
-  --good: #059669;
-  --good-soft: #d1fae5;
-  --bad: #dc2626;
-  --bad-soft: #fee2e2;
-  --warn: #d97706;
-  --shadow: 0 1px 2px rgba(22, 19, 46, 0.06), 0 12px 32px -12px rgba(76, 29, 149, 0.18);
-  --shadow-lg: 0 30px 80px -24px rgba(76, 29, 149, 0.35);
+  --bg-soft: var(--surface-2);
+  --muted: var(--ink-muted);
+  --border: var(--line);
+  --card: var(--surface-1);
+  --brand: var(--accent);
+  --brand-strong: var(--accent-fill);
+  --brand-2: var(--product);
+  --brand-soft: var(--accent-soft);
+  --bad: var(--critical);
+  --bad-soft: var(--critical-soft);
+  --warn: var(--warning);
+  --shadow: var(--shadow-card);
+  --shadow-lg: var(--shadow-raised);
   --radius: 16px;
-  --font: ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
-  --mono: ui-monospace, SFMono-Regular, "SF Mono", Menlo, Consolas, monospace;
-  color-scheme: light dark;
-}
-
-@media (prefers-color-scheme: dark) {
-  :root {
-    --bg: #0b0a1a;
-    --bg-soft: #110f26;
-    --ink: #f3f1ff;
-    --muted: #a8a4c8;
-    --border: #262347;
-    --card: #141231;
-    --brand: #a78bfa;
-    --brand-strong: #8b5cf6;
-    --brand-2: #2dd4bf;
-    --brand-soft: #221a45;
-    --good: #34d399;
-    --good-soft: #0f2f27;
-    --bad: #f87171;
-    --bad-soft: #3a1518;
-    --warn: #fbbf24;
-    --shadow: 0 1px 2px rgba(0, 0, 0, 0.4), 0 16px 40px -16px rgba(0, 0, 0, 0.6);
-    --shadow-lg: 0 30px 80px -24px rgba(124, 58, 237, 0.35);
-  }
+  --font: var(--font-sans);
+  --mono: var(--font-mono);
 }
 
 *,
@@ -59,7 +34,11 @@ html {
 
 body {
   margin: 0;
-  background: var(--bg);
+  /* The product's deep ground, fixed behind the page like the app's window. */
+  background:
+    radial-gradient(1200px 800px at 0% 0%, rgba(255, 255, 255, 0.07), transparent 60%),
+    linear-gradient(155deg, var(--ground-1) 0%, var(--ground-2) 52%, var(--ground-3) 100%) fixed;
+  background-color: var(--bg);
   color: var(--ink);
   font-family: var(--font);
   font-size: 16px;
@@ -79,24 +58,24 @@ a:hover {
 h1,
 h2,
 h3 {
-  line-height: 1.15;
-  letter-spacing: -0.02em;
+  line-height: 1.1;
+  letter-spacing: -0.025em;
   margin: 0 0 0.5em;
 }
 
 h1 {
   font-size: clamp(2.3rem, 5vw, 3.9rem);
-  font-weight: 800;
+  font-weight: 700;
 }
 
 h2 {
   font-size: clamp(1.6rem, 3vw, 2.4rem);
-  font-weight: 750;
+  font-weight: 650;
 }
 
 h3 {
   font-size: 1.15rem;
-  font-weight: 700;
+  font-weight: 650;
 }
 
 p {
@@ -154,10 +133,7 @@ pre {
 }
 
 .gradient-text {
-  background: linear-gradient(100deg, var(--brand) 10%, var(--brand-2) 90%);
-  -webkit-background-clip: text;
-  background-clip: text;
-  color: transparent;
+  color: var(--accent);
 }
 
 /* Logo */
@@ -176,11 +152,7 @@ pre {
 }
 
 .logo-word strong {
-  font-weight: 850;
-  background: linear-gradient(100deg, var(--brand), var(--brand-2));
-  -webkit-background-clip: text;
-  background-clip: text;
-  color: transparent;
+  font-weight: 800;
 }
 
 /* Buttons */
@@ -205,13 +177,12 @@ pre {
 }
 
 .button-primary {
-  background: linear-gradient(100deg, var(--brand-strong), #5b21b6 60%, var(--brand-2));
-  color: #fff;
-  box-shadow: 0 10px 30px -10px rgba(109, 40, 217, 0.7);
+  background: var(--accent-fill);
+  color: var(--on-accent);
 }
 
 .button-primary:hover {
-  box-shadow: 0 16px 36px -10px rgba(109, 40, 217, 0.8);
+  background: var(--accent-fill-hover);
 }
 
 .button-ghost {
@@ -245,8 +216,8 @@ pre {
   position: sticky;
   top: 0;
   z-index: 50;
-  background: color-mix(in srgb, var(--bg) 78%, transparent);
-  backdrop-filter: saturate(180%) blur(14px);
+  background: rgba(29, 19, 59, 0.6);
+  backdrop-filter: saturate(160%) blur(18px);
   border-bottom: 1px solid color-mix(in srgb, var(--border) 70%, transparent);
 }
 
@@ -363,14 +334,7 @@ pre {
 }
 
 .hero-glow {
-  position: absolute;
-  inset: -20% -10% auto;
-  height: 720px;
-  background:
-    radial-gradient(40% 45% at 22% 30%, rgba(139, 92, 246, 0.22), transparent 70%),
-    radial-gradient(35% 40% at 80% 20%, rgba(20, 184, 166, 0.2), transparent 70%),
-    radial-gradient(30% 35% at 60% 75%, rgba(236, 72, 153, 0.1), transparent 70%);
-  pointer-events: none;
+  display: none;
 }
 
 .hero-grid {
@@ -446,15 +410,7 @@ pre {
   width: 11px;
   height: 11px;
   border-radius: 50%;
-  background: #f87171;
-}
-
-.mockup-bar span:nth-child(2) {
-  background: #fbbf24;
-}
-
-.mockup-bar span:nth-child(3) {
-  background: #34d399;
+  background: var(--line-strong);
 }
 
 .mockup-bar em {
@@ -474,18 +430,19 @@ pre {
   flex-direction: column;
   gap: 12px;
   padding: 16px 12px;
-  background: linear-gradient(180deg, #1e1b4b, #2e1065);
+  background: var(--rail);
+  border-right: 1px solid var(--rail-line);
 }
 
 .mockup-side i {
   display: block;
   height: 26px;
-  border-radius: 8px;
-  background: rgba(255, 255, 255, 0.12);
+  border-radius: var(--radius-sm);
+  background: var(--rail-field);
 }
 
 .mockup-side i.active {
-  background: linear-gradient(135deg, #8b5cf6, #14b8a6);
+  background: var(--rail-active);
 }
 
 .mockup-main {
@@ -503,8 +460,8 @@ pre {
 .mockup-kpis div {
   padding: 10px 12px;
   border: 1px solid var(--border);
-  border-radius: 12px;
-  background: var(--bg);
+  border-radius: var(--radius-sm);
+  background: var(--surface-1);
 }
 
 .mockup-kpis small,
@@ -517,6 +474,8 @@ pre {
 
 .mockup-kpis b {
   font-size: 1.1rem;
+  letter-spacing: -0.02em;
+  font-weight: 600;
   font-variant-numeric: tabular-nums;
 }
 
@@ -531,8 +490,8 @@ pre {
 .mockup-panel {
   padding: 12px;
   border: 1px solid var(--border);
-  border-radius: 12px;
-  background: var(--bg);
+  border-radius: var(--radius-md);
+  background: var(--surface-1);
 }
 
 .mockup-chart {
@@ -554,15 +513,15 @@ pre {
 
 .bar-search {
   display: block;
-  border-radius: 4px 4px 0 0;
-  background: linear-gradient(180deg, #8b5cf6, #6d28d9);
+  border-radius: 3px 3px 0 0;
+  background: var(--chart-1);
   animation: grow 0.9s ease both;
 }
 
 .bar-ai {
   display: block;
-  border-radius: 0 0 4px 4px;
-  background: linear-gradient(180deg, #2dd4bf, #0d9488);
+  border-radius: 0;
+  background: var(--chart-2);
   animation: grow 0.9s ease both;
 }
 
@@ -649,20 +608,21 @@ pre {
 }
 
 .section-tinted {
-  background: linear-gradient(180deg, var(--bg-soft), var(--bg));
+  background: var(--surface-1);
 }
 
+/* A night band in both themes, like the app's dark mode. */
 .section-dark {
-  background: radial-gradient(70% 90% at 10% 0%, #2e1065 0%, #0b0a1a 60%);
-  color: #f3f1ff;
+  background: #0a0a0c;
+  color: #f5f5f7;
 }
 
 .section-dark .lead {
-  color: #c4bfe6;
+  color: #a1a1a6;
 }
 
 .section-dark .eyebrow {
-  color: #5eead4;
+  color: #a594ff;
 }
 
 .section-head {
@@ -811,19 +771,19 @@ pre {
 }
 
 .ai-fill.train {
-  background: linear-gradient(90deg, #8b5cf6, #6d28d9);
+  background: var(--chart-2);
 }
 
 .ai-fill.search {
-  background: linear-gradient(90deg, #2dd4bf, #0d9488);
+  background: var(--chart-1);
 }
 
 .ai-fill.assist {
-  background: linear-gradient(90deg, #f472b6, #db2777);
+  background: var(--chart-3);
 }
 
 .ai-fill.visit {
-  background: linear-gradient(90deg, #fbbf24, #f59e0b);
+  background: var(--chart-8);
 }
 
 /* Steps & stats */
@@ -849,10 +809,10 @@ pre {
   width: 38px;
   height: 38px;
   border-radius: 50%;
-  font-weight: 800;
-  color: #fff;
+  font-weight: 600;
+  color: var(--ink);
   margin-bottom: 14px;
-  background: linear-gradient(135deg, var(--brand-strong), var(--brand-2));
+  background: var(--surface-3);
 }
 
 .stats {
@@ -866,12 +826,9 @@ pre {
 .stats b {
   display: block;
   font-size: clamp(2rem, 4vw, 2.8rem);
-  font-weight: 850;
+  font-weight: 650;
   letter-spacing: -0.03em;
-  background: linear-gradient(100deg, var(--brand), var(--brand-2));
-  -webkit-background-clip: text;
-  background-clip: text;
-  color: transparent;
+  color: var(--ink);
 }
 
 .stats span {
@@ -883,31 +840,23 @@ pre {
 .terminal {
   border-radius: 16px;
   overflow: hidden;
-  background: #0d0b1f;
-  border: 1px solid #2a2550;
-  box-shadow: 0 40px 90px -30px rgba(0, 0, 0, 0.8);
+  background: #141416;
+  border: 1px solid #26262a;
+  box-shadow: 0 24px 60px rgba(0, 0, 0, 0.45);
 }
 
 .terminal-bar {
   display: flex;
   gap: 7px;
   padding: 12px 14px;
-  background: #16132f;
+  background: #1c1c1f;
 }
 
 .terminal-bar span {
   width: 11px;
   height: 11px;
   border-radius: 50%;
-  background: #f87171;
-}
-
-.terminal-bar span:nth-child(2) {
-  background: #fbbf24;
-}
-
-.terminal-bar span:nth-child(3) {
-  background: #34d399;
+  background: #3a3a3f;
 }
 
 .terminal pre {
@@ -916,17 +865,17 @@ pre {
   min-height: 300px;
   font-size: 0.82rem;
   line-height: 1.7;
-  color: #e9e6ff;
+  color: #f5f5f7;
   white-space: pre;
   overflow-x: auto;
 }
 
 .terminal .prompt {
-  color: #5eead4;
+  color: #a594ff;
 }
 
 .terminal .out {
-  color: #a9a3d6;
+  color: #a1a1a6;
 }
 
 .caret {
@@ -935,7 +884,7 @@ pre {
   height: 1.05em;
   margin-left: 2px;
   vertical-align: text-bottom;
-  background: #a78bfa;
+  background: #a594ff;
   animation: blink 1s steps(1) infinite;
 }
 
@@ -952,7 +901,7 @@ pre {
   list-style: none;
   padding: 0;
   margin: 20px 0 0;
-  color: #c4bfe6;
+  color: #a1a1a6;
 }
 
 .mini-points li {
@@ -1014,30 +963,22 @@ pre {
 .cta-box {
   text-align: center;
   padding: 64px 32px;
-  border-radius: 28px;
-  color: #fff;
-  background:
-    radial-gradient(60% 120% at 0% 0%, rgba(45, 212, 191, 0.35), transparent 60%),
-    linear-gradient(120deg, #4c1d95, #6d28d9 45%, #0f766e);
-  box-shadow: var(--shadow-lg);
+  border-radius: 24px;
+  color: var(--ink);
+  background: var(--surface-1);
+  border: 1px solid var(--line);
 }
 
 .cta-box p {
-  color: #ddd6fe;
+  color: var(--muted);
   font-size: 1.1rem;
   margin-bottom: 28px;
-}
-
-.cta-box .button-primary {
-  background: #fff;
-  color: #4c1d95;
 }
 
 /* Inner pages */
 
 .page-hero {
   padding: 72px 0 40px;
-  background: radial-gradient(60% 100% at 50% 0%, var(--brand-soft), transparent 70%);
   text-align: center;
 }
 
@@ -1089,6 +1030,12 @@ pre {
 
 .feature-section .checks {
   margin: 0;
+}
+
+/* `.checks` resets the list's padding; a checklist drawn as a card keeps the card's. */
+.checks.card {
+  padding: 22px 24px;
+  gap: 14px;
 }
 
 .release-head {
@@ -1228,8 +1175,8 @@ pre {
   margin: 0 0 14px;
   padding: 16px 18px;
   border-radius: 12px;
-  background: #0d0b1f;
-  color: #e9e6ff;
+  background: #141416;
+  color: #f5f5f7;
   font-size: 0.86rem;
   line-height: 1.7;
   overflow-x: auto;
@@ -1251,9 +1198,9 @@ pre {
   width: 30px;
   height: 30px;
   border-radius: 8px;
-  border: 1px solid #3b3566;
-  background: #1c1940;
-  color: #e9e6ff;
+  border: 1px solid #333338;
+  background: #1c1c1f;
+  color: #f5f5f7;
   cursor: pointer;
 }
 
@@ -1564,6 +1511,19 @@ pre {
 }
 
 @media (max-width: 420px) {
+  /* Logo, GitHub star, language, download and menu share a 375px phone's width. */
+  .nav {
+    gap: 8px;
+  }
+
+  .nav-end {
+    gap: 6px;
+  }
+
+  .lang-button .lucide-globe {
+    display: none;
+  }
+
   .nav-cta {
     padding: 8px 10px;
   }

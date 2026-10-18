@@ -1,0 +1,70 @@
+[
+  {
+    "id": "seo-crawler",
+    "key": "crawler",
+    "name": "OctopusOn SEO Crawler",
+    "short": "SEO Crawler",
+    "tagPrefix": "crawler-v",
+    "legacyTagPrefixes": ["spider-v"],
+    "cli": "octopuson-crawler",
+    "package": "snx-spider",
+    "app": "apps/spider",
+    "ground": "spider",
+    "repo": "octopusOn/seo-crawler",
+    "paths": ["apps/spider", "apps/snx-spider", "crates/seonexus-spider-app", "crates/seonexus-crawl", "crates/seonexus-crawl-store", "crates/seonexus-audit", "crates/seonexus-render", "crates/seonexus-opportunities"]
+  },
+  {
+    "id": "log-analyser",
+    "key": "log",
+    "name": "OctopusOn Log Analyser",
+    "short": "Log Analyser",
+    "tagPrefix": "log-v",
+    "legacyTagPrefixes": ["v"],
+    "cli": "octopuson-log",
+    "package": "snx-log",
+    "app": "apps/desktop",
+    "ground": "log",
+    "repo": "octopusOn/log-analyser",
+    "paths": ["apps/desktop", "apps/snx-log", "crates/seonexus-log-app", "crates/seonexus-logparse", "crates/seonexus-botverify", "crates/seonexus-analytics", "crates/seonexus-query", "crates/seonexus-store", "crates/seonexus-geo", "crates/seonexus-report"]
+  },
+  {
+    "id": "serp-checker",
+    "key": "serp",
+    "name": "OctopusOn SERP Checker",
+    "short": "SERP Checker",
+    "tagPrefix": "serp-v",
+    "cli": "octopuson-serp",
+    "package": "snx-serp",
+    "app": "apps/serp",
+    "ground": "serp",
+    "repo": "octopusOn/serp-checker",
+    "paths": ["apps/serp", "apps/snx-serp", "crates/seonexus-serp", "crates/seonexus-serp-app", "crates/seonexus-serp-score", "crates/seonexus-serp-store", "crates/seonexus-domain-intel"]
+  },
+  {
+    "id": "seo-keyword-research",
+    "key": "keywords",
+    "name": "OctopusOn SEO Keyword Research",
+    "short": "SEO Keyword Research",
+    "tagPrefix": "keywords-v",
+    "legacyTagPrefixes": ["kw-v"],
+    "cli": "octopuson-keywords",
+    "package": "snx-kw",
+    "app": "apps/keywords",
+    "ground": "keywords",
+    "repo": "octopusOn/seo-keyword-research",
+    "paths": ["apps/keywords", "apps/snx-kw", "crates/seonexus-keywords", "crates/seonexus-keyword-sources", "crates/seonexus-kw-app", "crates/seonexus-kw-store"]
+  },
+  {
+    "id": "index-checker",
+    "key": "index",
+    "name": "OctopusOn Index Checker",
+    "short": "Index Checker",
+    "tagPrefix": "index-v",
+    "cli": "octopuson-index",
+    "package": "snx-finder",
+    "app": "apps/finder",
+    "ground": "finder",
+    "repo": "octopusOn/index-checker",
+    "paths": ["apps/finder", "apps/snx-finder", "crates/seonexus-finder"]
+  }
+]
