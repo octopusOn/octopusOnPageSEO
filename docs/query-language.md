@@ -1,6 +1,6 @@
 # Query language
 
-Every report in the CLI (`snx-log query`) and the desktop app is a query in this language. A
+Every report in the CLI (`octopuson-log query`) and the desktop app is a query in this language. A
 query is a filter, optionally followed by directives that group and aggregate the matching hits.
 
 ```text
@@ -56,13 +56,13 @@ field is empty: `-bot:*` lists browser traffic.
 | `referer` | text | referer |
 | `host` | text | virtual host / router |
 | `protocol` | text | e.g. `HTTP/2.0` |
-| `bot` | text | identified bot id, e.g. `googlebot-smartphone` (`snx-log bots list`) |
+| `bot` | text | identified bot id, e.g. `googlebot-smartphone` (`octopuson-log bots list`) |
 | `bot_category` | text | `search`, `ai-training`, `ai-search`, `ai-assistant`, `ads`, `seo`, `social`, `monitoring`, `other` |
 | `verification` | text | `verified`, `spoofed` or `unverified` (bots only) |
 | `content_type` | text | guessed from the extension (logs carry no `Content-Type`): `html` (also pages without an extension and `.php`, `.aspx`, …), `image`, `js`, `css`, `font`, `json`, `xml`, `pdf`, `txt`, `media`, `document`, `archive`, `other` |
 | `referer_host` | text | host of the referer without `www.`, e.g. `chatgpt.com` |
 | `referer_type` | text | `direct` (no referer), `internal` (the request host or the site's own host and its subdomains), `ai` (ChatGPT, Perplexity, Gemini, Copilot, Claude, DeepSeek, Grok, …), `search`, `social`, `email` or `other` |
-| `country` | text | country of the client IP (ISO code, e.g. `TR`); needs the IP geolocation data (`snx-log geo update`) |
+| `country` | text | country of the client IP (ISO code, e.g. `TR`); needs the IP geolocation data (`octopuson-log geo update`) |
 | `asn` | number | autonomous system number of the client IP |
 | `as_org` | text | organization of the client IP's network, e.g. `Hetzner Online GmbH` |
 

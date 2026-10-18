@@ -1,10 +1,10 @@
-# Contributing to octopusSEO
+# Contributing to OctopusOn SEO
 
 ## Workflow
 
 1. Run `cargo xtask ci` before opening a pull request (Rust checks plus the frontend checks
    when pnpm is installed). CI runs the same checks on Linux, macOS and Windows.
-2. Use [Conventional Commits](https://www.conventionalcommits.org/) (`feat(logparse): ...`, `fix(store): ...`). Changelogs and versions are generated from commit history.
+2. Use [Conventional Commits](https://www.conventionalcommits.org/) with the program's key as the scope when a change is about one program (`feat(crawler): ...`, `fix(log): ...`, `feat(keywords): ...`, `fix(index): ...`, `feat(serp): ...`), and the crate name otherwise (`fix(logparse): ...`). Each program's version and English release notes are generated from these messages (`pnpm release <program>`, see [docs/release.md](docs/release.md)), so write the subject for users.
 3. Significant architectural changes require an ADR in `docs/adr/`.
 
 ## Architecture rules

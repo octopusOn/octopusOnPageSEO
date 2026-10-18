@@ -1,20 +1,83 @@
 name: Release
 
-# Pushing a tag such as `v0.2.0` creates a draft GitHub release (notes from
-# docs/releases/<version>.md), builds the desktop installers and CLI archives for every
-# platform and attaches them to it. Publishing the draft makes the files appear on the website.
-# Code signing and notarization are enabled by adding the Tauri secrets (see docs/release.md).
+# Pushing a tag creates a draft GitHub release of one program, builds its desktop installers and
+# CLI archives for every platform and attaches them to it. The tag is `<program>-v<version>`
+# (apps/web/src/lib/products.json `tagPrefix`): `log-v0.2.0` the Log Analyser, `spider-v0.2.0`
+# the SEO Crawler, `serp-v…` the SERP Checker, `keywords-v…` the SEO Keyword Research, `index-v…` the
+# Index Checker. `pnpm release <program>` (scripts/release.mjs) writes the English notes to
+# docs/releases/<program>-<version>.md and makes the tag. Publishing the draft makes the files
+# appear on the website. Code signing and notarization are enabled by adding the Tauri secrets
+# (see docs/release.md).
 
 on:
   push:
-    tags: ["v*"]
+    tags: ["crawler-v*", "log-v*", "serp-v*", "keywords-v*", "index-v*"]
 
 permissions:
   contents: write
 
 jobs:
+  resolve:
+    name: resolve product
+    runs-on: ubuntu-latest
+    outputs:
+      name: ${{ steps.product.outputs.name }}
+      app: ${{ steps.product.outputs.app }}
+      cli: ${{ steps.product.outputs.cli }}
+      package: ${{ steps.product.outputs.package }}
+      repo: ${{ steps.product.outputs.repo }}
+      repo_owner: ${{ steps.product.outputs.repo_owner }}
+      repo_name: ${{ steps.product.outputs.repo_name }}
+      tag: ${{ steps.product.outputs.tag }}
+      version: ${{ steps.product.outputs.version }}
+      notes: ${{ steps.product.outputs.notes }}
+    steps:
+      - uses: actions/checkout@v4
+      - id: product
+        env:
+          HAS_PROGRAMS_TOKEN: ${{ secrets.PROGRAMS_TOKEN != '' && '1' || '' }}
+        run: |
+          # The longest tag prefix followed by a version names the product.
+          product=$(jq -c --arg tag "$GITHUB_REF_NAME" '
+            map(select(. as $p | ($tag | startswith($p.tagPrefix))
+              and ($tag[($p.tagPrefix | length):] | test("^[0-9]"))))
+            | max_by(.tagPrefix | length) // empty' apps/web/src/lib/products.json)
+          if [ -z "$product" ]; then
+            echo "::error::${GITHUB_REF_NAME} is not the tag of a product in apps/web/src/lib/products.json"
+            exit 1
+          fi
+          prefix=$(jq -r .tagPrefix <<<"$product")
+          version="${GITHUB_REF_NAME#"$prefix"}"
+          app=$(jq -r .app <<<"$product")
+          conf_version=$(jq -r .version "${app}/src-tauri/tauri.conf.json")
+          if [ "$conf_version" != "$version" ]; then
+            echo "::error::${app}/src-tauri/tauri.conf.json is version ${conf_version}, the tag ${GITHUB_REF_NAME}"
+            exit 1
+          fi
+          {
+            echo "name=$(jq -r .name <<<"$product")"
+            echo "app=${app}"
+            echo "cli=$(jq -r .cli <<<"$product")"
+            echo "package=$(jq -r .package <<<"$product")"
+            # The program's own GitHub project gets the release (tag v<version>) when the
+            # PROGRAMS_TOKEN secret can write to it; otherwise this repository keeps it.
+            if [ -n "${HAS_PROGRAMS_TOKEN}" ]; then
+              repo=$(jq -r .repo <<<"$product")
+              echo "tag=v${version}"
+            else
+              repo="${GITHUB_REPOSITORY}"
+              echo "tag=${GITHUB_REF_NAME}"
+            fi
+            echo "repo=${repo}"
+            echo "repo_owner=${repo%%/*}"
+            echo "repo_name=${repo#*/}"
+            echo "version=${version}"
+            echo "notes=docs/releases/${prefix%v}${version}.md"
+          } >> "$GITHUB_OUTPUT"
+
   draft:
     name: draft release
+    needs: resolve
     runs-on: ubuntu-latest
     outputs:
       id: ${{ steps.release.outputs.id }}
@@ -22,26 +85,32 @@ jobs:
       - uses: actions/checkout@v4
       - id: release
         env:
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GH_TOKEN: ${{ secrets.PROGRAMS_TOKEN || secrets.GITHUB_TOKEN }}
+          REPO: ${{ needs.resolve.outputs.repo }}
+          TAG: ${{ needs.resolve.outputs.tag }}
+          PRODUCT: ${{ needs.resolve.outputs.name }}
+          VERSION: ${{ needs.resolve.outputs.version }}
+          NOTES: ${{ needs.resolve.outputs.notes }}
         run: |
-          version="${GITHUB_REF_NAME#v}"
-          notes="docs/releases/${version}.md"
-          [ -f "$notes" ] || { echo "Release notes for ${version} are missing" > /tmp/notes.md; notes=/tmp/notes.md; }
+          notes="$NOTES"
+          [ -f "$notes" ] || { echo "Release notes for ${PRODUCT} ${VERSION} are missing" > /tmp/notes.md; notes=/tmp/notes.md; }
           # Reuse the release of a re-run; otherwise take the id from the create response (a
           # listing right after creating a draft may not include it yet).
-          id=$(gh api "repos/${GITHUB_REPOSITORY}/releases" --paginate \
-            --jq ".[] | select(.tag_name == \"${GITHUB_REF_NAME}\") | .id" | head -n 1)
+          id=$(gh api "repos/${REPO}/releases" --paginate \
+            --jq ".[] | select(.tag_name == \"${TAG}\") | .id" | head -n 1)
           if [ -z "$id" ]; then
-            id=$(gh api -X POST "repos/${GITHUB_REPOSITORY}/releases" \
-              -f tag_name="$GITHUB_REF_NAME" -f name="octopusSEO Log Analyser ${version}" \
-              -F body=@"$notes" -F draft=true --jq .id)
+            prerelease=false
+            case "$VERSION" in *-*) prerelease=true ;; esac
+            id=$(gh api -X POST "repos/${REPO}/releases" \
+              -f tag_name="$TAG" -f name="${PRODUCT} ${VERSION}" \
+              -F body=@"$notes" -F draft=true -F prerelease="$prerelease" --jq .id)
           fi
           test -n "$id"
           echo "id=${id}" >> "$GITHUB_OUTPUT"
 
   desktop:
     name: desktop (${{ matrix.platform }})
-    needs: draft
+    needs: [resolve, draft]
     runs-on: ${{ matrix.platform }}
     strategy:
       fail-fast: false
@@ -91,16 +160,18 @@ jobs:
           done
       - uses: tauri-apps/tauri-action@v0
         env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GITHUB_TOKEN: ${{ secrets.PROGRAMS_TOKEN || secrets.GITHUB_TOKEN }}
         with:
-          projectPath: apps/desktop
+          owner: ${{ needs.resolve.outputs.repo_owner }}
+          repo: ${{ needs.resolve.outputs.repo_name }}
+          projectPath: ${{ needs.resolve.outputs.app }}
           tauriScript: pnpm tauri
           releaseId: ${{ needs.draft.outputs.id }}
           args: ${{ matrix.args }}
 
   cli:
-    name: snx-log (${{ matrix.target }})
-    needs: draft
+    name: ${{ needs.resolve.outputs.cli }} (${{ matrix.target }})
+    needs: [resolve, draft]
     runs-on: ${{ matrix.os }}
     strategy:
       fail-fast: false
@@ -120,22 +191,25 @@ jobs:
         with:
           targets: ${{ matrix.target }}
       - uses: Swatinem/rust-cache@v2
-      - run: cargo build --release --locked -p snx-log --target ${{ matrix.target }}
+      - run: cargo build --release --locked -p ${{ needs.resolve.outputs.package }} --target ${{ matrix.target }}
       - name: Package and upload
         shell: bash
         env:
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GH_TOKEN: ${{ secrets.PROGRAMS_TOKEN || secrets.GITHUB_TOKEN }}
+          REPO: ${{ needs.resolve.outputs.repo }}
+          TAG: ${{ needs.resolve.outputs.tag }}
+          CLI: ${{ needs.resolve.outputs.cli }}
         run: |
-          name="snx-log-${GITHUB_REF_NAME}-${{ matrix.target }}"
+          name="${CLI}-${GITHUB_REF_NAME}-${{ matrix.target }}"
           mkdir "$name"
           cp README.md LICENSE-MIT LICENSE-APACHE "$name/"
           if [ "${{ runner.os }}" = "Windows" ]; then
-            cp "target/${{ matrix.target }}/release/snx-log.exe" "$name/"
+            cp "target/${{ matrix.target }}/release/${CLI}.exe" "$name/"
             7z a "$name.zip" "$name"
             archive="$name.zip"
           else
-            cp "target/${{ matrix.target }}/release/snx-log" "$name/"
+            cp "target/${{ matrix.target }}/release/${CLI}" "$name/"
             tar czf "$name.tar.gz" "$name"
             archive="$name.tar.gz"
           fi
-          gh release upload "$GITHUB_REF_NAME" "$archive" --clobber
+          gh release upload "$TAG" "$archive" --repo "$REPO" --clobber

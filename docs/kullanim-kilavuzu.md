@@ -1,9 +1,9 @@
-# octopusSEO Log Analyser — Kullanım kılavuzu
+# OctopusOn Log Analyser — Kullanım kılavuzu
 
-octopusSEO Log Analyser, sunucu erişim loglarını SEO açısından analiz eder: arama motoru ve yapay
+OctopusOn Log Analyser, sunucu erişim loglarını SEO açısından analiz eder: arama motoru ve yapay
 zekâ botlarının sitenizi gerçekte nasıl taradığını, hangi URL'lerde hata aldığını, tarama
 bütçesinin nereye harcandığını, sahte botları, robots.txt kurallarına uyulup uyulmadığını ve
-YZ asistanlarından gelen ziyaretleri gösterir. Masaüstü uygulaması ve `snx-log` komut satırı
+YZ asistanlarından gelen ziyaretleri gösterir. Masaüstü uygulaması ve `octopuson-log` komut satırı
 aracı aynı veri klasörünü kullanır; birinde yapılan her şey diğerinde görünür.
 
 ## 1. Müşteri ve site
@@ -20,17 +20,17 @@ Her müşterinin bir veya birden fazla sitesi olur. Site oluştururken log forma
   aynen yapıştırılır.
 
 Format daha sonra site ayarlarından değiştirilebilir. Bir dosyanın doğru çözümlenip
-çözümlenmediğini içe aktarmadan önce **Formatı test et** (CLI: `snx-log inspect`) ile görün.
+çözümlenmediğini içe aktarmadan önce **Formatı test et** (CLI: `octopuson-log inspect`) ile görün.
 
 ```sh
-snx-log client add "Acme"
-snx-log site add acme.com --client "Acme"            # otomatik algılama
-snx-log site add shop.acme.com --client "Acme" --format combined
+octopuson-log client add "Acme"
+octopuson-log site add acme.com --client "Acme"            # otomatik algılama
+octopuson-log site add shop.acme.com --client "Acme" --format combined
 ```
 
 ### Site ayarları (neyin saklanacağı)
 
-**İçe aktar** sekmesindeki **Site ayarları** kartı (CLI: `snx-log site settings`) sonraki içe
+**İçe aktar** sekmesindeki **Site ayarları** kartı (CLI: `octopuson-log site settings`) sonraki içe
 aktarmaları süzer; büyük sitelerde disk ve zaman kazandırır:
 
 - **Site alan adı**: bu alan adından (ve alt alan adlarından) gelen referer'lar *site içi*
@@ -45,8 +45,8 @@ Ayarlar yalnızca sonraki içe aktarmalara uygulanır; filtrelenen satır sayıs
 sonucunda gösterilir.
 
 ```sh
-snx-log site settings acme.com --traffic bots --exclude '^/wp-admin/' --strip-param sid --strip-tracking true
-snx-log site settings acme.com            # mevcut ayarları göster
+octopuson-log site settings acme.com --traffic bots --exclude '^/wp-admin/' --strip-param sid --strip-tracking true
+octopuson-log site settings acme.com            # mevcut ayarları göster
 ```
 
 ### Site arşivi (paylaşma ve taşıma)
@@ -56,8 +56,8 @@ iş arkadaşınıza verebilir ya da başka bir bilgisayara taşıyabilirsiniz. M
 ayarları penceresinde **Arşive aktar…**, kenar çubuğunda **Site arşivi aç**.
 
 ```sh
-snx-log site export acme.com acme.snxsite
-snx-log site import acme.snxsite --name acme-kopya.com --client "Acme"
+octopuson-log site export acme.com acme.snxsite
+octopuson-log site import acme.snxsite --name acme-kopya.com --client "Acme"
 ```
 
 ## 2. İçe aktarma
@@ -72,10 +72,10 @@ döndürülmüş dosyalar da çalışır).
   aktarabilirsiniz.
 - İçe aktarma durdurulabilir; o anki dosya geri alınır, tamamlanan dosyalar kalır.
 - Yanlış bir dosya aktarıldıysa **içe aktarma geçmişinden** (çöp kutusu simgesi) o içe aktarma
-  verisiyle birlikte silinir (CLI: `snx-log site remove-import acme.com 3`).
+  verisiyle birlikte silinir (CLI: `octopuson-log site remove-import acme.com 3`).
 
 ```sh
-snx-log import acme.com /var/log/nginx/
+octopuson-log import acme.com /var/log/nginx/
 ```
 
 ## 3. Botlar ve doğrulama
@@ -96,9 +96,9 @@ IP'leri bu yüzden DNS ile doğrulanır. İçe aktarma DNS'i varsayılan olarak 
 kontrol etmek için:
 
 ```sh
-snx-log bots update
-snx-log bots verify acme.com --all
-snx-log bots check-ip 66.249.66.1 --bot googlebot-smartphone
+octopuson-log bots update
+octopuson-log bots verify acme.com --all
+octopuson-log bots check-ip 66.249.66.1 --bot googlebot-smartphone
 ```
 
 Masaüstünde: **Botlar** sekmesi → *Güncel listeleri indir* ve *Yeniden doğrula*.
@@ -112,9 +112,9 @@ indirilir) ve/veya ters DNS alan adı sonekleri. Özel botlar yerleşik botlarda
 kaydettiğinizde saklanmış istekler bir sonraki kullanımda otomatik olarak yeniden sınıflandırılır.
 
 ```sh
-snx-log bots custom add acme-monitor --name "Acme Monitor" --category monitoring \
+octopuson-log bots custom add acme-monitor --name "Acme Monitor" --category monitoring \
   --pattern AcmeMonitor --ip-range 203.0.113.0/24
-snx-log bots custom export ekip-botlari.json      # paylaşmak için; içe aktarma: import
+octopuson-log bots custom export ekip-botlari.json      # paylaşmak için; içe aktarma: import
 ```
 
 Masaüstünde: **Botlar** → **Özel botlar** kartı.
@@ -132,7 +132,7 @@ Her gün önceki 14 günün medyanıyla karşılaştırılır; küçük dalgalan
 düşüşleri uyarı üretmez.
 
 ```sh
-snx-log overview acme.com --period last30d
+octopuson-log overview acme.com --period last30d
 ```
 
 ## 5. Raporlar ve sorgu dili
@@ -193,8 +193,8 @@ Sonuçlar CSV, Excel (XLSX) veya JSON olarak dışa aktarılır. CSV'de formül 
 koruma vardır (log satırları saldırganın kontrolündedir).
 
 ```sh
-snx-log query acme.com --template googlebot-errors -o googlebot-hatalari.xlsx
-snx-log query acme.com --template ai-referrals 'date:last30d'
+octopuson-log query acme.com --template googlebot-errors -o googlebot-hatalari.xlsx
+octopuson-log query acme.com --template ai-referrals 'date:last30d'
 ```
 
 ### Kayıtlı sorgular
@@ -209,16 +209,16 @@ Sık kullandığınız filtreleri adlandırıp kaydedin; tüm sitelerde kullanı
   (JSON). Aynı adlı kayıtlar içe aktarırken korunur.
 
 ```sh
-snx-log saved add "Googlebot 404" 'bot:googlebot* verification:verified status:404 group:url'
-snx-log saved list
-snx-log query acme.com --saved "Googlebot 404" 'date:last7d'   # ek koşul eklenebilir
-snx-log saved export ekip-sorgulari.json
-snx-log saved import ekip-sorgulari.json        # --force: aynı adlıların üzerine yaz
+octopuson-log saved add "Googlebot 404" 'bot:googlebot* verification:verified status:404 group:url'
+octopuson-log saved list
+octopuson-log query acme.com --saved "Googlebot 404" 'date:last7d'   # ek koşul eklenebilir
+octopuson-log saved export ekip-sorgulari.json
+octopuson-log saved import ekip-sorgulari.json        # --force: aynı adlıların üzerine yaz
 ```
 
 ## 6. robots.txt uyumu
 
-**Robots.txt** sekmesi (CLI: `snx-log robots`) loglardaki her bot isteğini robots.txt ile
+**Robots.txt** sekmesi (CLI: `octopuson-log robots`) loglardaki her bot isteğini robots.txt ile
 karşılaştırır. Kurallar Google'ın uyguladığı gibi değerlendirilir: botun adına en özel uyan
 `User-agent` grubu (yoksa `*`), en uzun eşleşen kural, eşitlikte `Allow`; `*` ve `$` desteklenir.
 
@@ -234,8 +234,8 @@ Varsayılan olarak sitenin canlı `https://<alan adı>/robots.txt` dosyası indi
 başka bir URL de verilebilir. Güncel robots.txt tüm döneme uygulanır.
 
 ```sh
-snx-log robots acme.com --filter 'date:last30d verification:verified' -o robots-ihlalleri.xlsx
-snx-log robots acme.com --robots eski-robots.txt
+octopuson-log robots acme.com --filter 'date:last30d verification:verified' -o robots-ihlalleri.xlsx
+octopuson-log robots acme.com --robots eski-robots.txt
 ```
 
 ## 7. URL listesi karşılaştırma
@@ -260,7 +260,7 @@ URL'ler karşılaştırılmadan önce normalleştirilir (şema/host, varsayılan
 `/` ve büyük/küçük harf farkını yok sayma.
 
 ```sh
-snx-log compare-urls acme.com https://acme.com/sitemap.xml tarama.csv -o karsilastirma.xlsx
+octopuson-log compare-urls acme.com https://acme.com/sitemap.xml tarama.csv -o karsilastirma.xlsx
 ```
 
 ## 8. Dönem karşılaştırma
@@ -269,13 +269,13 @@ snx-log compare-urls acme.com https://acme.com/sitemap.xml tarama.csv -o karsila
 azalan.
 
 ```sh
-snx-log compare-periods acme.com --before 2026-09-01..2026-09-30 \
+octopuson-log compare-periods acme.com --before 2026-09-01..2026-09-30 \
   --after 2026-10-01..2026-10-31 --group directory --filter 'bot:googlebot* verification:verified'
 ```
 
 ## 9. IP konum verisi (ülke ve ağ)
 
-**Ayarlar** → **IP konum verisi** → *İndir* (CLI: `snx-log geo update`) ücretsiz DB-IP Lite
+**Ayarlar** → **IP konum verisi** → *İndir* (CLI: `octopuson-log geo update`) ücretsiz DB-IP Lite
 ülke ve ASN veritabanlarını (yaklaşık 20 MB, ayda bir güncellenir) indirir. Ardından her istemci
 IP'sinin ülkesi ve ağı (ör. *Hetzner Online GmbH*, *Amazon.com, Inc.*) sorgularda kullanılabilir:
 **Ülkeler**, **Ağlar (ASN)** ve **Sahte botların ağları** raporları; `country:TR`,

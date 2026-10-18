@@ -15,3 +15,13 @@
 # Tauri-generated capability schemas
 apps/desktop/src-tauri/gen/
 /.claude/
+
+apps/spider/src-tauri/gen/
+apps/serp/src-tauri/gen/
+
+# Next.js builds and local secrets (the credits portal and gateway)
+.next/
+.env*.local
+
+# TypeScript incremental build info
+*.tsbuildinfo

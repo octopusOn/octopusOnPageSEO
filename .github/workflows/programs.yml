@@ -1,0 +1,40 @@
+name: Program projects
+
+# Keeps the front page of every program's own GitHub project (README and screenshot, from
+# distribution/<program id>/) in step with this repository. Needs the PROGRAMS_TOKEN secret: a
+# token that can push to the octopusOn program repositories (see docs/release.md).
+
+on:
+  push:
+    branches: [main]
+    paths: ["distribution/**"]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  sync:
+    name: sync ${{ matrix.id }}
+    runs-on: ubuntu-latest
+    if: ${{ github.repository_owner == 'octopusOn' }}
+    strategy:
+      fail-fast: false
+      matrix:
+        id: [seo-crawler, log-analyser, serp-checker, seo-keyword-research, index-checker]
+    steps:
+      - uses: actions/checkout@v4
+      - name: Push README and screenshot
+        env:
+          TOKEN: ${{ secrets.PROGRAMS_TOKEN }}
+          ID: ${{ matrix.id }}
+        run: |
+          [ -n "$TOKEN" ] || { echo "::warning::PROGRAMS_TOKEN is not set; skipping"; exit 0; }
+          repo=$(jq -r --arg id "$ID" '.[] | select(.id == $id) | .repo' apps/web/src/lib/products.json)
+          git clone --depth 1 "https://x-access-token:${TOKEN}@github.com/${repo}.git" target
+          cp distribution/"$ID"/* target/
+          cd target
+          git add -A
+          if git diff --cached --quiet; then echo "Up to date"; exit 0; fi
+          git -c user.name="octopusOn bot" -c user.email="bot@octopuson.com" commit -m "Update README from octopusOn/octopusOnPageSEO@${GITHUB_SHA::7}"
+          git push
