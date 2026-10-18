@@ -1,6 +1,6 @@
 # OctopusOn SEO Keyword Research
 
-Discover keywords, group them into clusters one page can target, and map the clusters to your site.
+A free keyword research tool with keyword clustering: collect ideas from Google Ads, Search Console, Wordstat, autocomplete and your exports, group them by SERP overlap and map every cluster to a page.
 
 **100% free and open source** (no paid version, no trial, no limits) · for SEO and GEO (visibility in AI answers) · Windows, macOS and Linux · updated continuously as search engines and AI assistants change.
 
@@ -12,29 +12,42 @@ Get the installer for your system from the [latest release](../../releases/lates
 
 ## What it does
 
-### Discover from every source
+### Keyword ideas from the sources you trust
 
-Seeds, competitors, files and your own Google data, with the source and seed of every keyword kept.
+Combine Google data, Yandex data and your own exports in one list, without duplicates.
 
-- Yandex Wordstat, DataForSEO (Google Ads, Labs, autocomplete) and SerpApi
-- Search Console queries and Google Ads Keyword Planner with your own OAuth client
-- Ahrefs, Semrush, Keyword Planner and Search Console imports; budgets and a cost estimate before every run
+- Google Ads Keyword Planner and Search Console with your own Google sign-in
+- DataForSEO ideas, volumes, difficulty, intent and competitor keywords; SerpApi autocomplete
+- Yandex Wordstat for Yandex markets
+- Free Google and Yandex autocomplete, off by default and rate-limited
+- Seed expansion with a–z, question words and buying words in Turkish and English
 
-### Clusters you can explain
+### Keyword clustering by SERP overlap
 
-Group by wording for free, by shared top-ten results for certainty, or both.
+Keywords that share the same top-10 results can be targeted by one page.
 
-- Turkish-aware wording clusters for 50,000 keywords in seconds
-- Soft or hard result-page clustering with a shared-results threshold
-- Manual moves and splits that later clusterings keep
+- Clustering by wording: free, about 2 seconds for 50,000 keywords
+- Clustering by search results, soft or hard, by page or by site
+- Hybrid clustering that combines both
+- Your manual moves survive later re-clustering
 
-### Clusters against your site
+### Keyword mapping and content planning
 
-See which page serves each cluster, where your pages compete, and where competitors rank without you.
+Turn clusters into pages: what to update, what to write and where pages compete.
 
-- Target pages from Search Console and result pages
-- Cannibalisation and content gaps
-- Content briefs: questions people ask, related searches and the top pages
+- A target page for every cluster, with cannibalisation and gaps
+- Top competitors for each cluster
+- Content briefs with questions, related searches and top pages
+- Intent, difficulty and CPC on every cluster
+
+### Bring your existing keyword lists
+
+Keep the research you already paid for and organise it here.
+
+- Imports from Ahrefs, Semrush, Keyword Planner, Search Console and Wordstat: CSV, TSV, TXT, XLSX or a Search Console ZIP
+- Variants that differ only in case, accents or spacing merge into one keyword
+- The latest 10 clusterings are kept
+- Excel, CSV and JSON exports
 
 ## Command line
 

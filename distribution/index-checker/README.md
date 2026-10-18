@@ -1,6 +1,6 @@
 # OctopusOn Index Checker
 
-Search engines keep URLs your site stopped serving. Index Checker finds them on Google, Yandex, Bing, the Wayback Machine and Common Crawl, checks each one and writes the redirects.
+A free Google index checker for broken indexed pages: find URLs that Google, Bing and Yandex still show but your site answers with 404s, server errors, soft 404s or thin content, and get 301 redirect rules ready to deploy.
 
 **100% free and open source** (no paid version, no trial, no limits) · for SEO and GEO (visibility in AI answers) · Windows, macOS and Linux · updated continuously as search engines and AI assistants change.
 
@@ -12,29 +12,41 @@ Get the installer for your system from the [latest release](../../releases/lates
 
 ## What it does
 
-### Discover what search engines remember
+### Find the URLs search engines still remember
 
-site: searches, archives, sitemaps and your own lists show the URLs crawlers still know about.
+Free sources first, optional APIs when you need more.
 
-- Free result pages of Google, Yandex, Bing and DuckDuckGo
-- Wayback Machine and Common Crawl history, XML sitemaps and your Search Console exports
-- Optional search APIs: Google Custom Search, Yandex Search API, Serper and SerpApi
+- site: searches on Google, Bing, Yandex and DuckDuckGo in a browser you watch, no key needed
+- XML sitemaps, robots.txt, extra keywords and ready-made search operators
+- URL lists pasted in or imported from Search Console and Yandex Webmaster
+- Optional Serper and SerpApi with your own key or OctopusOn credits
+- Wayback Machine and Common Crawl marks for URLs that were archived
 
-### Check every URL like a crawler
+### Check every indexed URL like a crawler
 
 Each URL is fetched with its redirects followed and sorted by what needs fixing.
 
-- 404 and 410, other 4xx and 5xx errors
-- Soft 404s: 200 pages that say “not found” and deep URLs redirected to the home page
-- Thin pages under your word-count threshold, with title, H1, canonical and noindex
+- 404 and 410, other 4xx, 5xx errors and redirect loops
+- Soft 404s from the page text, redirects to the home page, canonicals or meta refresh
+- Thin pages, noindex pages, broken sitemap URLs and orphan indexed pages
 
-### Fix it in minutes
+### Fix it in minutes with 301 redirects
 
-Turn the findings into redirect rules and reports your developers can deploy.
+Turn the findings into redirect rules and lists your developers can deploy.
 
-- 301 and 410 rules for Nginx, Apache, Caddy, IIS, Cloudflare, Vercel and Next.js
-- Directory-wide wildcard redirects, WordPress and Shopify CSVs, a clean sitemap and IndexNow lists
-- CSV, Excel and JSON exports; every scan is saved to reopen and re-verify
+- 301 and 410 rules for Nginx (with directory wildcards), Apache, Caddy, IIS, Cloudflare, Vercel and Next.js
+- WordPress and Shopify redirect CSVs
+- Removal lists for Search Console and Yandex, a clean sitemap and IndexNow lists
+- Suggested 301 targets you review URL by URL
+
+### Track index health over time
+
+Every scan is saved, so you can prove a cleanup worked.
+
+- Index health score and per-directory clusters
+- Scan comparison: resolved, new, persistent and dropped from the index
+- Re-check single URLs after a fix
+- Excel, CSV, JSON and Markdown reports
 
 ## Command line
 

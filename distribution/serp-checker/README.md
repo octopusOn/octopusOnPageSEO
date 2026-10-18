@@ -1,6 +1,6 @@
 # OctopusOn SERP Checker
 
-Rankings, and why pages rank: the SERP Checker crawls the top results, scores content and sites, and explains keyword difficulty.
+A free SERP checker and rank tracker: see where you rank on Google, Bing and Yandex in any country, spot SERP features and AI Overviews, and get a keyword difficulty built from crawling the pages that rank.
 
 **100% free and open source** (no paid version, no trial, no limits) · for SEO and GEO (visibility in AI answers) · Windows, macOS and Linux · updated continuously as search engines and AI assistants change.
 
@@ -12,37 +12,40 @@ Get the installer for your system from the [latest release](../../releases/lates
 
 ## What it does
 
-### Your sources, your choice
+### Check rankings for free, or at scale with APIs
 
-Search Google, Bing and Yandex through the free browser mode or the API you already pay for — or add your own.
+Start without any key, then add data sources when you need more volume, mobile results or page-level Google results.
 
-- Yandex Search API, DataForSEO, Serper and SerpApi built in
-- Your own provider with a request template and JSONPath, CSS or regex mapping
-- Fallback order per engine, monthly budgets and a cost estimate before every run
+- Free browser mode for Google, Bing and Yandex: a visible Chrome or Edge window, 30 seconds between searches and 100 searches per engine per day by default
+- Optional APIs with your own key or OctopusOn credits: DataForSEO, Serper, SerpApi and the Yandex Search API
+- Custom providers mapped with JSONPath, CSS selectors or regex
+- Monthly budgets and a cost estimate before every run
 
-### Scores for pages and sites
+### Keyword difficulty you can explain
 
-The pages that rank are crawled with the SEO Crawler engine and scored on what can be measured.
+Instead of a black-box number, the SERP analysis crawls the pages that rank and shows why a keyword is hard.
 
-- Content: keyword placement, topic coverage, depth, structure, questions, schema, freshness
-- Site: domain age (RDAP, WHOIS, Wayback), Open PageRank, referring domains
-- Technical health from the SEO Crawler's audit
+- Content, technical and site strength of every ranking page
+- Domain age, Open PageRank and optional backlink data
+- Difficulty in six bands, opportunity score and search intent
+- Advice on word count, H2s, schema, title, questions to answer and content gaps
 
-### Keyword difficulty you can check
+### Rank tracking with history and share of voice
 
-Difficulty is the click-weighted strength of the ten results, with every component and its contribution shown.
+Follow keyword positions over time for your site and your competitors.
 
-- Search intent, SERP features and your opportunity
-- What it takes to rank: length, subheadings, schema, title, questions to answer
-- Content gaps against the pages that rank
+- Daily, weekly or manual checks while the app is open, or from cron with the command line
+- Position, change, best position, ranking URL and history
+- Visibility and share of voice against competitors
+- Cannibalisation warnings when several of your pages rank for one keyword
 
-### Rank tracking
+### SERP features, AI Overviews and stored result pages
 
-Projects check their keywords daily or weekly while the app is open, or from cron with the command line.
+See what else competes for the click on every result page.
 
-- Positions, best positions and history per keyword
-- Visibility, share of voice and cannibalisation
-- Stored result pages, read again when selectors change
+- Ads, featured snippets, People Also Ask, local pack, images, videos, top stories, shopping and knowledge panels
+- AI answers (Google AI Overviews, Yandex Neuro and Bing Copilot) lower the opportunity score
+- Raw result pages are stored and can be read again later
 
 ## Command line
 

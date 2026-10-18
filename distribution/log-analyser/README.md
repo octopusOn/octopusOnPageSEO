@@ -1,6 +1,6 @@
 # OctopusOn Log Analyser
 
-OctopusOn Log Analyser turns raw access logs into crawl insights: which pages Googlebot and AI crawlers fetch, where they hit errors, which bots are fake and where your crawl budget goes.
+A free SEO log file analyser. OctopusOn Log Analyser turns raw access logs into crawl insights: which pages Googlebot and AI crawlers fetch, where they hit errors, which bots are fake and where your crawl budget goes.
 
 **100% free and open source** (no paid version, no trial, no limits) · for SEO and GEO (visibility in AI answers) · Windows, macOS and Linux · updated continuously as search engines and AI assistants change.
 

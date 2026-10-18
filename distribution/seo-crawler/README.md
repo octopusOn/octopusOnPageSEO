@@ -1,6 +1,6 @@
 # OctopusOn SEO Crawler
 
-A fast, local SEO crawler: see a site the way search engines do, and find what holds it back.
+A free SEO spider and website audit tool that crawls like a search engine: JavaScript rendering, broken links, redirect chains, duplicate content, hreflang and an explainable SEO score, with no URL limit.
 
 **100% free and open source** (no paid version, no trial, no limits) · for SEO and GEO (visibility in AI answers) · Windows, macOS and Linux · updated continuously as search engines and AI assistants change.
 
@@ -12,29 +12,50 @@ Get the installer for your system from the [latest release](../../releases/lates
 
 ## What it does
 
-### Crawl like a search engine
+### A free SEO spider that crawls like Googlebot
 
-Crawl whole sites or URL lists with polite rate limits, robots.txt and sitemaps, as raw HTML or rendered in a real browser.
+Crawl as Googlebot Smartphone, Googlebot Desktop, Bingbot, Chrome or your own user agent, at a polite speed, with robots.txt read the way Google reads it.
 
-- JavaScript rendering with a local Chrome or Edge
-- Compare raw and rendered HTML for JavaScript SEO
-- Live progress, pause and resume, saved crawls to reopen
+- Spider mode or list mode, with URL, depth and time limits and include and exclude patterns
+- 1–64 parallel requests, speed profiles and a requests-per-second cap
+- robots.txt: respect it, ignore it but report, or ignore it; X-Robots-Tag per crawler
+- XML sitemaps, sitemap indexes and gzip files, with their redirect chains
+- Live progress, pause and resume, several crawls at once and saved crawls to reopen
 
-### An SEO score you can explain
+### JavaScript rendering for JavaScript SEO
 
-Every finding has a priority and every deduction leads back to the URLs behind it.
+Single-page apps and client-side frameworks are crawled the way search engines render them, in a fresh, isolated browser context for every URL.
 
-- Titles, descriptions, headings, canonicals, hreflang, directives
-- Redirect chains, broken links, duplicate and near-duplicate content
-- System-by-system breakdown of the overall score
+- Uses the Chrome, Chromium or Edge already on your computer
+- Desktop, mobile or custom viewport
+- Raw vs rendered: title, description, canonical, robots directives, word count and links
+- Flags a noindex removed by JavaScript and re-crawls failed renders
 
-### Compare, export, build
+### Site audit with an explainable SEO score
 
-Track how a site changes between crawls and hand results to your team.
+A 0–100 SEO score built from 100+ checks. Every deduction leads to the URLs behind it, with an explanation and a fix.
 
-- Crawl and finding comparisons
-- Filtered exports to Excel, CSV and JSON
-- XML sitemap builder
+- Response codes, redirects and security: HTTPS, HSTS and mixed content
+- Titles, meta descriptions, headings, canonicals, directives and pagination
+- Images, structured data, Open Graph and Twitter cards, mobile viewport
+- Prioritised fixes, grouped into nine systems
+
+### Ready for AI search and GEO
+
+Check that AI crawlers can reach your content, next to the classic SEO checks.
+
+- AI readiness: AI bot access in robots.txt and llms.txt
+- Structured data that rich results and AI answers rely on
+- Pair it with Log Analyser to see which AI bots really visit
+
+### Crawl comparison, exports and Search Console data
+
+Follow a site from one crawl to the next, hand results to clients and find quick wins in Google data.
+
+- Compare two crawls on 30 SEO fields and see new, fixed and remaining findings
+- Filtered exports to Excel, CSV and JSON from every tab
+- Choose the columns of every tab
+- SEO Opportunities: low-CTR pages, near wins and traffic losses from Search Console and GA4 data
 
 ## Command line
 
