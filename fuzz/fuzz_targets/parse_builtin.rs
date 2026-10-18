@@ -2,7 +2,7 @@
 #![no_main]
 
 use libfuzzer_sys::fuzz_target;
-use seonexus_logparse::FormatRegistry;
+use octopuson_logparse::FormatRegistry;
 
 fuzz_target!(|line: &str| {
     let registry = FormatRegistry::builtin();

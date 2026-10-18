@@ -1,6 +1,6 @@
 # OctopusOn SEO Crawler (beta)
 
-The CLI (`apps/snx-spider`) and desktop app (`apps/spider`) use the same crawl, storage, audit and export code. The desktop imports `@octopusseo/design`, like the Log Analyser, and sets `data-product="spider"`.
+The CLI (`apps/octopuson-crawler-cli`) and desktop app (`apps/seo-crawler`) use the same crawl, storage, audit and export code. The desktop imports `@octopusseo/design`, like the Log Analyser, and sets `data-product="spider"`.
 
 ## Crawl a site
 
@@ -172,24 +172,24 @@ A missing browser or launch failure stops the crawl with a clear error. A per-pa
 **Rendering viewport** offers Automatic, Desktop (1280×800), Mobile (390×844) and Custom. Automatic preserves the existing Googlebot Smartphone 412×915 mobile / other-agent 1280×800 desktop layouts. Custom width and height each accept 240–3840 CSS pixels, with a separate mobile-layout option. Layout does not change the selected HTTP/browser User-Agent or robots identity. Mobile layout honors viewport meta tags; page overflow and markup can affect actual inner dimensions. Pixel ratio stays one, without touch/hardware emulation. Saved plans, full repeats and JS-failure retries retain the setting; the overview shows the saved layout. Different viewports count as different settings in comparison coverage. Repeat a crawl to collect another layout's DOM and generated links; saved archives remain unchanged.
 
 ```sh
-cargo run -p snx-spider -- crawl https://example.com \
+cargo run -p octopuson-crawler-cli -- crawl https://example.com \
   --render javascript --render-wait-ms 1500 --render-timeout 30 \
   --render-concurrency 2 --rps 5 --store-html --store-headers
-cargo run -p snx-spider -- show latest --tab rendering
-cargo run -p snx-spider -- export latest --tab rendering --out rendering.xlsx
-cargo run -p snx-spider -- crawl https://example.com --render javascript \
+cargo run -p octopuson-crawler-cli -- show latest --tab rendering
+cargo run -p octopuson-crawler-cli -- export latest --tab rendering --out rendering.xlsx
+cargo run -p octopuson-crawler-cli -- crawl https://example.com --render javascript \
   --render-viewport 390x844 --render-mobile
 ```
 
 ## Commands
 
 ```sh
-cargo run -p snx-spider -- crawl https://example.com --rps 5 --store-html --store-headers
-cargo run -p snx-spider -- crawl --list-file urls.txt
-cargo run -p snx-spider -- crawls --json
-cargo run -p snx-spider -- show latest --tab issues
-cargo run -p snx-spider -- export latest --tab internal --out internal.xlsx
-cargo run -p snx-spider -- export latest --out ./crawl-export --format csv
+cargo run -p octopuson-crawler-cli -- crawl https://example.com --rps 5 --store-html --store-headers
+cargo run -p octopuson-crawler-cli -- crawl --list-file urls.txt
+cargo run -p octopuson-crawler-cli -- crawls --json
+cargo run -p octopuson-crawler-cli -- show latest --tab issues
+cargo run -p octopuson-crawler-cli -- export latest --tab internal --out internal.xlsx
+cargo run -p octopuson-crawler-cli -- export latest --out ./crawl-export --format csv
 ```
 
 Use `--data-dir` or `OCTOPUSSEO_SPIDER_DATA_DIR` to select the same workspace in both clients.
@@ -235,14 +235,14 @@ No lastmod is inferred from capture timestamps; priority/changefreq are omitted.
 
 ## Validation
 
-`pnpm --filter @octopusseo/spider check` runs strict TypeScript checking and frontend tests. The Rust suite covers extraction, robots/scope, crawl control, storage, audit execution and findings, bounded filters, injection-like input, exports and desktop IPC. CI checks and builds the Spider alongside the Log Analyser and website.
+`pnpm --filter @octopusseo/seo-crawler check` runs strict TypeScript checking and frontend tests. The Rust suite covers extraction, robots/scope, crawl control, storage, audit execution and findings, bounded filters, injection-like input, exports and desktop IPC. CI checks and builds the Spider alongside the Log Analyser and website.
 
 Development and test profiles omit debug symbols only for bundled `libduckdb-sys` C++ code to keep regenerated build caches smaller. Rust application debug information and release profiles are unchanged.
 
 Real-browser tests are opt-in (they require an installed browser and loopback network access):
 
 ```sh
-cargo test -p seonexus-render -- --ignored
+cargo test -p octopuson-render -- --ignored
 ```
 
 These cover async script/XHR content, generated links, supplying the main response exactly once, blocked resources, isolated storage, DOM truncation, cancellation, rendering timeouts and continuing with the next URL. The rendering adapter adds `tungstenite` 0.28 as a small blocking, loopback-only WebSocket transport (handshake feature only; no second async/TLS runtime). Base64 encoding reuses the version already in the workspace dependency graph.

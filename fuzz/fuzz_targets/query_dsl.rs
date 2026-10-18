@@ -3,7 +3,7 @@
 #![no_main]
 
 use libfuzzer_sys::fuzz_target;
-use seonexus_query::{parse, to_dsl, validate};
+use octopuson_query::{parse, to_dsl, validate};
 
 fuzz_target!(|text: &str| {
     if let Ok(query) = parse(text) {

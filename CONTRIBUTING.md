@@ -9,8 +9,8 @@
 
 ## Architecture rules
 
-- **Hexagonal layering.** Domain crates (`seonexus-logparse`, `-url`, `-botverify`, `-query`, `-analytics`) must not depend on DuckDB, Tauri, the filesystem or the network. They expose traits (ports); adapters (`seonexus-store`, `seonexus-report`, `seonexus-net`) implement them.
-- **Thin front-ends.** `apps/snx-log` and `apps/desktop` only translate user input into calls on `seonexus-log-app` use-cases. A feature is added to the use-case first, then exposed in both front-ends.
+- **Hexagonal layering.** Domain crates (`octopuson-logparse`, `-url`, `-botverify`, `-query`, `-analytics`) must not depend on DuckDB, Tauri, the filesystem or the network. They expose traits (ports); adapters (`octopuson-store`, `octopuson-report`, `octopuson-net`) implement them.
+- **Thin front-ends.** `apps/octopuson-log-cli` and `apps/log-analyser` only translate user input into calls on `octopuson-log-app` use-cases. A feature is added to the use-case first, then exposed in both front-ends.
 - **Small modules.** One responsibility per module. Split files that grow hard to read.
 
 ## Code rules
@@ -24,11 +24,11 @@
 
 ## Frontend
 
-- `apps/desktop` is TypeScript in strict mode; `pnpm --filter @seonexus/desktop check` runs `tsc` and Vitest.
+- `apps/log-analyser` is TypeScript in strict mode; `pnpm --filter @octopusseo/log-analyser check` runs `tsc` and Vitest.
 - Every UI string goes through the typed dictionaries in `src/i18n` (English and Turkish).
 - IPC types in `src/api/types.ts` mirror the Rust DTOs; `src-tauri/src/ipc_tests.rs` must cover new commands with the JSON the UI sends.
 
 ## Bots
 
-- Add or change bots in `crates/seonexus-botverify/src/catalog.rs` (specific patterns before generic ones) and bump `CATALOG_VERSION`; stored sites are re-classified automatically.
+- Add or change bots in `crates/octopuson-botverify/src/catalog.rs` (specific patterns before generic ones) and bump `CATALOG_VERSION`; stored sites are re-classified automatically.
 - New IP list sources go to `ranges::SOURCES`; refresh the snapshot with `cargo xtask bot-ranges`.

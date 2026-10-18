@@ -1,0 +1,40 @@
+[package]
+name = "octopuson-kw-app"
+description = "Use cases of the OctopusOn SEO Keyword Research: projects, imports, clustering, exports, settings and keys."
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+repository.workspace = true
+authors.workspace = true
+publish.workspace = true
+
+[dependencies]
+directories.workspace = true
+encoding_rs.workspace = true
+quick-xml.workspace = true
+octopuson-cloud.workspace = true
+octopuson-core.workspace = true
+octopuson-keyword-sources.workspace = true
+octopuson-keywords.workspace = true
+octopuson-kw-store.workspace = true
+octopuson-net.workspace = true
+octopuson-oauth.workspace = true
+octopuson-render.workspace = true
+octopuson-report.workspace = true
+octopuson-secrets.workspace = true
+octopuson-serp.workspace = true
+octopuson-serp-score.workspace = true
+octopuson-text.workspace = true
+serde.workspace = true
+serde_json.workspace = true
+thiserror.workspace = true
+zip.workspace = true
+
+[dev-dependencies]
+rust_xlsxwriter.workspace = true
+tempfile.workspace = true
+url.workspace = true
+
+[lints]
+workspace = true

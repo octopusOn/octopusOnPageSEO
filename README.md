@@ -1,6 +1,6 @@
 # OctopusOn SEO
 
-Open-source, cross-platform SEO tooling written in Rust. (Crates keep the internal `seonexus-` prefix of the project's first name.)
+Open-source, cross-platform SEO tooling written in Rust.
 
 | Product | Status | Programs |
 |---------|--------|----------|
@@ -106,7 +106,7 @@ pnpm desktop          # development (Vite + Tauri)
 pnpm desktop:build    # installers for the current platform
 ```
 
-`pnpm --filter @seonexus/desktop dev` alone serves the UI in a browser with a built-in demo backend, so the interface can be developed without the Rust toolchain.
+`pnpm --filter @octopusseo/log-analyser dev` alone serves the UI in a browser with a built-in demo backend, so the interface can be developed without the Rust toolchain.
 
 ## SEO Crawler
 
@@ -124,11 +124,11 @@ The Spider uses the Log Analyser's **Chromatophore** design package with its own
 pnpm spider               # native desktop app (Vite + Tauri)
 pnpm spider:dev           # browser demo on http://localhost:1430
 pnpm spider:build         # native installers for the current platform
-pnpm --filter @octopusseo/spider check
+pnpm --filter @octopusseo/seo-crawler check
 
-cargo run -p snx-spider -- crawl https://example.com --rps 5 --store-headers
-cargo run -p snx-spider -- show latest --tab issues
-cargo run -p snx-spider -- export latest --tab issues --out issues.xlsx
+cargo run -p octopuson-crawler-cli -- crawl https://example.com --rps 5 --store-headers
+cargo run -p octopuson-crawler-cli -- show latest --tab issues
+cargo run -p octopuson-crawler-cli -- export latest --tab issues --out issues.xlsx
 ```
 
 The CLI and desktop share `OCTOPUSSEO_SPIDER_DATA_DIR`, or the platform's Spider application-data directory. Browser builds use explicitly labeled sample data; live crawling and XLSX export require the native app. JavaScript rendering requires an installed Chrome/Chromium/Edge; it is enabled per crawl. Custom rendering CSS, near-duplicate detection, crawl comparisons and the self-hosted service are not implemented yet. A million-URL performance benchmark has not been run; there is no claim that the current crawler uses constant memory.
@@ -149,9 +149,9 @@ pnpm serp                 # native desktop app (Vite + Tauri)
 pnpm serp:dev             # browser preview with sample data on http://localhost:1450
 pnpm serp:build           # native installers for the current platform
 
-cargo run -p snx-serp -- analyze "türk kahvesi nasıl yapılır" --engine google --country tr --site example.com
-cargo run -p snx-serp -- project create "Example" --site example.com --engine google --country tr
-cargo run -p snx-serp -- track --due
+cargo run -p octopuson-serp-cli -- analyze "türk kahvesi nasıl yapılır" --engine google --country tr --site example.com
+cargo run -p octopuson-serp-cli -- project create "Example" --site example.com --engine google --country tr
+cargo run -p octopuson-serp-cli -- track --due
 ```
 
 See [docs/serp.md](docs/serp.md) (Turkish: [docs/serp-kilavuz.md](docs/serp-kilavuz.md)) and [ADR 0064](docs/adr/0064-serp-finder.md).
@@ -170,9 +170,9 @@ pnpm keywords             # native desktop app (Vite + Tauri)
 pnpm keywords:dev         # browser preview with sample data on http://localhost:1460
 pnpm keywords:build       # native installers for the current platform
 
-cargo run -p snx-kw -- project create "Example" --site example.com --engine google --country tr --language tr
-cargo run -p snx-kw -- import 1 ahrefs-keywords.csv
-cargo run -p snx-kw -- cluster 1 --method lexical
+cargo run -p octopuson-keywords-cli -- project create "Example" --site example.com --engine google --country tr --language tr
+cargo run -p octopuson-keywords-cli -- import 1 ahrefs-keywords.csv
+cargo run -p octopuson-keywords-cli -- cluster 1 --method lexical
 ```
 
 See [docs/keywords.md](docs/keywords.md) (Turkish: [docs/keywords-kilavuz.md](docs/keywords-kilavuz.md)) and [ADR 0069](docs/adr/0069-keyword-miner.md).
@@ -190,52 +190,79 @@ pnpm web              # development server on http://localhost:3000
 pnpm web:build        # production build
 ```
 
-Downloads and the changelog come from the GitHub releases of `OCTOPUSSEO_GITHUB_REPO` (refreshed hourly, no redeploy needed); the tag prefix names the product (`v…` Log Analyser, `spider-v…` Spider, `serp-v…` SERP Checker, `kw-v…` SEO Keyword Research; see [docs/release.md](docs/release.md) and [ADR 0065](docs/adr/0065-multi-product-releases.md)). Without releases there, `pnpm web:downloads -- --product <log-analyser|spider|serp-finder|keyword-miner>` copies the installers and CLI binaries built on this machine into `apps/web/public/downloads` (ignored by git; run it before `pnpm web:build`) and the site offers those; with neither, a product's page and download section say it is not released yet. The download button picks the installer for the visitor's system and, where the browser tells, CPU architecture. See [apps/web/.env.example](apps/web/.env.example) for all settings.
+Downloads and the changelog come from GitHub releases: each program publishes to its own project (`octopusOn/seo-crawler`, `octopusOn/log-analyser`, …) and earlier releases sit in this repository. Tags are `<key>-v<version>` (`crawler-v…`, `log-v…`, `serp-v…`, `keywords-v…`, `index-v…`); see [docs/release.md](docs/release.md). The site refreshes them hourly, with no redeploy. For local testing, `OCTOPUSSEO_LOCAL_DOWNLOADS=1` with `pnpm web:downloads -- --product <program id>` serves installers built on this machine from `apps/web/public/downloads` (ignored by git). Without either, a program's download section says it is not released yet. The download button picks the installer for the visitor's system and, where the browser tells, CPU architecture. See [apps/web/.env.example](apps/web/.env.example) for all settings.
 
 ## Repository layout
 
 ```
-crates/seonexus-core        Shared value types (timestamps, dates, result tables)
-crates/seonexus-logparse    Streaming log parsers, compression, format detection
-crates/seonexus-query       Query AST, text language, planner, SQL compiler, templates
-crates/seonexus-botverify   Bot catalog, user-agent classification, IP lists, verification
-crates/seonexus-url         URL normalization, robots.txt
-crates/seonexus-geo         IP → country / ASN lookups (DB-IP Lite data)
-crates/seonexus-analytics   URL-list comparison, period comparison, crawl overview
-crates/seonexus-store       DuckDB/Parquet storage adapter
-crates/seonexus-report      CSV / XLSX / JSON exporters
-crates/seonexus-net         HTTP and DNS adapters
-crates/seonexus-log-app     Use-cases shared by the CLI and the desktop app
-apps/snx-log                CLI
-apps/desktop                Log Analyser desktop app (React UI + src-tauri shell)
-apps/spider                 Spider desktop app (React UI + src-tauri shell)
-apps/snx-spider              Spider CLI
-apps/serp                    SERP Checker desktop app (React UI + src-tauri shell)
-apps/snx-serp                SERP Checker CLI
-apps/keywords                SEO Keyword Research desktop app (React UI + src-tauri shell)
-apps/snx-kw                  SEO Keyword Research CLI
-crates/seonexus-serp         SERP model, declarative mappings, Google/Bing/Yandex parsers, providers
-crates/seonexus-serp-score   Content, technical, site, difficulty, intent and opportunity scores
-crates/seonexus-serp-store   DuckDB store of runs, snapshots, raw responses, analyses and rankings
-crates/seonexus-serp-app     SERP Checker use cases shared by both frontends
-crates/seonexus-keywords     SEO Keyword Research domain: normalisation, expansions, filters, clustering, mapping
-crates/seonexus-keyword-sources  Wordstat, DataForSEO, SerpApi, Search Console, Google Ads, suggestions
-crates/seonexus-kw-store     SEO Keyword Research storage (DuckDB)
-crates/seonexus-kw-app       SEO Keyword Research use cases shared by both frontends
-crates/seonexus-oauth        Google OAuth for desktop apps (loopback, PKCE)
-crates/seonexus-secrets      keychain, file and environment secret store
-crates/seonexus-text         Tokenizing, Turkish-aware folding, stems and term statistics
-crates/seonexus-domain-intel Domain age (RDAP, WHOIS, Wayback), Open PageRank, Tranco
-crates/seonexus-crawl        Crawl engine, scope, robots.txt and sitemaps
-crates/seonexus-html         HTML extraction and content fingerprints
-crates/seonexus-audit        Bilingual technical SEO issue catalog
-crates/seonexus-crawl-store  DuckDB crawl storage, audit rules and bounded table queries
-crates/seonexus-spider-app   Spider use cases shared by both frontends
-apps/web                    OctopusOn SEO website (Next.js)
-packages/design             Chromatophore, the shared design language (tokens, fonts, component CSS)
-docs/                       ADRs, query language, user guide, release notes
-fuzz/                       cargo-fuzz targets
-xtask/                      Developer automation
+Programs (desktop app + command line; each has its own GitHub project for releases)
+apps/seo-crawler                  SEO Crawler desktop app (React UI + src-tauri shell)
+apps/octopuson-crawler-cli        SEO Crawler command line (octopuson-crawler)
+apps/log-analyser                 Log Analyser desktop app
+apps/octopuson-log-cli            Log Analyser command line (octopuson-log)
+apps/serp-checker                 SERP Checker desktop app
+apps/octopuson-serp-cli           SERP Checker command line (octopuson-serp)
+apps/seo-keyword-research         SEO Keyword Research desktop app
+apps/octopuson-keywords-cli       SEO Keyword Research command line (octopuson-keywords)
+apps/index-checker                Index Checker desktop app
+apps/octopuson-index-cli          Index Checker command line (octopuson-index)
+
+Shared Rust crates
+crates/octopuson-core             Shared value types (timestamps, dates, result tables)
+crates/octopuson-url              URL normalization, robots.txt
+crates/octopuson-net              HTTP and DNS adapters
+crates/octopuson-report           CSV / XLSX / JSON exporters
+crates/octopuson-text             Tokenizing, Turkish-aware folding, stems and term statistics
+crates/octopuson-oauth            Google OAuth for desktop apps (loopback, PKCE)
+crates/octopuson-secrets          Keychain, file and environment secret store
+crates/octopuson-cloud            OctopusOn credits: account sign-in, connector catalog, gateway transport
+
+SEO Crawler
+crates/octopuson-crawl            Crawl engine, scope, robots.txt and sitemaps
+crates/octopuson-render           JavaScript rendering with a local Chrome, Chromium or Edge
+crates/octopuson-html             HTML extraction and content fingerprints
+crates/octopuson-audit            Bilingual technical SEO issue catalog
+crates/octopuson-crawl-store      DuckDB crawl storage, audit rules and bounded table queries
+crates/octopuson-opportunities    SEO opportunities from Search Console and GA4 data
+crates/octopuson-spider-app       SEO Crawler use cases shared by the CLI and the desktop app
+
+Log Analyser
+crates/octopuson-logparse         Streaming log parsers, compression, format detection
+crates/octopuson-query            Query AST, text language, planner, SQL compiler, templates
+crates/octopuson-botverify        Bot catalog, user-agent classification, IP lists, verification
+crates/octopuson-geo              IP → country / ASN lookups (DB-IP Lite data)
+crates/octopuson-analytics        URL-list comparison, period comparison, crawl overview
+crates/octopuson-store            DuckDB/Parquet storage adapter
+crates/octopuson-log-app          Log Analyser use cases shared by the CLI and the desktop app
+
+SERP Checker
+crates/octopuson-serp             SERP model, declarative mappings, Google/Bing/Yandex parsers, providers
+crates/octopuson-serp-score       Content, technical, site, difficulty, intent and opportunity scores
+crates/octopuson-serp-store       DuckDB store of runs, snapshots, raw responses, analyses and rankings
+crates/octopuson-domain-intel     Domain age (RDAP, WHOIS, Wayback), Open PageRank, Tranco
+crates/octopuson-serp-app         SERP Checker use cases shared by the CLI and the desktop app
+
+SEO Keyword Research
+crates/octopuson-keywords         Normalisation, expansions, filters, clustering, mapping
+crates/octopuson-keyword-sources  Wordstat, DataForSEO, SerpApi, Search Console, Google Ads, suggestions
+crates/octopuson-kw-store         SEO Keyword Research storage (DuckDB)
+crates/octopuson-kw-app           SEO Keyword Research use cases shared by the CLI and the desktop app
+
+Index Checker
+crates/octopuson-finder           Indexed URL discovery, checks, clusters and redirect rules
+
+Website and accounts
+apps/web                          octopuson.com (Next.js), rendered from the CMS
+apps/cms                          Content admin (Laravel) at cms.octopuson.com
+apps/portal                       Account and credits portal (my.octopuson.com)
+apps/gateway                      API gateway for OctopusOn credits (api.octopuson.com)
+packages/cloud-core               Shared accounts, credits, payments and connector logic
+packages/design                   Chromatophore, the shared design language (tokens, fonts, component CSS)
+
+docs/                             ADRs, query language, user guides, release notes
+distribution/                     Front pages of the per-program GitHub projects
+fuzz/                             cargo-fuzz targets
+xtask/                            Developer automation
 ```
 
 Architecture decisions are recorded in [docs/adr](docs/adr).
@@ -248,7 +275,7 @@ Requirements: Rust stable (via [rustup](https://rustup.rs)); for the desktop app
 cargo xtask ci          # fmt + clippy + tests + cargo-deny + frontend checks
 cargo xtask frontend    # frontend only: type-check, tests, build
 cargo xtask bot-ranges  # refresh the bundled crawler IP list snapshot
-cargo run -p snx-log -- --help
+cargo run -p octopuson-log-cli -- --help
 ```
 
 See [CONTRIBUTING.md](CONTRIBUTING.md) for conventions.

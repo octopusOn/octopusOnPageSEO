@@ -7,11 +7,11 @@ page and links every download to GitHub.
 
 | Program | Key | Tag | GitHub project | Desktop app | CLI (Cargo package) |
 |---|---|---|---|---|---|
-| SEO Crawler | `crawler` | `crawler-v0.2.0` | `octopusOn/seo-crawler` | `apps/spider` | `octopuson-crawler` (`snx-spider`) |
-| Log Analyser | `log` | `log-v0.2.0` (earlier: `v0.1.0`) | `octopusOn/log-analyser` | `apps/desktop` | `octopuson-log` (`snx-log`) |
-| SERP Checker | `serp` | `serp-v0.2.0` | `octopusOn/serp-checker` | `apps/serp` | `octopuson-serp` (`snx-serp`) |
-| SEO Keyword Research | `keywords` | `keywords-v0.2.0` | `octopusOn/seo-keyword-research` | `apps/keywords` | `octopuson-keywords` (`snx-kw`) |
-| Index Checker | `index` | `index-v0.2.0` | `octopusOn/index-checker` | `apps/finder` | `octopuson-index` (`snx-finder`) |
+| SEO Crawler | `crawler` | `crawler-v0.2.0` | `octopusOn/seo-crawler` | `apps/seo-crawler` | `octopuson-crawler` (`octopuson-crawler-cli`) |
+| Log Analyser | `log` | `log-v0.2.0` (earlier: `v0.1.0`) | `octopusOn/log-analyser` | `apps/log-analyser` | `octopuson-log` (`octopuson-log-cli`) |
+| SERP Checker | `serp` | `serp-v0.2.0` | `octopusOn/serp-checker` | `apps/serp-checker` | `octopuson-serp` (`octopuson-serp-cli`) |
+| SEO Keyword Research | `keywords` | `keywords-v0.2.0` | `octopusOn/seo-keyword-research` | `apps/seo-keyword-research` | `octopuson-keywords` (`octopuson-keywords-cli`) |
+| Index Checker | `index` | `index-v0.2.0` | `octopusOn/index-checker` | `apps/index-checker` | `octopuson-index` (`octopuson-index-cli`) |
 
 The table comes from `apps/web/src/lib/products.json`, which the release workflow, the website
 and `scripts/release.mjs` all read. A new program is one more entry there and in
@@ -101,7 +101,7 @@ downloads the program.
    numbers.
 3. Edit the notes: write the highlights and polish the bullets.
 4. For the Log Analyser, refresh the bundled crawler IP lists with `cargo xtask bot-ranges` and
-   review the diff of `crates/seonexus-botverify/data/ip-ranges.json`.
+   review the diff of `crates/octopuson-botverify/data/ip-ranges.json`.
 5. Run `cargo xtask ci`.
 6. Commit and tag:
 

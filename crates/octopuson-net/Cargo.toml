@@ -1,0 +1,22 @@
+[package]
+name = "octopuson-net"
+description = "Network adapters: HTTP downloads and system DNS resolution."
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+repository.workspace = true
+authors.workspace = true
+publish.workspace = true
+
+[dependencies]
+dns-lookup.workspace = true
+octopuson-botverify.workspace = true
+octopuson-core.workspace = true
+octopuson-crawl.workspace = true
+thiserror.workspace = true
+ureq.workspace = true
+url.workspace = true
+
+[lints]
+workspace = true

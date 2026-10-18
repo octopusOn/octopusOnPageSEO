@@ -1,0 +1,92 @@
+---
+source: crates/octopuson-logparse/tests/fixtures.rs
+expression: "parse_fixture(\"combined.log\", \"combined\").join(\"\\n\")"
+---
+LogRecord {
+    timestamp: Timestamp(
+        1791387593000000,
+    ),
+    client_ip: 66.249.66.1,
+    method: "GET",
+    target: "/urun/kirmizi-ayakkabi?renk=kirmizi",
+    protocol: "HTTP/1.1",
+    status: 200,
+    bytes: Some(
+        15342,
+    ),
+    referer: None,
+    user_agent: Some(
+        "Mozilla/5.0 (compatible; Googlebot/2.1; +http://www.google.com/bot.html)",
+    ),
+    duration_micros: None,
+    host: None,
+    router: None,
+    upstream: None,
+    request_seq: None,
+}
+LogRecord {
+    timestamp: Timestamp(
+        1791387594000000,
+    ),
+    client_ip: 40.77.167.5,
+    method: "GET",
+    target: "/blog/seo-ipuclari",
+    protocol: "HTTP/1.1",
+    status: 301,
+    bytes: Some(
+        0,
+    ),
+    referer: None,
+    user_agent: Some(
+        "Mozilla/5.0 (compatible; bingbot/2.0; +http://www.bing.com/bingbot.htm)",
+    ),
+    duration_micros: None,
+    host: None,
+    router: None,
+    upstream: None,
+    request_seq: None,
+}
+LogRecord {
+    timestamp: Timestamp(
+        1791387595000000,
+    ),
+    client_ip: 2a03:2880:f003::1,
+    method: "HEAD",
+    target: "/",
+    protocol: "HTTP/2.0",
+    status: 404,
+    bytes: None,
+    referer: Some(
+        "https://www.google.com/",
+    ),
+    user_agent: Some(
+        "facebookexternalhit/1.1",
+    ),
+    duration_micros: None,
+    host: None,
+    router: None,
+    upstream: None,
+    request_seq: None,
+}
+LogRecord {
+    timestamp: Timestamp(
+        1791387596000000,
+    ),
+    client_ip: 20.171.207.1,
+    method: "GET",
+    target: "/sitemap.xml",
+    protocol: "HTTP/1.1",
+    status: 500,
+    bytes: Some(
+        162,
+    ),
+    referer: None,
+    user_agent: Some(
+        "Mozilla/5.0 AppleWebKit/537.36 (KHTML, like Gecko; compatible; GPTBot/1.2; +https://openai.com/gptbot)",
+    ),
+    duration_micros: None,
+    host: None,
+    router: None,
+    upstream: None,
+    request_seq: None,
+}

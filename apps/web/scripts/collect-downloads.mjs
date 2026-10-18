@@ -2,11 +2,11 @@
 // machine into public/downloads/<tag>/ and records them in public/downloads/releases.json. The
 // site offers these files while no GitHub repository with releases is configured.
 //
-//   pnpm --filter @octopusseo/web downloads [--product log-analyser|spider|serp-finder|keyword-miner] [--notes <file.md>]
+//   pnpm --filter @octopusseo/web downloads [--product seo-crawler|log-analyser|serp-checker|seo-keyword-research|index-checker] [--notes <file.md>]
 //
 // Build first, e.g. for the Log Analyser: `pnpm desktop:build` (add `-- --target
 // universal-apple-darwin` on a Mac for both Apple Silicon and Intel) and `cargo build --release
-// -p snx-log --target <triple>`; CLI binaries are only taken from such explicit-target builds,
+// -p octopuson-log-cli --target <triple>`; CLI binaries are only taken from such explicit-target builds,
 // whose triple names the archive. The products, their apps, CLIs and tag prefixes are listed in
 // src/lib/products.json. Next.js only serves files that exist when the site is built, so collect
 // before `next build`.

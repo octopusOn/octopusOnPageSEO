@@ -30,7 +30,7 @@ allow = [
     # BSD-style permissive license of libbzip2, used by libbz2-rs-sys (pure-Rust bzip2).
     "bzip2-1.0.6",
 ]
-# Mozilla CA root data used by ureq: HTTPS downloads of crawler IP lists (seonexus-net) and
+# Mozilla CA root data used by ureq: HTTPS downloads of crawler IP lists (octopuson-net) and
 # libduckdb-sys' build script. Scoped to this crate instead of allowed globally.
 exceptions = [
     { crate = "webpki-roots", allow = ["CDLA-Permissive-2.0"] },

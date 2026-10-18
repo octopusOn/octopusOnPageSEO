@@ -1,0 +1,23 @@
+[package]
+name = "octopuson-cloud"
+description = "OctopusOn SEO credits for the desktop apps: account sign-in by device code, the connector catalog, and a transport that sends paid-source requests through the OctopusOn SEO gateway."
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+repository.workspace = true
+authors.workspace = true
+publish.workspace = true
+
+[dependencies]
+directories.workspace = true
+octopuson-core.workspace = true
+octopuson-oauth.workspace = true
+octopuson-secrets.workspace = true
+serde.workspace = true
+serde_json.workspace = true
+thiserror.workspace = true
+url.workspace = true
+
+[lints]
+workspace = true

@@ -1,0 +1,37 @@
+[package]
+name = "octopuson-finder"
+description = "OctopusOn Index Checker: discover indexed URLs from Google, Yandex, Bing, DuckDuckGo, Wayback and APIs, and detect 404, 4xx, 5xx, soft-404 and thin 200 pages."
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+repository.workspace = true
+authors.workspace = true
+publish.workspace = true
+
+[dependencies]
+base64.workspace = true
+directories.workspace = true
+duckdb.workspace = true
+quick-xml.workspace = true
+rayon.workspace = true
+regex.workspace = true
+scraper.workspace = true
+octopuson-cloud.workspace = true
+octopuson-core.workspace = true
+octopuson-crawl.workspace = true
+octopuson-html.workspace = true
+octopuson-net.workspace = true
+octopuson-render.workspace = true
+octopuson-report.workspace = true
+octopuson-serp.workspace = true
+serde.workspace = true
+serde_json.workspace = true
+tempfile.workspace = true
+thiserror.workspace = true
+tracing.workspace = true
+ureq.workspace = true
+url.workspace = true
+
+[lints]
+workspace = true

@@ -1,0 +1,37 @@
+[package]
+name = "octopuson-log-app"
+description = "Application use-cases shared by the octopuson-log CLI and the desktop Log Analyser."
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+repository.workspace = true
+authors.workspace = true
+publish.workspace = true
+
+[dependencies]
+flate2.workspace = true
+octopuson-analytics.workspace = true
+octopuson-botverify.workspace = true
+octopuson-core.workspace = true
+octopuson-geo.workspace = true
+octopuson-logparse.workspace = true
+octopuson-net.workspace = true
+octopuson-query.workspace = true
+octopuson-report.workspace = true
+octopuson-store.workspace = true
+octopuson-url.workspace = true
+rayon.workspace = true
+regex.workspace = true
+serde.workspace = true
+serde_json.workspace = true
+thiserror.workspace = true
+tracing.workspace = true
+xxhash-rust.workspace = true
+zip.workspace = true
+
+[dev-dependencies]
+tempfile.workspace = true
+
+[lints]
+workspace = true

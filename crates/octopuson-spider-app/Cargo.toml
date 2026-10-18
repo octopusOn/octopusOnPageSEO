@@ -1,0 +1,43 @@
+[package]
+name = "octopuson-spider-app"
+description = "Use cases of the OctopusOn SEO Crawler: run, list, read and export crawls."
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+repository.workspace = true
+authors.workspace = true
+publish.workspace = true
+
+[dependencies]
+octopuson-core.workspace = true
+octopuson-opportunities.workspace = true
+octopuson-html.workspace = true
+octopuson-audit.workspace = true
+octopuson-crawl.workspace = true
+octopuson-crawl-store.workspace = true
+octopuson-net.workspace = true
+octopuson-render.workspace = true
+octopuson-report.workspace = true
+serde.workspace = true
+serde_json.workspace = true
+url.workspace = true
+base64.workspace = true
+getrandom = "0.4.3"
+sha2 = "0.10.9"
+zstd.workspace = true
+csv = "1.4"
+quick-xml.workspace = true
+encoding_rs.workspace = true
+thiserror.workspace = true
+tempfile.workspace = true
+zip.workspace = true
+
+[target.'cfg(target_os = "macos")'.dependencies]
+keyring = { workspace = true, features = ["apple-native"] }
+
+[target.'cfg(windows)'.dependencies]
+keyring = { workspace = true, features = ["windows-native"] }
+
+[lints]
+workspace = true

@@ -2,7 +2,7 @@
 #![no_main]
 
 use libfuzzer_sys::fuzz_target;
-use seonexus_url::{NormalizeOptions, QueryMode, normalize};
+use octopuson_url::{NormalizeOptions, QueryMode, normalize};
 
 fuzz_target!(|raw: &str| {
     for options in [

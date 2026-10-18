@@ -48,14 +48,14 @@ jobs:
           cache: pnpm
       - run: pnpm install --frozen-lockfile
       - run: pnpm --filter @octopusseo/design check
-      - run: pnpm --filter @seonexus/desktop check
-      - run: pnpm --filter @seonexus/desktop build
-      - run: pnpm --filter @octopusseo/spider check
-      - run: pnpm --filter @octopusseo/spider build
-      - run: pnpm --filter @octopusseo/serp check
-      - run: pnpm --filter @octopusseo/serp build
-      - run: pnpm --filter @octopusseo/keywords check
-      - run: pnpm --filter @octopusseo/keywords build
+      - run: pnpm --filter @octopusseo/log-analyser check
+      - run: pnpm --filter @octopusseo/log-analyser build
+      - run: pnpm --filter @octopusseo/seo-crawler check
+      - run: pnpm --filter @octopusseo/seo-crawler build
+      - run: pnpm --filter @octopusseo/serp-checker check
+      - run: pnpm --filter @octopusseo/serp-checker build
+      - run: pnpm --filter @octopusseo/seo-keyword-research check
+      - run: pnpm --filter @octopusseo/seo-keyword-research build
       - run: pnpm --filter @octopusseo/web check
       - run: pnpm --filter @octopusseo/web build
 

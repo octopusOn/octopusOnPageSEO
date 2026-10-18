@@ -3,7 +3,7 @@
 #![no_main]
 
 use libfuzzer_sys::fuzz_target;
-use seonexus_logparse::{FormatRegistry, detect, header_formats};
+use octopuson_logparse::{FormatRegistry, detect, header_formats};
 
 fuzz_target!(|text: &str| {
     let lines: Vec<&str> = text.lines().collect();

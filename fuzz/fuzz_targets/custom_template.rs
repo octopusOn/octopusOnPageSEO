@@ -3,7 +3,7 @@
 #![no_main]
 
 use libfuzzer_sys::fuzz_target;
-use seonexus_logparse::{LogFormat, TemplateFormat};
+use octopuson_logparse::{LogFormat, TemplateFormat};
 
 fuzz_target!(|input: (&str, &str)| {
     let (format, line) = input;

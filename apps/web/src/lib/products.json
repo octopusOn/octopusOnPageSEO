@@ -7,11 +7,11 @@
     "tagPrefix": "crawler-v",
     "legacyTagPrefixes": ["spider-v"],
     "cli": "octopuson-crawler",
-    "package": "snx-spider",
-    "app": "apps/spider",
+    "package": "octopuson-crawler-cli",
+    "app": "apps/seo-crawler",
     "ground": "spider",
     "repo": "octopusOn/seo-crawler",
-    "paths": ["apps/spider", "apps/snx-spider", "crates/seonexus-spider-app", "crates/seonexus-crawl", "crates/seonexus-crawl-store", "crates/seonexus-audit", "crates/seonexus-render", "crates/seonexus-opportunities"]
+    "paths": ["apps/seo-crawler", "apps/octopuson-crawler-cli", "crates/octopuson-spider-app", "crates/octopuson-crawl", "crates/octopuson-crawl-store", "crates/octopuson-audit", "crates/octopuson-render", "crates/octopuson-opportunities"]
   },
   {
     "id": "log-analyser",
@@ -21,11 +21,11 @@
     "tagPrefix": "log-v",
     "legacyTagPrefixes": ["v"],
     "cli": "octopuson-log",
-    "package": "snx-log",
-    "app": "apps/desktop",
+    "package": "octopuson-log-cli",
+    "app": "apps/log-analyser",
     "ground": "log",
     "repo": "octopusOn/log-analyser",
-    "paths": ["apps/desktop", "apps/snx-log", "crates/seonexus-log-app", "crates/seonexus-logparse", "crates/seonexus-botverify", "crates/seonexus-analytics", "crates/seonexus-query", "crates/seonexus-store", "crates/seonexus-geo", "crates/seonexus-report"]
+    "paths": ["apps/log-analyser", "apps/octopuson-log-cli", "crates/octopuson-log-app", "crates/octopuson-logparse", "crates/octopuson-botverify", "crates/octopuson-analytics", "crates/octopuson-query", "crates/octopuson-store", "crates/octopuson-geo", "crates/octopuson-report"]
   },
   {
     "id": "serp-checker",
@@ -34,11 +34,11 @@
     "short": "SERP Checker",
     "tagPrefix": "serp-v",
     "cli": "octopuson-serp",
-    "package": "snx-serp",
-    "app": "apps/serp",
+    "package": "octopuson-serp-cli",
+    "app": "apps/serp-checker",
     "ground": "serp",
     "repo": "octopusOn/serp-checker",
-    "paths": ["apps/serp", "apps/snx-serp", "crates/seonexus-serp", "crates/seonexus-serp-app", "crates/seonexus-serp-score", "crates/seonexus-serp-store", "crates/seonexus-domain-intel"]
+    "paths": ["apps/serp-checker", "apps/octopuson-serp-cli", "crates/octopuson-serp", "crates/octopuson-serp-app", "crates/octopuson-serp-score", "crates/octopuson-serp-store", "crates/octopuson-domain-intel"]
   },
   {
     "id": "seo-keyword-research",
@@ -48,11 +48,11 @@
     "tagPrefix": "keywords-v",
     "legacyTagPrefixes": ["kw-v"],
     "cli": "octopuson-keywords",
-    "package": "snx-kw",
-    "app": "apps/keywords",
+    "package": "octopuson-keywords-cli",
+    "app": "apps/seo-keyword-research",
     "ground": "keywords",
     "repo": "octopusOn/seo-keyword-research",
-    "paths": ["apps/keywords", "apps/snx-kw", "crates/seonexus-keywords", "crates/seonexus-keyword-sources", "crates/seonexus-kw-app", "crates/seonexus-kw-store"]
+    "paths": ["apps/seo-keyword-research", "apps/octopuson-keywords-cli", "crates/octopuson-keywords", "crates/octopuson-keyword-sources", "crates/octopuson-kw-app", "crates/octopuson-kw-store"]
   },
   {
     "id": "index-checker",
@@ -61,10 +61,10 @@
     "short": "Index Checker",
     "tagPrefix": "index-v",
     "cli": "octopuson-index",
-    "package": "snx-finder",
-    "app": "apps/finder",
+    "package": "octopuson-index-cli",
+    "app": "apps/index-checker",
     "ground": "finder",
     "repo": "octopusOn/index-checker",
-    "paths": ["apps/finder", "apps/snx-finder", "crates/seonexus-finder"]
+    "paths": ["apps/index-checker", "apps/octopuson-index-cli", "crates/octopuson-finder"]
   }
 ]

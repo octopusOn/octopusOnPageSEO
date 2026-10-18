@@ -1,0 +1,28 @@
+[package]
+name = "octopuson-crawl-store"
+description = "Storage of OctopusOn SEO Crawler crawls: one DuckDB database per crawl, tabs and exports."
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+repository.workspace = true
+authors.workspace = true
+publish.workspace = true
+
+[dependencies]
+directories.workspace = true
+duckdb.workspace = true
+octopuson-core.workspace = true
+octopuson-crawl.workspace = true
+octopuson-html.workspace = true
+octopuson-audit.workspace = true
+serde.workspace = true
+serde_json.workspace = true
+thiserror.workspace = true
+url.workspace = true
+
+[dev-dependencies]
+tempfile.workspace = true
+
+[lints]
+workspace = true

@@ -1,7 +1,7 @@
 [workspace]
 resolver = "3"
-members = ["crates/*", "apps/snx-log", "apps/snx-spider", "apps/snx-finder", "apps/snx-serp", "apps/snx-kw", "apps/desktop/src-tauri", "apps/spider/src-tauri", "apps/finder/src-tauri", "apps/serp/src-tauri", "apps/keywords/src-tauri", "xtask"]
-default-members = ["crates/*", "apps/snx-log", "apps/snx-spider", "apps/snx-finder", "apps/snx-serp", "apps/snx-kw"]
+members = ["crates/*", "apps/octopuson-log-cli", "apps/octopuson-crawler-cli", "apps/octopuson-index-cli", "apps/octopuson-serp-cli", "apps/octopuson-keywords-cli", "apps/log-analyser/src-tauri", "apps/seo-crawler/src-tauri", "apps/index-checker/src-tauri", "apps/serp-checker/src-tauri", "apps/seo-keyword-research/src-tauri", "xtask"]
+default-members = ["crates/*", "apps/octopuson-log-cli", "apps/octopuson-crawler-cli", "apps/octopuson-index-cli", "apps/octopuson-serp-cli", "apps/octopuson-keywords-cli"]
 
 [workspace.package]
 version = "0.1.0"
@@ -15,39 +15,39 @@ publish = false
 
 [workspace.dependencies]
 # Internal crates
-seonexus-core = { path = "crates/seonexus-core" }
-seonexus-logparse = { path = "crates/seonexus-logparse" }
-seonexus-url = { path = "crates/seonexus-url" }
-seonexus-botverify = { path = "crates/seonexus-botverify" }
-seonexus-query = { path = "crates/seonexus-query" }
-seonexus-analytics = { path = "crates/seonexus-analytics" }
-seonexus-store = { path = "crates/seonexus-store" }
-seonexus-report = { path = "crates/seonexus-report" }
-seonexus-log-app = { path = "crates/seonexus-log-app" }
-seonexus-net = { path = "crates/seonexus-net" }
-seonexus-geo = { path = "crates/seonexus-geo" }
-seonexus-html = { path = "crates/seonexus-html" }
-seonexus-audit = { path = "crates/seonexus-audit" }
-seonexus-crawl = { path = "crates/seonexus-crawl" }
-seonexus-crawl-store = { path = "crates/seonexus-crawl-store" }
-seonexus-spider-app = { path = "crates/seonexus-spider-app" }
-seonexus-opportunities = { path = "crates/seonexus-opportunities" }
-seonexus-finder = { path = "crates/seonexus-finder" }
+octopuson-core = { path = "crates/octopuson-core" }
+octopuson-logparse = { path = "crates/octopuson-logparse" }
+octopuson-url = { path = "crates/octopuson-url" }
+octopuson-botverify = { path = "crates/octopuson-botverify" }
+octopuson-query = { path = "crates/octopuson-query" }
+octopuson-analytics = { path = "crates/octopuson-analytics" }
+octopuson-store = { path = "crates/octopuson-store" }
+octopuson-report = { path = "crates/octopuson-report" }
+octopuson-log-app = { path = "crates/octopuson-log-app" }
+octopuson-net = { path = "crates/octopuson-net" }
+octopuson-geo = { path = "crates/octopuson-geo" }
+octopuson-html = { path = "crates/octopuson-html" }
+octopuson-audit = { path = "crates/octopuson-audit" }
+octopuson-crawl = { path = "crates/octopuson-crawl" }
+octopuson-crawl-store = { path = "crates/octopuson-crawl-store" }
+octopuson-spider-app = { path = "crates/octopuson-spider-app" }
+octopuson-opportunities = { path = "crates/octopuson-opportunities" }
+octopuson-finder = { path = "crates/octopuson-finder" }
 
-seonexus-render = { path = "crates/seonexus-render" }
-seonexus-serp = { path = "crates/seonexus-serp" }
-seonexus-text = { path = "crates/seonexus-text" }
-seonexus-domain-intel = { path = "crates/seonexus-domain-intel" }
-seonexus-serp-score = { path = "crates/seonexus-serp-score" }
-seonexus-keyword-sources = { path = "crates/seonexus-keyword-sources" }
-seonexus-keywords = { path = "crates/seonexus-keywords" }
-seonexus-kw-app = { path = "crates/seonexus-kw-app" }
-seonexus-kw-store = { path = "crates/seonexus-kw-store" }
-seonexus-oauth = { path = "crates/seonexus-oauth" }
-seonexus-secrets = { path = "crates/seonexus-secrets" }
-seonexus-cloud = { path = "crates/seonexus-cloud" }
-seonexus-serp-store = { path = "crates/seonexus-serp-store" }
-seonexus-serp-app = { path = "crates/seonexus-serp-app" }
+octopuson-render = { path = "crates/octopuson-render" }
+octopuson-serp = { path = "crates/octopuson-serp" }
+octopuson-text = { path = "crates/octopuson-text" }
+octopuson-domain-intel = { path = "crates/octopuson-domain-intel" }
+octopuson-serp-score = { path = "crates/octopuson-serp-score" }
+octopuson-keyword-sources = { path = "crates/octopuson-keyword-sources" }
+octopuson-keywords = { path = "crates/octopuson-keywords" }
+octopuson-kw-app = { path = "crates/octopuson-kw-app" }
+octopuson-kw-store = { path = "crates/octopuson-kw-store" }
+octopuson-oauth = { path = "crates/octopuson-oauth" }
+octopuson-secrets = { path = "crates/octopuson-secrets" }
+octopuson-cloud = { path = "crates/octopuson-cloud" }
+octopuson-serp-store = { path = "crates/octopuson-serp-store" }
+octopuson-serp-app = { path = "crates/octopuson-serp-app" }
 
 # External crates
 anyhow = "1"

@@ -228,7 +228,7 @@
    window) and its icon sits on that ground. A program's page paints the whole site in it. */
 
 /* Grounds as the programs' windows use them (@octopusseo/design `data-product`; the Index
-   Check app paints its own crimson, apps/finder/src/styles.css). A program icon or card takes
+   Check app paints its own crimson, apps/index-checker/src/styles.css). A program icon or card takes
    its program's ground; a program's page lifts it to the root so header, body and footer share
    it. */
 [data-product="log"],

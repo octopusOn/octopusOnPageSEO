@@ -1,12 +1,12 @@
 # OctopusOn SERP Checker
 
-The SERP Checker reads Google, Bing and Yandex result pages, crawls the pages that rank with the Spider engine, scores their content and sites, and explains keyword difficulty. The CLI (`apps/snx-serp`) and the desktop app (`apps/serp`) share the use cases in `crates/seonexus-serp-app` and one data folder: `OCTOPUSSEO_SERP_DATA_DIR`, or the platform's application data directory for "octopusSEO SERP Finder". Design decisions are in [ADR 0064](adr/0064-serp-finder.md).
+The SERP Checker reads Google, Bing and Yandex result pages, crawls the pages that rank with the Spider engine, scores their content and sites, and explains keyword difficulty. The CLI (`apps/octopuson-serp-cli`) and the desktop app (`apps/serp-checker`) share the use cases in `crates/octopuson-serp-app` and one data folder: `OCTOPUSSEO_SERP_DATA_DIR`, or the platform's application data directory for "octopusSEO SERP Finder". Design decisions are in [ADR 0064](adr/0064-serp-finder.md).
 
 ```sh
 pnpm serp                 # native desktop app (Vite + Tauri)
 pnpm serp:dev             # browser preview with sample data on http://localhost:1450
 pnpm serp:build           # native installers for the current platform
-cargo run -p snx-serp -- --help
+cargo run -p octopuson-serp-cli -- --help
 ```
 
 ## Sources

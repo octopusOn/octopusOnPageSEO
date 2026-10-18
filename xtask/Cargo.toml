@@ -8,7 +8,7 @@ license.workspace = true
 publish = false
 
 [dependencies]
-seonexus-log-app.workspace = true
+octopuson-log-app.workspace = true
 anyhow.workspace = true
 clap.workspace = true
 

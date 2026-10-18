@@ -1,0 +1,22 @@
+[package]
+name = "octopuson-domain-intel"
+description = "Facts about domains: registration dates from RDAP, WHOIS and the Wayback Machine, Open PageRank, Tranco ranks and backlink summaries."
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+repository.workspace = true
+authors.workspace = true
+publish.workspace = true
+
+[dependencies]
+base64.workspace = true
+psl.workspace = true
+octopuson-core.workspace = true
+serde.workspace = true
+serde_json.workspace = true
+thiserror.workspace = true
+url.workspace = true
+
+[lints]
+workspace = true

@@ -106,6 +106,6 @@ The octopusSEO mark is three white glass blocks turning around a centre. Its fil
 | `octopus-mark.svg` | Vector mark for dark grounds (white glass); the programs' `BrandMark`, the website's `LogoMark` and the favicons use the same three paths |
 | `octopus-mark-dark.svg` | The same mark in deep violet for light grounds (documents, print) |
 | `octopus-mark.png` | The original glossy artwork, 512 px on transparency, for large displays |
-| `app-icon.png` | The 1024 px app icon (mark on the Deep Sea tile); `apps/desktop/src-tauri/icons/source.png` is a copy, regenerate the icon set with `pnpm tauri icon src-tauri/icons/source.png -o src-tauri/icons` in `apps/desktop` and remove the `android`/`ios` folders it adds |
+| `app-icon.png` | The 1024 px app icon (mark on the Deep Sea tile); `apps/log-analyser/src-tauri/icons/source.png` is a copy, regenerate the icon set with `pnpm tauri icon src-tauri/icons/source.png -o src-tauri/icons` in `apps/log-analyser` and remove the `android`/`ios` folders it adds |
 
 Keep the mark white on the product grounds; never recolour single blocks.

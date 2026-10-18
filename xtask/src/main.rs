@@ -64,11 +64,11 @@ fn run(task: Task) -> Result<()> {
     }
 }
 
-/// Bundled snapshot read by `seonexus_botverify::ranges::RangeSnapshot::bundled`.
-const BOT_RANGES_SNAPSHOT: &str = "crates/seonexus-botverify/data/ip-ranges.json";
+/// Bundled snapshot read by `octopuson_botverify::ranges::RangeSnapshot::bundled`.
+const BOT_RANGES_SNAPSHOT: &str = "crates/octopuson-botverify/data/ip-ranges.json";
 
 fn bot_ranges() -> Result<()> {
-    let download = seonexus_log_app::bots::download_ranges();
+    let download = octopuson_log_app::bots::download_ranges();
     for failure in &download.failures {
         eprintln!("warning: {}: {}", failure.id, failure.error);
     }
@@ -82,7 +82,7 @@ fn bot_ranges() -> Result<()> {
     // Keep lists that failed to download from the previous snapshot.
     let previous = std::fs::read_to_string(&path)
         .ok()
-        .and_then(|text| seonexus_log_app::bots::RangeSnapshot::from_json(&text).ok())
+        .and_then(|text| octopuson_log_app::bots::RangeSnapshot::from_json(&text).ok())
         .unwrap_or_default();
     let snapshot = previous.merged_with(download.snapshot);
     std::fs::write(&path, snapshot.to_json() + "\n")
@@ -126,15 +126,15 @@ fn test() -> Result<()> {
         "test",
         "--workspace",
         "--exclude",
-        "seonexus-desktop",
+        "octopuson-log-desktop",
         "--exclude",
-        "seonexus-spider-desktop",
+        "octopuson-crawler-desktop",
         "--exclude",
-        "seonexus-finder-desktop",
+        "octopuson-index-desktop",
         "--exclude",
-        "seonexus-serp-desktop",
+        "octopuson-serp-desktop",
         "--exclude",
-        "seonexus-kw-desktop",
+        "octopuson-keywords-desktop",
         "--doc",
         "--locked",
     ])
@@ -161,16 +161,22 @@ fn frontend(required: bool) -> Result<()> {
     }
     exec("pnpm", &["install", "--frozen-lockfile"])?;
     exec("pnpm", &["--filter", "@octopusseo/design", "check"])?;
-    exec("pnpm", &["--filter", "@seonexus/desktop", "check"])?;
-    exec("pnpm", &["--filter", "@seonexus/desktop", "build"])?;
-    exec("pnpm", &["--filter", "@octopusseo/spider", "check"])?;
-    exec("pnpm", &["--filter", "@octopusseo/spider", "build"])?;
-    exec("pnpm", &["--filter", "@octopusseo/finder", "check"])?;
-    exec("pnpm", &["--filter", "@octopusseo/finder", "build"])?;
-    exec("pnpm", &["--filter", "@octopusseo/serp", "check"])?;
-    exec("pnpm", &["--filter", "@octopusseo/serp", "build"])?;
-    exec("pnpm", &["--filter", "@octopusseo/keywords", "check"])?;
-    exec("pnpm", &["--filter", "@octopusseo/keywords", "build"])?;
+    exec("pnpm", &["--filter", "@octopusseo/log-analyser", "check"])?;
+    exec("pnpm", &["--filter", "@octopusseo/log-analyser", "build"])?;
+    exec("pnpm", &["--filter", "@octopusseo/seo-crawler", "check"])?;
+    exec("pnpm", &["--filter", "@octopusseo/seo-crawler", "build"])?;
+    exec("pnpm", &["--filter", "@octopusseo/index-checker", "check"])?;
+    exec("pnpm", &["--filter", "@octopusseo/index-checker", "build"])?;
+    exec("pnpm", &["--filter", "@octopusseo/serp-checker", "check"])?;
+    exec("pnpm", &["--filter", "@octopusseo/serp-checker", "build"])?;
+    exec(
+        "pnpm",
+        &["--filter", "@octopusseo/seo-keyword-research", "check"],
+    )?;
+    exec(
+        "pnpm",
+        &["--filter", "@octopusseo/seo-keyword-research", "build"],
+    )?;
     exec("pnpm", &["--filter", "@octopusseo/web", "check"])?;
     exec("pnpm", &["--filter", "@octopusseo/web", "build"])?;
     exec("pnpm", &["--filter", "@octopusseo/cloud-core", "check"])?;

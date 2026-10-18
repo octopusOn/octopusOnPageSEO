@@ -1,5 +1,5 @@
 [package]
-name = "seonexus-fuzz"
+name = "octopuson-fuzz"
 version = "0.0.0"
 edition = "2024"
 publish = false
@@ -13,10 +13,10 @@ cargo-fuzz = true
 
 [dependencies]
 libfuzzer-sys = "0.4"
-seonexus-botverify = { path = "../crates/seonexus-botverify" }
-seonexus-logparse = { path = "../crates/seonexus-logparse" }
-seonexus-query = { path = "../crates/seonexus-query" }
-seonexus-url = { path = "../crates/seonexus-url" }
+octopuson-botverify = { path = "../crates/octopuson-botverify" }
+octopuson-logparse = { path = "../crates/octopuson-logparse" }
+octopuson-query = { path = "../crates/octopuson-query" }
+octopuson-url = { path = "../crates/octopuson-url" }
 
 [[bin]]
 name = "parse_builtin"

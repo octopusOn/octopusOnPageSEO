@@ -191,6 +191,65 @@ dependencies = [
 ]
 
 [[package]]
+name = "octopuson-botverify"
+version = "0.1.0"
+dependencies = [
+ "memchr",
+ "serde",
+ "serde_json",
+ "thiserror",
+]
+
+[[package]]
+name = "octopuson-core"
+version = "0.1.0"
+dependencies = [
+ "serde",
+]
+
+[[package]]
+name = "octopuson-fuzz"
+version = "0.0.0"
+dependencies = [
+ "libfuzzer-sys",
+ "octopuson-botverify",
+ "octopuson-logparse",
+ "octopuson-query",
+ "octopuson-url",
+]
+
+[[package]]
+name = "octopuson-logparse"
+version = "0.1.0"
+dependencies = [
+ "bzip2",
+ "flate2",
+ "memchr",
+ "octopuson-core",
+ "serde",
+ "serde_json",
+ "thiserror",
+ "zip",
+ "zstd",
+]
+
+[[package]]
+name = "octopuson-query"
+version = "0.1.0"
+dependencies = [
+ "octopuson-core",
+ "serde",
+ "thiserror",
+]
+
+[[package]]
+name = "octopuson-url"
+version = "0.1.0"
+dependencies = [
+ "serde",
+]
+
+[[package]]
 name = "pkg-config"
 version = "0.3.34"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -219,65 +278,6 @@ name = "r-efi"
 version = "6.0.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "f8dcc9c7d52a811697d2151c701e0d08956f92b0e24136cf4cf27b57a6a0d9bf"
-
-[[package]]
-name = "seonexus-botverify"
-version = "0.1.0"
-dependencies = [
- "memchr",
- "serde",
- "serde_json",
- "thiserror",
-]
-
-[[package]]
-name = "seonexus-core"
-version = "0.1.0"
-dependencies = [
- "serde",
-]
-
-[[package]]
-name = "seonexus-fuzz"
-version = "0.0.0"
-dependencies = [
- "libfuzzer-sys",
- "seonexus-botverify",
- "seonexus-logparse",
- "seonexus-query",
- "seonexus-url",
-]
-
-[[package]]
-name = "seonexus-logparse"
-version = "0.1.0"
-dependencies = [
- "bzip2",
- "flate2",
- "memchr",
- "seonexus-core",
- "serde",
- "serde_json",
- "thiserror",
- "zip",
- "zstd",
-]
-
-[[package]]
-name = "seonexus-query"
-version = "0.1.0"
-dependencies = [
- "seonexus-core",
- "serde",
- "thiserror",
-]
-
-[[package]]
-name = "seonexus-url"
-version = "0.1.0"
-dependencies = [
- "serde",
-]
 
 [[package]]
 name = "serde"
@@ -379,9 +379,9 @@ checksum = "a2c754d6c33795a1c324727428e5a7dedb5b06195f9890bdbcba760d3e246563"
 
 [[package]]
 name = "zip"
-version = "9.0.2"
+version = "9.0.5"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "9e2fc56a6707efb066c40aead2409ebb1224e6dde24a074e9fbc78ced500507b"
+checksum = "6e04976da629d3b04204ba8105b396a193af8ad2583b2c79bfb3ab8af580a11e"
 dependencies = [
  "crc32fast",
  "flate2",

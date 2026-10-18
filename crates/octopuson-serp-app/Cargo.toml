@@ -1,0 +1,40 @@
+[package]
+name = "octopuson-serp-app"
+description = "Use cases of the SERP Checker: providers and fallback chains, secrets, budgets, searches and stored snapshots."
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+repository.workspace = true
+authors.workspace = true
+publish.workspace = true
+
+[dependencies]
+directories.workspace = true
+psl.workspace = true
+regex.workspace = true
+octopuson-cloud.workspace = true
+octopuson-core.workspace = true
+octopuson-crawl.workspace = true
+octopuson-domain-intel.workspace = true
+octopuson-html.workspace = true
+octopuson-net.workspace = true
+octopuson-render.workspace = true
+octopuson-report.workspace = true
+octopuson-serp.workspace = true
+octopuson-serp-score.workspace = true
+octopuson-secrets.workspace = true
+octopuson-serp-store.workspace = true
+octopuson-spider-app.workspace = true
+octopuson-text.workspace = true
+serde.workspace = true
+serde_json.workspace = true
+thiserror.workspace = true
+url.workspace = true
+zip.workspace = true
+
+[dev-dependencies]
+tempfile.workspace = true
+
+[lints]
+workspace = true

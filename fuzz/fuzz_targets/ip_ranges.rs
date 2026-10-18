@@ -2,8 +2,8 @@
 #![no_main]
 
 use libfuzzer_sys::fuzz_target;
-use seonexus_botverify::ranges::parse_prefix_list;
-use seonexus_botverify::IpRangeSet;
+use octopuson_botverify::ranges::parse_prefix_list;
+use octopuson_botverify::IpRangeSet;
 
 fuzz_target!(|text: &str| {
     if let Ok(prefixes) = parse_prefix_list(text) {

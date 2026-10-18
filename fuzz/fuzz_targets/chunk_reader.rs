@@ -3,7 +3,7 @@
 #![no_main]
 
 use libfuzzer_sys::fuzz_target;
-use seonexus_logparse::input::{ChunkReader, LineReader};
+use octopuson_logparse::input::{ChunkReader, LineReader};
 
 fuzz_target!(|input: (u8, u8, &[u8])| {
     let (chunk_size, max_line, bytes) = input;

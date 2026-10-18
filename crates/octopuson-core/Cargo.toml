@@ -1,0 +1,20 @@
+[package]
+name = "octopuson-core"
+description = "Shared domain types, identifiers and error primitives for OctopusOn SEO products."
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+repository.workspace = true
+authors.workspace = true
+publish.workspace = true
+
+[dependencies]
+serde.workspace = true
+
+[lints]
+workspace = true
+
+[dev-dependencies]
+proptest.workspace = true
+serde_json.workspace = true

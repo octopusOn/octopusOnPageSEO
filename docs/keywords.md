@@ -2,7 +2,7 @@
 
 The SEO Keyword Research discovers keywords, groups them into clusters that one page can target, and maps the clusters to your site. Design decisions are in [ADR 0069](adr/0069-keyword-miner.md); a Turkish guide is in [keywords-kilavuz.md](keywords-kilavuz.md).
 
-The CLI (`apps/snx-kw`) and the desktop app (`apps/keywords`) share the use cases in `crates/seonexus-kw-app` and one data folder:
+The CLI (`apps/octopuson-keywords-cli`) and the desktop app (`apps/seo-keyword-research`) share the use cases in `crates/octopuson-kw-app` and one data folder:
 - `OCTOPUSSEO_KW_DATA_DIR`, or the platform's application data directory for "octopusSEO Keyword Miner".
 - It is separate from the SERP Checker's: keys, budgets and result pages are not shared.
 
@@ -10,7 +10,7 @@ The CLI (`apps/snx-kw`) and the desktop app (`apps/keywords`) share the use case
 pnpm keywords             # native desktop app (Vite + Tauri)
 pnpm keywords:dev         # browser preview with sample data on http://localhost:1460
 pnpm keywords:build       # native installers for the current platform
-cargo run -p snx-kw -- --help
+cargo run -p octopuson-keywords-cli -- --help
 ```
 
 ## Projects
