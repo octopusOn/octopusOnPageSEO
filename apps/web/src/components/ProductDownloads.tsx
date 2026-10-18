@@ -4,7 +4,7 @@ import { CopyButton } from "@/components/CopyButton";
 import { WindowsIcon } from "@/components/icons";
 import type { Dictionary } from "@/i18n";
 import { formatBytes } from "@/lib/format";
-import { archName, installerRank } from "@/lib/installers";
+import { archName, installerRank, quarantineCommand } from "@/lib/installers";
 import type { Platform, Release, ReleaseAsset } from "@/lib/releases";
 
 import "./products.css";
@@ -17,12 +17,16 @@ function PlatformIcon({ platform }: { platform: Platform }) {
   return <TerminalIcon size={20} aria-hidden="true" />;
 }
 
-/** Desktop installers by platform and command-line archives of one release. */
+/**
+ * Desktop installers by platform and command-line archives of one release. With a macOS build,
+ * the steps that open an app macOS has not been able to verify (the builds are not notarized yet).
+ */
 export function ProductDownloads({
   release,
   dict,
   tag,
   id,
+  app,
 }: {
   release: Release;
   dict: Dictionary;
@@ -30,10 +34,14 @@ export function ProductDownloads({
   tag: string;
   /** Prefix of the section anchors, unique on the page. */
   id: string;
+  /** The program's name, which is also its macOS app bundle: `OctopusOn SEO Crawler`. */
+  app: string;
 }) {
   const d = dict.download;
   const desktop = release.assets.filter((a) => a.kind !== "cli").sort((a, b) => installerRank(a) - installerRank(b));
   const cli = release.assets.filter((a) => a.kind === "cli");
+  const mac = desktop.some((a) => a.platform === "macos");
+  const command = quarantineCommand(app);
   const label = (asset: ReleaseAsset) => {
     if (asset.kind === "cli") return `${d.kinds.cli} · ${asset.target ?? ""}`;
     const kind = asset.offline ? d.kinds.exeOffline : d.kinds[asset.kind];
@@ -75,11 +83,28 @@ export function ProductDownloads({
                       </li>
                     ))}
                   </ul>
-                  <p className="platform-note">{d.platformNotes[platform]}</p>
+                  <p className="platform-note">
+                    {platform === "macos" ? <a href={`#${id}-macos`}>{d.platformNotes.macos}</a> : d.platformNotes[platform]}
+                  </p>
                 </article>
               );
             })}
           </div>
+          {mac && (
+            <aside id={`${id}-macos`} className="card mac-open" aria-labelledby={`${id}-macos-title`}>
+              <h4 id={`${id}-macos-title`}>
+                <Apple size={18} aria-hidden="true" /> {d.macOpen.title}
+              </h4>
+              <p>{d.macOpen.text}</p>
+              <div className="code-block">
+                <pre className="code">
+                  <code>{command}</code>
+                </pre>
+                <CopyButton text={command} label={dict.common.copy} done={dict.common.copied} />
+              </div>
+              <p className="platform-note">{d.macOpen.alternative}</p>
+            </aside>
+          )}
         </section>
       )}
 

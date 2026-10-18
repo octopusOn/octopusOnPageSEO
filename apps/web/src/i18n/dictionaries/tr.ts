@@ -53,9 +53,14 @@ export const tr: Dictionary = {
       linux: "Linux",
     },
     platformNotes: {
-      macos: "İlk açılış: macOS uygulamayı doğrulayamadığını söylerse Sistem Ayarları → Gizlilik ve Güvenlik bölümünde “Yine de Aç”a tıklayın.",
+      macos: "macOS ilk açılışta engelliyor mu? Aşağıdaki adımlara bakın.",
       windows: "SmartScreen bilinmeyen yayıncı uyarısı verirse “Ek bilgi” → “Yine de çalıştır”a tıklayın.",
       linux: "AppImage: dosyayı çalıştırılabilir yapın (chmod +x) ve açın — ya da .deb veya .rpm paketini kurun.",
+    },
+    macOpen: {
+      title: "Uygulamayı Mac'te açmak",
+      text: "Mac sürümü henüz Apple onayından (notarization) geçmedi; bu yüzden macOS ilk açılışta “Apple, uygulamanın kötü amaçlı yazılım içermediğini doğrulayamadı” der. Uygulamayı Uygulamalar klasörüne sürükleyin, Terminal'de bu komutu bir kez çalıştırın ve uygulamayı yeniden açın:",
+      alternative: "Terminal kullanmadan: uyarıyı kapatın, Sistem Ayarları → Gizlilik ve Güvenlik'i açın ve “Yine de Aç”a tıklayın.",
     },
     arch: {
       universal: "Evrensel",

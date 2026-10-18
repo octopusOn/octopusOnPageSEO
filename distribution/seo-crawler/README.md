@@ -10,6 +10,14 @@ A free SEO spider and website audit tool that crawls like a search engine: JavaS
 
 Get the installer for your system from the [latest release](../../releases/latest): `.dmg` for macOS (Apple Silicon and Intel), `.msi` or `.exe` for Windows, `.AppImage`, `.deb` or `.rpm` for Linux. More on [octopuson.com](https://octopuson.com/en/seo-crawler).
 
+**macOS:** the app is not notarized by Apple yet, so on first launch macOS says Apple could not verify it is free of malware. Drag the app to Applications, run this command once in Terminal, then open it again:
+
+```bash
+xattr -dr com.apple.quarantine "/Applications/OctopusOn SEO Crawler.app"
+```
+
+Or close the message, open **System Settings → Privacy & Security** and click **Open Anyway**. On Windows, if SmartScreen warns about an unknown publisher, choose **More info → Run anyway**.
+
 ## What it does
 
 ### A free SEO spider that crawls like Googlebot

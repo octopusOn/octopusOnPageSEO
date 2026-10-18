@@ -55,9 +55,14 @@ export const en = {
       linux: "Linux",
     },
     platformNotes: {
-      macos: "First launch: if macOS says it cannot verify the app, open System Settings → Privacy & Security and click “Open Anyway”.",
+      macos: "First launch blocked by macOS? See the steps below.",
       windows: "If SmartScreen warns about an unknown publisher, click “More info” → “Run anyway”.",
       linux: "AppImage: make it executable (chmod +x) and run it — or install the .deb or .rpm package.",
+    },
+    macOpen: {
+      title: "Opening the app on a Mac",
+      text: "The Mac version is not notarized by Apple yet, so on first launch macOS says Apple could not verify the app is free of malware. Drag the app to Applications, run this command once in Terminal, then open the app again:",
+      alternative: "Without Terminal: close the message, open System Settings → Privacy & Security and click “Open Anyway”.",
     },
     arch: {
       universal: "Universal",

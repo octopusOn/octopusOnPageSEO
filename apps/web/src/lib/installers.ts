@@ -66,3 +66,12 @@ export function downloadChoices(
       archLabel: arch ? archName(platform, arch, names) : null,
     }));
 }
+
+/**
+ * The Terminal command that lets macOS open a program that is not notarized yet: it removes the
+ * quarantine flag the browser set on the downloaded app. `app` is the program's name, which is
+ * also its bundle name (tauri.conf.json `productName`).
+ */
+export function quarantineCommand(app: string): string {
+  return `xattr -dr com.apple.quarantine "/Applications/${app}.app"`;
+}

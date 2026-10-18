@@ -133,6 +133,8 @@ const install = [
   "",
   `Download the installer for your system from the assets below: \`.dmg\` (macOS, universal), \`.msi\` or \`.exe\` (Windows), \`.AppImage\`, \`.deb\` or \`.rpm\` (Linux).`,
   `The command-line tool \`${product.cli}\` is in the \`${product.cli}-${tag}-<target>\` archives.`,
+  "",
+  `**macOS:** until the app is notarized, macOS says Apple could not verify it is free of malware. Drag it to Applications and run \`xattr -dr com.apple.quarantine "/Applications/${product.name}.app"\` once in Terminal, or choose **Open Anyway** in System Settings → Privacy & Security.`,
 ].join("\n");
 const notes = [
   `# ${product.name} ${version}`,

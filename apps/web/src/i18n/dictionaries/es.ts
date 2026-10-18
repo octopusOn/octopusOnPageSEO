@@ -53,9 +53,14 @@ export const es: Dictionary = {
       linux: "Linux",
     },
     platformNotes: {
-      macos: "Primer inicio: si macOS indica que no puede verificar la app, abre Ajustes del Sistema → Privacidad y seguridad y pulsa «Abrir igualmente».",
+      macos: "¿macOS bloquea el primer inicio? Mira los pasos de abajo.",
       windows: "Si SmartScreen avisa de un editor desconocido, pulsa «Más información» → «Ejecutar de todas formas».",
       linux: "AppImage: hazlo ejecutable (chmod +x) y ábrelo, o instala el paquete .deb o .rpm.",
+    },
+    macOpen: {
+      title: "Abrir la app en un Mac",
+      text: "La versión para Mac aún no está notarizada por Apple, así que en el primer inicio macOS dice que Apple no ha podido verificar que la app esté libre de software malicioso. Arrastra la app a Aplicaciones, ejecuta este comando una vez en Terminal y vuelve a abrirla:",
+      alternative: "Sin Terminal: cierra el aviso, abre Ajustes del Sistema → Privacidad y seguridad y pulsa «Abrir igualmente».",
     },
     arch: {
       universal: "Universal",

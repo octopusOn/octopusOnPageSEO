@@ -268,7 +268,7 @@ export async function DownloadsBlock({ data, cards, ctx }: { data: Data; cards: 
             )}
           </header>
           {release ? (
-            <ProductDownloads release={release} dict={dict} tag={tag} id={product.id} />
+            <ProductDownloads release={release} dict={dict} tag={tag} id={product.id} app={product.name} />
           ) : (
             <div className="card notice">
               <h3>{dict.productPage.notReleasedTitle}</h3>
@@ -335,7 +335,7 @@ export async function ProductDownloadsBlock({ data, ctx }: { data: Data; ctx: Bl
     <>
       {product && release && (
         <section aria-label={text(data, "link_label") || product.name}>
-          <ProductDownloads release={release} dict={ctx.dict} tag={ctx.tag} id={product.id} />
+          <ProductDownloads release={release} dict={ctx.dict} tag={ctx.tag} id={product.id} app={product.name} />
         </section>
       )}
       {(link || release?.url) && (

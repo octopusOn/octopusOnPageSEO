@@ -138,7 +138,11 @@ example on an intranet:
 ## Signing
 
 Unsigned builds work but trigger Gatekeeper / SmartScreen warnings ("Open Anyway" /
-"Run anyway"); the download page explains both.
+"Run anyway"); the download page explains both. On macOS it also shows, under every program's
+downloads, the Terminal command that removes the quarantine flag
+(`xattr -dr com.apple.quarantine "/Applications/<productName>.app"`, from
+`quarantineCommand()` in apps/web/src/lib/installers.ts); the program READMEs and new release
+notes carry it too. Drop these notes once the builds are notarized.
 
 ### macOS (Developer ID + notarization)
 

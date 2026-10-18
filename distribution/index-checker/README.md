@@ -10,6 +10,14 @@ A free Google index checker for broken indexed pages: find URLs that Google, Bin
 
 Get the installer for your system from the [latest release](../../releases/latest): `.dmg` for macOS (Apple Silicon and Intel), `.msi` or `.exe` for Windows, `.AppImage`, `.deb` or `.rpm` for Linux. More on [octopuson.com](https://octopuson.com/en/index-checker).
 
+**macOS:** the app is not notarized by Apple yet, so on first launch macOS says Apple could not verify it is free of malware. Drag the app to Applications, run this command once in Terminal, then open it again:
+
+```bash
+xattr -dr com.apple.quarantine "/Applications/OctopusOn Index Checker.app"
+```
+
+Or close the message, open **System Settings → Privacy & Security** and click **Open Anyway**. On Windows, if SmartScreen warns about an unknown publisher, choose **More info → Run anyway**.
+
 ## What it does
 
 ### Find the URLs search engines still remember
