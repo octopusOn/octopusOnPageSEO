@@ -16,6 +16,9 @@
 //!   brands, forums and ads.
 //! - [`opportunity::opportunity`] (`opp-1`), [`intent::intent`] (`intent-1`) and
 //!   [`recommend::recommend`].
+//!
+//! [`rank`] holds the rank tracking measures (visibility, trends, competitor shares) that the
+//! SERP Checker and the GEO-SEO Platform share.
 
 pub mod breakdown;
 pub mod context;
@@ -23,6 +26,7 @@ pub mod difficulty;
 pub mod intent;
 pub mod opportunity;
 pub mod page;
+pub mod rank;
 pub mod recommend;
 pub mod signals;
 pub mod site;
@@ -356,5 +360,7 @@ pub fn analyze(input: &AnalysisInput<'_>) -> KeywordAnalysis {
     }
 }
 
+#[cfg(test)]
+mod rank_tests;
 #[cfg(test)]
 mod tests;

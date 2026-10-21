@@ -2,56 +2,19 @@
 
 use std::collections::{BTreeMap, HashMap};
 
+pub use octopuson_serp_score::rank::{CompetitorShare, Schedule, VisibilityPoint};
+
 use octopuson_core::Timestamp;
 use octopuson_serp::provider::{ProviderError, SearchEvent};
 use octopuson_serp::{Device, Engine, Location, SerpQuery, Target, keyword_key};
-use octopuson_serp_score::difficulty::CTR;
+use octopuson_serp_score::rank::{
+    Check, ResultPage, competitor_shares as shares_over, seconds_of, trend, visibility,
+};
 use octopuson_serp_store::{KeywordRow, ProjectRow, RankingRow, RunKind, RunStatus, TrackerRow};
 use serde::{Deserialize, Serialize};
 
 use crate::search::now;
 use crate::{SearchRequest, SerpAppError, SerpWorkspace};
-
-/// How often a project is checked.
-#[derive(Debug, Clone, Copy, Default, PartialEq, Eq, Hash, Serialize, Deserialize)]
-#[serde(rename_all = "lowercase")]
-pub enum Schedule {
-    /// Every day.
-    #[default]
-    Daily,
-    /// Every week.
-    Weekly,
-    /// Only when asked.
-    Manual,
-}
-
-impl Schedule {
-    const fn as_str(self) -> &'static str {
-        match self {
-            Self::Daily => "daily",
-            Self::Weekly => "weekly",
-            Self::Manual => "manual",
-        }
-    }
-
-    fn parse(text: &str) -> Self {
-        match text {
-            "weekly" => Self::Weekly,
-            "manual" => Self::Manual,
-            _ => Self::Daily,
-        }
-    }
-
-    /// Seconds after a check when the next one is due (a little early, so a daily check at a
-    /// varying time does not drift by a day).
-    const fn interval_secs(self) -> Option<i64> {
-        match self {
-            Self::Daily => Some(20 * 3_600),
-            Self::Weekly => Some(6 * 86_400 + 12 * 3_600),
-            Self::Manual => None,
-        }
-    }
-}
 
 /// Where keywords are tracked.
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
@@ -199,37 +162,6 @@ pub struct RankRow {
     pub error: Option<String>,
 }
 
-/// Visibility on one day.
-#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
-pub struct VisibilityPoint {
-    /// `YYYY-MM-DD`.
-    pub date: String,
-    /// Share of the clicks the site would get at its positions, against first place
-    /// everywhere, weighted by volume (0–100).
-    pub visibility: f64,
-    /// Keywords in the top 3.
-    pub top3: u32,
-    /// Keywords in the top 10.
-    pub top10: u32,
-    /// Keywords ranking at all.
-    pub ranked: u32,
-}
-
-/// A domain's share of the project's keywords.
-#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
-pub struct CompetitorShare {
-    /// Domain.
-    pub domain: String,
-    /// Visibility over the latest checks (0–100).
-    pub visibility: f64,
-    /// Keywords it ranks for.
-    pub keywords: u32,
-    /// Its average position where it ranks.
-    pub average_position: Option<f64>,
-    /// Whether it is the project's own site.
-    pub own: bool,
-}
-
 /// The rank report of a project.
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 pub struct RankReport {
@@ -241,15 +173,6 @@ pub struct RankReport {
     pub visibility: Vec<VisibilityPoint>,
     /// The project's site and its competitors (listed, else the most frequent domains).
     pub competitors: Vec<CompetitorShare>,
-}
-
-/// Click share of a position: the curve of the difficulty model, 1% on page two.
-fn ctr(position: u16) -> f64 {
-    match position {
-        1..=10 => CTR[usize::from(position - 1)],
-        11..=20 => 0.01,
-        _ => 0.0,
-    }
 }
 
 impl SerpWorkspace {
@@ -623,8 +546,6 @@ impl SerpWorkspace {
 type Pair = (i64, i64);
 /// Checks by keyword and tracker, oldest first.
 type Checks<'a> = BTreeMap<Pair, Vec<&'a RankingRow>>;
-/// Clicks, keywords and positions of a domain.
-type Share = (f64, u32, Vec<u16>);
 
 /// What one search of a rank check found.
 enum Checked {
@@ -677,49 +598,40 @@ fn ranking_of(
     Ok((ranking, checked))
 }
 
+/// A stored ranking as the shared measures read it.
+fn check_of(ranking: &RankingRow) -> Check<'_> {
+    Check {
+        checked_at: &ranking.checked_at,
+        position: ranking.position,
+        url: ranking.url.as_deref(),
+        pages: ranking.positions.len(),
+        error: ranking.error.as_deref(),
+    }
+}
+
 fn rank_row(
     keyword: &KeywordRow,
     tracker_id: i64,
     checks: &[&RankingRow],
     volume: Option<u64>,
 ) -> RankRow {
-    let successful: Vec<&RankingRow> = checks
-        .iter()
-        .copied()
-        .filter(|check| check.error.is_none())
-        .collect();
-    let latest = checks.last();
-    let current = successful.last();
-    let previous = successful
-        .len()
-        .checked_sub(2)
-        .and_then(|index| successful.get(index));
-    let mut history: BTreeMap<String, Option<u16>> = BTreeMap::new();
-    for check in &successful {
-        history.insert(
-            check.checked_at.get(..10).unwrap_or_default().to_owned(),
-            check.position,
-        );
-    }
-    let position = current.and_then(|check| check.position);
-    let before = previous.and_then(|check| check.position);
+    let checks: Vec<Check<'_>> = checks.iter().map(|check| check_of(check)).collect();
+    let trend = trend(&checks);
     RankRow {
         keyword_id: keyword.id,
         keyword: keyword.keyword.clone(),
         tags: keyword.tags.clone(),
         tracker_id,
-        position,
-        previous: before,
-        change: position
-            .zip(before)
-            .map(|(now, before)| i32::from(before) - i32::from(now)),
-        best: successful.iter().filter_map(|check| check.position).min(),
-        url: current.and_then(|check| check.url.clone()),
-        cannibalised: current.is_some_and(|check| check.positions.len() > 1),
-        checked_at: latest.map(|check| check.checked_at.clone()),
-        history: history.into_iter().collect(),
+        position: trend.position,
+        previous: trend.previous,
+        change: trend.change,
+        best: trend.best,
+        url: trend.url,
+        cannibalised: trend.cannibalised,
+        checked_at: trend.checked_at,
+        history: trend.history,
         volume,
-        error: latest.and_then(|check| check.error.clone()),
+        error: trend.error,
     }
 }
 
@@ -728,74 +640,31 @@ fn visibility_points(
     rankings: &[RankingRow],
     weight: &dyn Fn(&Pair) -> f64,
 ) -> Vec<VisibilityPoint> {
-    let mut days: BTreeMap<String, HashMap<Pair, Option<u16>>> = BTreeMap::new();
-    for ranking in rankings.iter().filter(|ranking| ranking.error.is_none()) {
-        days.entry(ranking.checked_at.get(..10).unwrap_or_default().to_owned())
-            .or_default()
-            .insert((ranking.keyword_id, ranking.tracker_id), ranking.position);
-    }
-    days.into_iter()
-        .map(|(date, positions)| {
-            let best: f64 = positions.keys().map(|pair| ctr(1) * weight(pair)).sum();
-            let got: f64 = positions
-                .iter()
-                .map(|(pair, position)| position.map_or(0.0, ctr) * weight(pair))
-                .sum();
-            let count = |limit: u16| {
-                u32::try_from(
-                    positions
-                        .values()
-                        .filter(|position| position.is_some_and(|position| position <= limit))
-                        .count(),
-                )
-                .unwrap_or(u32::MAX)
-            };
-            VisibilityPoint {
-                date,
-                visibility: share_of(got, best),
-                top3: count(3),
-                top10: count(10),
-                ranked: count(u16::MAX),
-            }
-        })
-        .collect()
-}
-
-/// Percentage with one decimal; 0 without a whole.
-fn share_of(part: f64, whole: f64) -> f64 {
-    if whole > 0.0 {
-        (part / whole * 1000.0).round() / 10.0
-    } else {
-        0.0
-    }
+    visibility(
+        rankings
+            .iter()
+            .map(|ranking| ((ranking.keyword_id, ranking.tracker_id), check_of(ranking))),
+        weight,
+    )
 }
 
 /// Shares of the project's site and its competitors over the latest snapshot of each keyword
 /// and tracker; without listed competitors, the five most visible other domains.
-#[allow(clippy::cast_precision_loss)] // position counts
 fn competitor_shares(
     store: &octopuson_serp_store::SerpStore,
     project: &Project,
     by_pair: &Checks<'_>,
     weight: &dyn Fn(&Pair) -> f64,
 ) -> Result<Vec<CompetitorShare>, SerpAppError> {
-    let mut shares: HashMap<String, Share> = HashMap::new();
-    let mut best_total = 0.0;
+    let mut pages = Vec::new();
     for (pair, checks) in by_pair {
         let Some(snapshot) = checks.iter().rev().find_map(|check| check.snapshot_id) else {
             continue;
         };
-        best_total += ctr(1) * weight(pair);
-        let mut seen = std::collections::HashSet::new();
-        for (position, domain) in store.snapshot_domains(snapshot)? {
-            if !seen.insert(domain.clone()) {
-                continue;
-            }
-            let entry = shares.entry(domain).or_default();
-            entry.0 += ctr(position) * weight(pair);
-            entry.1 += 1;
-            entry.2.push(position);
-        }
+        pages.push(ResultPage {
+            weight: weight(pair),
+            domains: store.snapshot_domains(snapshot)?,
+        });
     }
     let own = project
         .target
@@ -804,49 +673,13 @@ fn competitor_shares(
         .next()
         .map(octopuson_serp::registrable_domain)
         .unwrap_or_default();
-    let mut domains: Vec<String> = project.competitors.clone();
-    if domains.is_empty() {
-        let mut frequent: Vec<(&String, &Share)> = shares
-            .iter()
-            .filter(|(domain, _)| **domain != own)
-            .collect();
-        frequent.sort_by(|a, b| b.1.0.total_cmp(&a.1.0).then_with(|| a.0.cmp(b.0)));
-        domains = frequent
-            .into_iter()
-            .take(5)
-            .map(|(domain, _)| domain.clone())
-            .collect();
-    }
-    domains.insert(0, own.clone());
-    Ok(domains
-        .into_iter()
-        .map(|domain| {
-            let (clicks, keywords, positions) = shares.get(&domain).cloned().unwrap_or_default();
-            CompetitorShare {
-                visibility: share_of(clicks, best_total),
-                keywords,
-                average_position: (!positions.is_empty()).then(|| {
-                    let sum: f64 = positions.iter().map(|position| f64::from(*position)).sum();
-                    (sum / positions.len() as f64 * 10.0).round() / 10.0
-                }),
-                own: domain == own,
-                domain,
-            }
-        })
-        .collect())
-}
-
-/// Seconds since the epoch of an RFC 3339 UTC timestamp written by this program.
-fn seconds_of(timestamp: &str) -> Option<i64> {
-    let day = octopuson_domain_intel::Day::parse_iso(timestamp)?;
-    let time = timestamp.get(11..19)?;
-    let mut parts = time.split(':').map(|part| part.parse::<i64>().ok());
-    let (hours, minutes, seconds) = (parts.next()??, parts.next()??, parts.next()??);
-    Some(day.days() * 86_400 + hours * 3_600 + minutes * 60 + seconds)
+    Ok(shares_over(&pages, &own, &project.competitors))
 }
 
 #[cfg(test)]
 mod tests {
+    use octopuson_serp_score::rank::ctr;
+
     use super::*;
 
     #[test]
