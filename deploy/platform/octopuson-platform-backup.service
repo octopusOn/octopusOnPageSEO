@@ -1,0 +1,15 @@
+# Nightly backup of the web GEO-SEO Platform's data (scripts/backup-platform.sh). Installed as
+# /etc/systemd/system/octopuson-platform-backup.service with its timer; see docs/platform.md,
+# "Backups".
+[Unit]
+Description=Back up the GEO-SEO Platform data (app.octopuson.com)
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=oneshot
+# RESTIC_REPOSITORY, RESTIC_PASSWORD and the storage's credentials.
+EnvironmentFile=/etc/octopuson/backup.env
+ExecStart=/bin/bash /home/octopuson/octopusOnPageSEO/scripts/backup-platform.sh
+Nice=10
+IOSchedulingClass=idle

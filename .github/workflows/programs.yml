@@ -21,7 +21,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        id: [seo-crawler, log-analyser, serp-checker, seo-keyword-research, index-checker]
+        id: [seo-crawler, log-analyser, serp-checker, seo-keyword-research, index-checker, geo-seo-platform]
     steps:
       - uses: actions/checkout@v4
       - name: Push README and screenshot
@@ -31,8 +31,12 @@ jobs:
         run: |
           [ -n "$TOKEN" ] || { echo "::warning::PROGRAMS_TOKEN is not set; skipping"; exit 0; }
           repo=$(jq -r --arg id "$ID" '.[] | select(.id == $id) | .repo' apps/web/src/lib/products.json)
+          if ! git ls-remote "https://x-access-token:${TOKEN}@github.com/${repo}.git" >/dev/null 2>&1; then
+            echo "::warning::${repo} does not exist yet or the token cannot reach it; skipping"
+            exit 0
+          fi
           git clone --depth 1 "https://x-access-token:${TOKEN}@github.com/${repo}.git" target
-          cp distribution/"$ID"/* target/
+          cp -R distribution/"$ID"/. target/
           cd target
           git add -A
           if git diff --cached --quiet; then echo "Up to date"; exit 0; fi

@@ -12,6 +12,12 @@ page and links every download to GitHub.
 | SERP Checker | `serp` | `serp-v0.2.0` | `octopusOn/serp-checker` | `apps/serp-checker` | `octopuson-serp` (`octopuson-serp-cli`) |
 | SEO Keyword Research | `keywords` | `keywords-v0.2.0` | `octopusOn/seo-keyword-research` | `apps/seo-keyword-research` | `octopuson-keywords` (`octopuson-keywords-cli`) |
 | Index Checker | `index` | `index-v0.2.0` | `octopusOn/index-checker` | `apps/index-checker` | `octopuson-index` (`octopuson-index-cli`) |
+| GEO-SEO Platform | `platform` | `platform-v0.1.0` | `octopusOn/geo-seo-platform` | `apps/geo-seo-platform` | `octopuson-platform` (`octopuson-platform-cli`) |
+
+The GEO-SEO Platform's releases also carry its Linux web server: the `server` job builds
+`octopuson-platform-server` with the built interface into
+`octopuson-platform-server-<tag>-x86_64-unknown-linux-gnu.tar.gz` and its `.sha256`, which
+`scripts/deploy-platform.sh` installs on the server ([platform.md](platform.md#deploying)).
 
 The table comes from `apps/web/src/lib/products.json`, which the release workflow, the website
 and `scripts/release.mjs` all read. A new program is one more entry there and in
@@ -24,23 +30,23 @@ Each program has a GitHub project of its own for its releases, README, stars and
 
 Set them up once:
 
-1. Create the five public repositories under the `octopusOn` organisation, each with an initial
-   README:
+1. Create the public repositories under the `octopusOn` organisation, each with an initial
+   README (the first five exist since 2026-10-18; `geo-seo-platform` is still to make):
 
    ```bash
-   for repo in seo-crawler log-analyser serp-checker seo-keyword-research index-checker; do
+   for repo in seo-crawler log-analyser serp-checker seo-keyword-research index-checker geo-seo-platform; do
      gh repo create "octopusOn/$repo" --public --add-readme --homepage "https://octopuson.com/en/$repo"
    done
    ```
 
-2. Create a fine-grained personal access token with **Contents: read and write** on those five
+2. Create a fine-grained personal access token with **Contents: read and write** on those
    repositories.
 3. Add it to this repository as the `PROGRAMS_TOKEN` secret.
 
 With the secret in place:
 - releases go to the program's project as tag `v<version>`;
-- the `Program projects` workflow copies `distribution/<id>/README.md` and `screenshot.jpg` there
-  whenever they change. Regenerate them from the CMS seed with `node scripts/program-readmes.mjs`.
+- the `Program projects` workflow copies `distribution/<id>/` there (README, screenshot, and the
+  GEO-SEO Platform's agent skills) whenever it changes, and skips a project that does not exist yet. Regenerate them from the CMS seed with `node scripts/program-readmes.mjs`.
 
 Without the secret, releases stay in this repository under the monorepo tag.
 
@@ -128,10 +134,10 @@ The website links downloads to GitHub. To serve builds from the website itself i
 example on an intranet:
 
 1. Build on each platform with `pnpm desktop:build`, `pnpm spider:build`, `pnpm serp:build`,
-   `pnpm keywords:build` or `pnpm finder:build`. On a Mac, add `-- --target
+   `pnpm keywords:build`, `pnpm finder:build` or `pnpm platform:build`. On a Mac, add `-- --target
    universal-apple-darwin`.
 2. Build the CLI with `cargo build --release -p <package> --target <triple>`.
-3. Run `pnpm web:downloads -- --product <seo-crawler|log-analyser|serp-checker|seo-keyword-research|index-checker>`
+3. Run `pnpm web:downloads -- --product <seo-crawler|log-analyser|serp-checker|seo-keyword-research|index-checker|geo-seo-platform>`
    for each program. The files land in `apps/web/public/downloads/<tag>/`.
 4. Build the site with `OCTOPUSSEO_LOCAL_DOWNLOADS=1 pnpm web:build`.
 

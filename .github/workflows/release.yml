@@ -4,14 +4,15 @@ name: Release
 # CLI archives for every platform and attaches them to it. The tag is `<program>-v<version>`
 # (apps/web/src/lib/products.json `tagPrefix`): `log-v0.2.0` the Log Analyser, `spider-v0.2.0`
 # the SEO Crawler, `serp-v…` the SERP Checker, `keywords-v…` the SEO Keyword Research, `index-v…` the
-# Index Checker. `pnpm release <program>` (scripts/release.mjs) writes the English notes to
+# Index Checker, `platform-v…` the GEO-SEO Platform (which also gets its Linux web server, the
+# archive scripts/deploy-platform.sh installs). `pnpm release <program>` (scripts/release.mjs) writes the English notes to
 # docs/releases/<program>-<version>.md and makes the tag. Publishing the draft makes the files
 # appear on the website. Code signing and notarization are enabled by adding the Tauri secrets
 # (see docs/release.md).
 
 on:
   push:
-    tags: ["crawler-v*", "log-v*", "serp-v*", "keywords-v*", "index-v*"]
+    tags: ["crawler-v*", "log-v*", "serp-v*", "keywords-v*", "index-v*", "platform-v*"]
 
 permissions:
   contents: write
@@ -25,6 +26,8 @@ jobs:
       app: ${{ steps.product.outputs.app }}
       cli: ${{ steps.product.outputs.cli }}
       package: ${{ steps.product.outputs.package }}
+      server: ${{ steps.product.outputs.server }}
+      app_package: ${{ steps.product.outputs.app_package }}
       repo: ${{ steps.product.outputs.repo }}
       repo_owner: ${{ steps.product.outputs.repo_owner }}
       repo_name: ${{ steps.product.outputs.repo_name }}
@@ -59,6 +62,8 @@ jobs:
             echo "app=${app}"
             echo "cli=$(jq -r .cli <<<"$product")"
             echo "package=$(jq -r .package <<<"$product")"
+            echo "server=$(jq -r '.server // ""' <<<"$product")"
+            echo "app_package=$(jq -r '.id' <<<"$product")"
             # The program's own GitHub project gets the release (tag v<version>) when the
             # PROGRAMS_TOKEN secret can write to it; otherwise this repository keeps it.
             if [ -n "${HAS_PROGRAMS_TOKEN}" ]; then
@@ -213,3 +218,40 @@ jobs:
             archive="$name.tar.gz"
           fi
           gh release upload "$TAG" "$archive" --repo "$REPO" --clobber
+
+  server:
+    name: web server (x86_64-unknown-linux-gnu)
+    needs: [resolve, draft]
+    if: needs.resolve.outputs.server != ''
+    # The oldest supported Ubuntu, so the binary runs on its glibc and every newer one.
+    runs-on: ubuntu-22.04
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@stable
+      - uses: Swatinem/rust-cache@v2
+      - uses: pnpm/action-setup@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm --filter "@octopusseo/${{ needs.resolve.outputs.app_package }}" build
+      - run: cargo build --release --locked -p ${{ needs.resolve.outputs.server }}
+      - name: Package and upload
+        env:
+          GH_TOKEN: ${{ secrets.PROGRAMS_TOKEN || secrets.GITHUB_TOKEN }}
+          REPO: ${{ needs.resolve.outputs.repo }}
+          TAG: ${{ needs.resolve.outputs.tag }}
+          SERVER: ${{ needs.resolve.outputs.server }}
+          APP: ${{ needs.resolve.outputs.app }}
+        run: |
+          # The binary and the built interface; scripts/deploy-platform.sh unpacks it into a new
+          # release folder on the server and checks it against the .sha256 file.
+          name="${SERVER}-${GITHUB_REF_NAME}-x86_64-unknown-linux-gnu"
+          mkdir "$name"
+          cp "target/release/${SERVER}" "$name/"
+          cp -R "${APP}/dist" "$name/ui"
+          cp LICENSE-MIT LICENSE-APACHE "$name/"
+          tar czf "$name.tar.gz" "$name"
+          sha256sum "$name.tar.gz" > "$name.tar.gz.sha256"
+          gh release upload "$TAG" "$name.tar.gz" "$name.tar.gz.sha256" --repo "$REPO" --clobber

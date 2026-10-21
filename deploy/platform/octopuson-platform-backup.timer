@@ -1,0 +1,12 @@
+# Runs octopuson-platform-backup.service every night. Installed as
+# /etc/systemd/system/octopuson-platform-backup.timer.
+[Unit]
+Description=Nightly backup of the GEO-SEO Platform data
+
+[Timer]
+OnCalendar=*-*-* 03:30:00
+RandomizedDelaySec=20m
+Persistent=true
+
+[Install]
+WantedBy=timers.target

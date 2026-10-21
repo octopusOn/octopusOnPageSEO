@@ -1,0 +1,35 @@
+# app.octopuson.com: the web GEO-SEO Platform (apps/octopuson-platform-server), the Linux binary
+# and built interface of a release. Installed as /etc/systemd/system/octopuson-platform.service;
+# see docs/platform.md, "Deploying". scripts/deploy-platform.sh unpacks each release into
+# /home/octopuson/platform-releases/<version>-<time> and points `current` at it.
+[Unit]
+Description=OctopusOn GEO-SEO Platform (app.octopuson.com, apps/octopuson-platform-server)
+After=network.target
+
+[Service]
+Type=simple
+User=octopuson
+Group=octopuson
+WorkingDirectory=/home/octopuson/platform-releases/current
+# PLATFORM_MASTER_KEY, and the optional Google, SMTP and Chrome settings.
+EnvironmentFile=/etc/octopuson/platform.env
+Environment=PLATFORM_BIND=127.0.0.1:8796
+Environment=PLATFORM_PUBLIC_URL=https://app.octopuson.com
+Environment=PLATFORM_PORTAL_URL=https://my.octopuson.com
+Environment=OCTOPUSSEO_CLOUD_URL=https://api.octopuson.com
+Environment=PLATFORM_UI_DIR=/home/octopuson/platform-releases/current/ui
+# Every account's folder (server.duckdb and users/<account id>/), created owner-only by systemd.
+Environment=PLATFORM_DATA_DIR=/var/lib/octopuson/platform
+StateDirectory=octopuson/platform
+StateDirectoryMode=0700
+ExecStart=/home/octopuson/platform-releases/current/octopuson-platform-server
+# Open event streams keep a graceful stop waiting; jobs are cancelled on the way out.
+TimeoutStopSec=20
+Restart=always
+RestartSec=3
+NoNewPrivileges=true
+PrivateTmp=true
+ProtectSystem=full
+
+[Install]
+WantedBy=multi-user.target
