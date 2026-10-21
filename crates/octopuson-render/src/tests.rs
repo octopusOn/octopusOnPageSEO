@@ -574,3 +574,16 @@ fn assert_unicode_truncation(renderer: &ChromeRenderer, url: &str, control: &Cra
     assert!(rendered.truncated);
     assert!(rendered.html.len() <= usize::try_from(limit).unwrap());
 }
+
+#[test]
+#[ignore = "requires an installed Chrome/Chromium/Edge"]
+fn prints_a_self_contained_document_to_pdf() {
+    let html = "<!doctype html><meta charset=utf-8><meta http-equiv=\"Content-Security-Policy\" content=\"default-src 'none'; style-src 'unsafe-inline'\"><style>@page{size:A4;margin:12mm}</style><h1>Rapor ğüşİ</h1><script>document.title='ran'</script>";
+    let pdf = crate::print_pdf(html, None).unwrap();
+    assert!(pdf.starts_with(b"%PDF-"));
+    assert!(pdf.len() > 1_000);
+    assert!(matches!(
+        crate::print_pdf(&"x".repeat(crate::MAX_PDF_HTML + 1), None),
+        Err(crate::RenderError::Browser(_))
+    ));
+}

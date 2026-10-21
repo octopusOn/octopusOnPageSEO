@@ -11,6 +11,7 @@ mod browser;
 mod cache;
 mod cdp;
 mod downloads;
+mod pdf;
 mod session;
 mod slots;
 
@@ -21,6 +22,7 @@ use octopuson_crawl::{
     CrawlPlan, FetchError, RenderRequest, RenderedPage, Renderer, Rendering, Viewport,
 };
 
+pub use pdf::{MAX_PDF_HTML, print_pdf};
 pub use session::{BrowserOptions, BrowserPage, BrowserSession};
 
 /// The Chrome, Chromium or Edge executable that would be used: `explicit` if it exists, else
