@@ -1,0 +1,153 @@
+{
+  "version": "0.1.20260701",
+  "status_code": 20000,
+  "status_message": "Ok.",
+  "time": "0.4 sec.",
+  "cost": 0.006,
+  "tasks_count": 1,
+  "tasks_error": 0,
+  "tasks": [
+    {
+      "id": "10211300-1535-0387-0000-ab12cd34ef57",
+      "status_code": 20000,
+      "status_message": "Ok.",
+      "time": "0.3 sec.",
+      "cost": 0.006,
+      "result_count": 1,
+      "path": ["v3", "serp", "google", "organic", "live", "advanced"],
+      "data": {
+        "api": "serp",
+        "function": "live",
+        "se": "google",
+        "se_type": "organic",
+        "keyword": "spor ayakkabı",
+        "location_name": "Istanbul,Istanbul,Turkey",
+        "language_code": "tr",
+        "device": "desktop",
+        "depth": 20,
+        "load_async_ai_overview": true
+      },
+      "result": [
+        {
+          "keyword": "spor ayakkabı",
+          "type": "organic",
+          "se_domain": "google.com.tr",
+          "location_code": 1012782,
+          "language_code": "tr",
+          "check_url": "https://www.google.com.tr/search?q=spor+ayakkab%C4%B1&hl=tr&gl=TR",
+          "datetime": "2026-10-21 09:00:00 +00:00",
+          "item_types": ["ai_overview", "featured_snippet", "organic", "people_also_ask", "local_pack"],
+          "se_results_count": 4200000,
+          "items_count": 8,
+          "items": [
+            {
+              "type": "ai_overview",
+              "rank_group": 1,
+              "rank_absolute": 1,
+              "position": "left",
+              "asynchronous_ai_overview": true,
+              "items": [
+                {
+                  "type": "ai_overview_element",
+                  "position": "left",
+                  "title": null,
+                  "text": "Spor ayakkabı seçerken...",
+                  "markdown": "Spor ayakkabı seçerken...",
+                  "links": null,
+                  "references": [
+                    {
+                      "type": "ai_overview_reference",
+                      "source": "Örnek Blog",
+                      "domain": "blog.example.com",
+                      "url": "https://blog.example.com/spor-ayakkabi-secimi",
+                      "title": "Spor ayakkabı nasıl seçilir?",
+                      "text": "Ayağınızın yapısına göre..."
+                    }
+                  ]
+                }
+              ],
+              "references": [
+                {
+                  "type": "ai_overview_reference",
+                  "source": "Rival",
+                  "domain": "www.rival.com",
+                  "url": "https://www.rival.com/rehber",
+                  "title": "Rehber",
+                  "text": "..."
+                }
+              ]
+            },
+            {
+              "type": "featured_snippet",
+              "rank_group": 1,
+              "rank_absolute": 2,
+              "position": "left",
+              "domain": "www.example.com",
+              "title": "Spor Ayakkabı",
+              "url": "https://www.example.com/spor-ayakkabi",
+              "description": "En iyi modeller..."
+            },
+            {
+              "type": "organic",
+              "rank_group": 1,
+              "rank_absolute": 3,
+              "position": "left",
+              "domain": "www.rival.com",
+              "title": "Spor Ayakkabı Modelleri",
+              "url": "https://www.rival.com/spor",
+              "description": "Yeni sezon..."
+            },
+            {
+              "type": "organic",
+              "rank_group": 2,
+              "rank_absolute": 4,
+              "position": "left",
+              "domain": "www.example.com",
+              "title": "Spor Ayakkabı",
+              "url": "https://www.example.com/spor-ayakkabi",
+              "description": "En iyi..."
+            },
+            {
+              "type": "people_also_ask",
+              "rank_group": 1,
+              "rank_absolute": 5,
+              "position": "left",
+              "title": null,
+              "items": []
+            },
+            {
+              "type": "organic",
+              "rank_group": 3,
+              "rank_absolute": 6,
+              "position": "left",
+              "domain": "other.com.tr",
+              "title": "Spor Ayakkabı Fiyatları",
+              "url": "https://other.com.tr/spor-ayakkabi",
+              "description": "..."
+            },
+            {
+              "type": "organic",
+              "rank_group": 4,
+              "rank_absolute": 7,
+              "position": "left",
+              "domain": "shop.example.com",
+              "title": "Kategori",
+              "url": "https://shop.example.com/kategori/spor",
+              "description": "..."
+            },
+            {
+              "type": "organic",
+              "rank_group": 5,
+              "rank_absolute": 8,
+              "position": "left",
+              "domain": "notexample.com",
+              "title": "Başka",
+              "url": "https://notexample.com/spor",
+              "description": "..."
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

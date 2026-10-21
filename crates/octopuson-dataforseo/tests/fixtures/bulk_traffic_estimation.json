@@ -1,0 +1,71 @@
+{
+  "version": "0.1.20260701",
+  "status_code": 20000,
+  "status_message": "Ok.",
+  "time": "0.3 sec.",
+  "cost": 0.0124,
+  "tasks_count": 1,
+  "tasks_error": 0,
+  "tasks": [
+    {
+      "id": "10211200-1535-0387-0000-aa1b2c3d4e5f",
+      "status_code": 20000,
+      "status_message": "Ok.",
+      "time": "0.2 sec.",
+      "cost": 0.0124,
+      "result_count": 1,
+      "path": [
+        "v3",
+        "dataforseo_labs",
+        "google",
+        "bulk_traffic_estimation",
+        "live"
+      ],
+      "data": {
+        "api": "dataforseo_labs",
+        "function": "bulk_traffic_estimation",
+        "se_type": "google"
+      },
+      "result": [
+        {
+          "se_type": "google",
+          "location_code": 2792,
+          "language_code": "tr",
+          "total_count": 2,
+          "items_count": 2,
+          "items": [
+            {
+              "se_type": "google",
+              "target": "example.com",
+              "metrics": {
+                "organic": {
+                  "etv": 4256.6,
+                  "count": 3052
+                },
+                "paid": {
+                  "etv": 120.5,
+                  "count": 4
+                },
+                "featured_snippet": null,
+                "local_pack": null
+              }
+            },
+            {
+              "se_type": "google",
+              "target": "rival.com",
+              "metrics": {
+                "organic": {
+                  "etv": 8800.0,
+                  "count": 5100
+                },
+                "paid": null,
+                "featured_snippet": null,
+                "local_pack": null
+              }
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

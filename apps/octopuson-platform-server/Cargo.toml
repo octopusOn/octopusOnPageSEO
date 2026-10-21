@@ -1,0 +1,46 @@
+[package]
+name = "octopuson-platform-server"
+description = "Web server of the OctopusOn GEO-SEO Platform (app.octopuson.com): sign-in with the OctopusOn SEO account, one workspace per account, the platform's commands over HTTP."
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+repository.workspace = true
+authors.workspace = true
+publish.workspace = true
+
+[[bin]]
+name = "octopuson-platform-server"
+path = "src/main.rs"
+
+[dependencies]
+aes-gcm = "0.10"
+axum = { version = "0.8", default-features = false, features = ["http1", "json", "query", "tokio", "tracing"] }
+base64.workspace = true
+duckdb.workspace = true
+getrandom.workspace = true
+lettre = { version = "0.11.23", default-features = false, features = ["builder", "smtp-transport", "rustls-tls"] }
+octopuson-cloud.workspace = true
+octopuson-core.workspace = true
+octopuson-net.workspace = true
+octopuson-oauth.workspace = true
+octopuson-platform-app.workspace = true
+octopuson-secrets.workspace = true
+serde.workspace = true
+serde_json.workspace = true
+sha2.workspace = true
+thiserror.workspace = true
+tokio = { version = "1", features = ["rt-multi-thread", "macros", "net", "signal", "sync", "time"] }
+tokio-stream = { version = "0.1", features = ["sync"] }
+tower-http = { version = "0.6", features = ["fs", "set-header"] }
+tracing.workspace = true
+tracing-subscriber.workspace = true
+url.workspace = true
+
+[dev-dependencies]
+http-body-util = "0.1"
+tempfile.workspace = true
+tower = { version = "0.5", features = ["util"] }
+
+[lints]
+workspace = true

@@ -1,0 +1,56 @@
+{
+  "$schema": "https://schema.tauri.app/config/2",
+  "productName": "OctopusOn GEO-SEO Platform",
+  "mainBinaryName": "octopuson-geo-seo-platform",
+  "version": "0.1.0",
+  "identifier": "com.octopuson.geo-seo-platform",
+  "build": {
+    "beforeDevCommand": "pnpm dev",
+    "devUrl": "http://localhost:1470",
+    "beforeBuildCommand": "pnpm build",
+    "frontendDist": "../dist"
+  },
+  "app": {
+    "windows": [
+      {
+        "title": "OctopusOn GEO-SEO Platform",
+        "width": 1480,
+        "height": 960,
+        "minWidth": 1080,
+        "minHeight": 680,
+        "titleBarStyle": "Overlay",
+        "hiddenTitle": true,
+        "trafficLightPosition": {
+          "x": 20,
+          "y": 24
+        },
+        "backgroundColor": "#0b1a3a",
+        "theme": "Dark"
+      }
+    ],
+    "security": {
+      "csp": "default-src 'self'; img-src 'self' data:; style-src 'self' 'unsafe-inline'; font-src 'self' data:; connect-src ipc: http://ipc.localhost"
+    }
+  },
+  "bundle": {
+    "active": true,
+    "targets": "all",
+    "publisher": "OctopusOn",
+    "copyright": "© 2026 OctopusOn SEO",
+    "homepage": "https://octopuson.com",
+    "category": "DeveloperTool",
+    "shortDescription": "All-in-one SEO and GEO platform",
+    "longDescription": "Domain overview, keyword research, backlinks, gap analysis, rank tracking, site audits, AI visibility, Search Console and white-label reports, with your own API keys or OctopusOn SEO credits.",
+    "icon": [
+      "icons/32x32.png",
+      "icons/128x128.png",
+      "icons/128x128@2x.png",
+      "icons/icon.icns",
+      "icons/icon.ico"
+    ],
+    "macOS": {
+      "signingIdentity": "-",
+      "minimumSystemVersion": "11.0"
+    }
+  }
+}

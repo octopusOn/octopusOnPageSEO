@@ -1,0 +1,202 @@
+{
+  "version": "0.1.20260701",
+  "status_code": 20000,
+  "status_message": "Ok.",
+  "time": "0.3 sec.",
+  "cost": 0.0124,
+  "tasks_count": 1,
+  "tasks_error": 0,
+  "tasks": [
+    {
+      "id": "10211200-1535-0387-0000-aa1b2c3d4e5f",
+      "status_code": 20000,
+      "status_message": "Ok.",
+      "time": "0.2 sec.",
+      "cost": 0.0124,
+      "result_count": 1,
+      "path": [
+        "v3",
+        "dataforseo_labs",
+        "google",
+        "competitors_domain",
+        "live"
+      ],
+      "data": {
+        "api": "dataforseo_labs",
+        "function": "competitors_domain",
+        "se_type": "google"
+      },
+      "result": [
+        {
+          "se_type": "google",
+          "target": "example.com",
+          "location_code": 2792,
+          "language_code": "tr",
+          "total_count": 540,
+          "items_count": 3,
+          "items": [
+            {
+              "se_type": "google",
+              "domain": "example.com",
+              "avg_position": 8.2,
+              "sum_position": 25000,
+              "intersections": 3052,
+              "full_domain_metrics": {
+                "organic": {
+                  "pos_1": 1,
+                  "pos_2_3": 2,
+                  "pos_4_10": 5,
+                  "pos_11_20": 4,
+                  "pos_21_30": 3,
+                  "pos_31_40": 1,
+                  "pos_41_50": 0,
+                  "pos_51_60": 0,
+                  "pos_61_70": 0,
+                  "pos_71_80": 0,
+                  "pos_81_90": 0,
+                  "pos_91_100": 0,
+                  "etv": 4256.6,
+                  "count": 3052,
+                  "estimated_paid_traffic_cost": 21310.9,
+                  "is_new": 1,
+                  "is_up": 2,
+                  "is_down": 1,
+                  "is_lost": 0
+                }
+              },
+              "metrics": {
+                "organic": {
+                  "pos_1": 1,
+                  "pos_2_3": 2,
+                  "pos_4_10": 5,
+                  "pos_11_20": 4,
+                  "pos_21_30": 3,
+                  "pos_31_40": 1,
+                  "pos_41_50": 0,
+                  "pos_51_60": 0,
+                  "pos_61_70": 0,
+                  "pos_71_80": 0,
+                  "pos_81_90": 0,
+                  "pos_91_100": 0,
+                  "etv": 4256.6,
+                  "count": 3052,
+                  "estimated_paid_traffic_cost": 21310.9,
+                  "is_new": 1,
+                  "is_up": 2,
+                  "is_down": 1,
+                  "is_lost": 0
+                }
+              }
+            },
+            {
+              "se_type": "google",
+              "domain": "rival.com",
+              "avg_position": 11.4,
+              "sum_position": 12000,
+              "intersections": 910,
+              "full_domain_metrics": {
+                "organic": {
+                  "pos_1": 1,
+                  "pos_2_3": 2,
+                  "pos_4_10": 5,
+                  "pos_11_20": 4,
+                  "pos_21_30": 3,
+                  "pos_31_40": 1,
+                  "pos_41_50": 0,
+                  "pos_51_60": 0,
+                  "pos_61_70": 0,
+                  "pos_71_80": 0,
+                  "pos_81_90": 0,
+                  "pos_91_100": 0,
+                  "etv": 8800.0,
+                  "count": 5100,
+                  "estimated_paid_traffic_cost": 40100.0,
+                  "is_new": 1,
+                  "is_up": 2,
+                  "is_down": 1,
+                  "is_lost": 0
+                }
+              },
+              "metrics": {
+                "organic": {
+                  "pos_1": 1,
+                  "pos_2_3": 2,
+                  "pos_4_10": 5,
+                  "pos_11_20": 4,
+                  "pos_21_30": 3,
+                  "pos_31_40": 1,
+                  "pos_41_50": 0,
+                  "pos_51_60": 0,
+                  "pos_61_70": 0,
+                  "pos_71_80": 0,
+                  "pos_81_90": 0,
+                  "pos_91_100": 0,
+                  "etv": 1400.0,
+                  "count": 910,
+                  "estimated_paid_traffic_cost": 6000.0,
+                  "is_new": 1,
+                  "is_up": 2,
+                  "is_down": 1,
+                  "is_lost": 0
+                }
+              }
+            },
+            {
+              "se_type": "google",
+              "domain": "other.com.tr",
+              "avg_position": 21.0,
+              "sum_position": 9000,
+              "intersections": 402,
+              "full_domain_metrics": {
+                "organic": {
+                  "pos_1": 1,
+                  "pos_2_3": 2,
+                  "pos_4_10": 5,
+                  "pos_11_20": 4,
+                  "pos_21_30": 3,
+                  "pos_31_40": 1,
+                  "pos_41_50": 0,
+                  "pos_51_60": 0,
+                  "pos_61_70": 0,
+                  "pos_71_80": 0,
+                  "pos_81_90": 0,
+                  "pos_91_100": 0,
+                  "etv": 700.0,
+                  "count": 1200,
+                  "estimated_paid_traffic_cost": 2500.0,
+                  "is_new": 1,
+                  "is_up": 2,
+                  "is_down": 1,
+                  "is_lost": 0
+                }
+              },
+              "metrics": {
+                "organic": {
+                  "pos_1": 1,
+                  "pos_2_3": 2,
+                  "pos_4_10": 5,
+                  "pos_11_20": 4,
+                  "pos_21_30": 3,
+                  "pos_31_40": 1,
+                  "pos_41_50": 0,
+                  "pos_51_60": 0,
+                  "pos_61_70": 0,
+                  "pos_71_80": 0,
+                  "pos_81_90": 0,
+                  "pos_91_100": 0,
+                  "etv": 220.0,
+                  "count": 402,
+                  "estimated_paid_traffic_cost": 800.0,
+                  "is_new": 1,
+                  "is_up": 2,
+                  "is_down": 1,
+                  "is_lost": 0
+                }
+              }
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

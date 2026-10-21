@@ -1,0 +1,59 @@
+{
+  "version": "0.1.20260701",
+  "status_code": 20000,
+  "status_message": "Ok.",
+  "time": "0.4 sec.",
+  "cost": 0.0276,
+  "tasks_count": 1,
+  "tasks_error": 0,
+  "tasks": [
+    {
+      "id": "10211400-1535-0389-0000-0b1c2d3e4f50",
+      "status_code": 20000,
+      "status_message": "Ok.",
+      "time": "0.3 sec.",
+      "cost": 0.0276,
+      "result_count": 1,
+      "path": [
+        "v3",
+        "backlinks",
+        "domain_pages",
+        "live"
+      ],
+      "data": {
+        "api": "backlinks",
+        "function": "domain_pages",
+        "target": "example.com"
+      },
+      "result": [
+        {
+          "target": "example.com",
+          "total_count": 3200,
+          "items_count": 1,
+          "items": [
+            {
+              "type": "backlinks_domain_page",
+              "page": "https://www.example.com/",
+              "status_code": 200,
+              "location": null,
+              "meta": {
+                "title": "Örnek Mağaza",
+                "canonical": null,
+                "internal_links_count": 120
+              },
+              "page_summary": {
+                "first_seen": "2017-03-02 00:00:00 +00:00",
+                "rank": 55,
+                "backlinks": 40100,
+                "referring_domains": 1500,
+                "referring_main_domains": 1400,
+                "broken_backlinks": 3,
+                "lost_date": null
+              }
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

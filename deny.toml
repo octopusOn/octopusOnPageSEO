@@ -34,6 +34,9 @@ allow = [
 # libduckdb-sys' build script. Scoped to this crate instead of allowed globally.
 exceptions = [
     { crate = "webpki-roots", allow = ["CDLA-Permissive-2.0"] },
+    # BSD Zero Clause (public-domain-like, no conditions) of the quoted-printable encoder used by
+    # lettre for the web platform's report e-mails. Scoped to this crate.
+    { crate = "quoted_printable", allow = ["0BSD"] },
 ]
 
 [bans]

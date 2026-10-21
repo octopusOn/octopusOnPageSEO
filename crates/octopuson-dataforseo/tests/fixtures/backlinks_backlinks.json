@@ -1,0 +1,118 @@
+{
+  "version": "0.1.20260701",
+  "status_code": 20000,
+  "status_message": "Ok.",
+  "time": "0.4 sec.",
+  "cost": 0.0276,
+  "tasks_count": 1,
+  "tasks_error": 0,
+  "tasks": [
+    {
+      "id": "10211400-1535-0389-0000-0b1c2d3e4f50",
+      "status_code": 20000,
+      "status_message": "Ok.",
+      "time": "0.3 sec.",
+      "cost": 0.0276,
+      "result_count": 1,
+      "path": [
+        "v3",
+        "backlinks",
+        "backlinks",
+        "live"
+      ],
+      "data": {
+        "api": "backlinks",
+        "function": "backlinks",
+        "target": "example.com"
+      },
+      "result": [
+        {
+          "target": "example.com",
+          "mode": "as_is",
+          "custom_mode": null,
+          "total_count": 182340,
+          "items_count": 2,
+          "items": [
+            {
+              "type": "backlink",
+              "domain_from": "blog.news.com.tr",
+              "url_from": "https://blog.news.com.tr/en-iyi-ayakkabilar",
+              "url_from_https": true,
+              "domain_to": "www.example.com",
+              "url_to": "https://www.example.com/spor",
+              "url_to_https": true,
+              "tld_from": "com.tr",
+              "is_new": true,
+              "is_lost": false,
+              "backlink_spam_score": 3,
+              "rank": 120,
+              "page_from_rank": 61,
+              "domain_from_rank": 72,
+              "domain_from_platform_type": [
+                "news"
+              ],
+              "domain_from_is_ip": false,
+              "domain_from_ip": "1.2.3.4",
+              "domain_from_country": "TR",
+              "page_from_external_links": 12,
+              "page_from_internal_links": 80,
+              "page_from_size": 51200,
+              "page_from_encoding": "utf-8",
+              "page_from_language": "tr",
+              "page_from_title": "En iyi ayakkabılar",
+              "page_from_status_code": 200,
+              "first_seen": "2026-09-30 10:00:00 +00:00",
+              "prev_seen": null,
+              "last_seen": "2026-10-20 10:00:00 +00:00",
+              "item_type": "anchor",
+              "attributes": null,
+              "dofollow": true,
+              "original": true,
+              "alt": null,
+              "image_url": null,
+              "anchor": "spor ayakkabı",
+              "text_pre": "..",
+              "text_post": "..",
+              "semantic_location": "article",
+              "links_count": 1,
+              "group_count": 0,
+              "is_broken": false,
+              "url_to_status_code": 200,
+              "url_to_spam_score": 0,
+              "url_to_redirect_target": null,
+              "ranked_keywords_info": null,
+              "is_indirect_link": false,
+              "indirect_link_path": null
+            },
+            {
+              "type": "backlink",
+              "domain_from": "forum.example.org",
+              "url_from": "https://forum.example.org/t/123",
+              "domain_to": "example.com",
+              "url_to": "https://example.com/eski-sayfa",
+              "is_new": false,
+              "is_lost": false,
+              "backlink_spam_score": 40,
+              "page_from_rank": 8,
+              "domain_from_rank": 31,
+              "domain_from_country": "US",
+              "page_from_title": null,
+              "first_seen": "2024-01-11 10:00:00 +00:00",
+              "last_seen": "2026-10-19 10:00:00 +00:00",
+              "item_type": "image",
+              "attributes": [
+                "nofollow",
+                "ugc"
+              ],
+              "dofollow": false,
+              "alt": "logo",
+              "anchor": null,
+              "is_broken": true,
+              "url_to_status_code": 404
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

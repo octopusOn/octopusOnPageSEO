@@ -1,0 +1,131 @@
+{
+  "version": "0.1.20260701",
+  "status_code": 20000,
+  "status_message": "Ok.",
+  "time": "0.3 sec.",
+  "cost": 0.0124,
+  "tasks_count": 1,
+  "tasks_error": 0,
+  "tasks": [
+    {
+      "id": "10211500-1535-0390-0000-1a2b3c4d5e6f",
+      "status_code": 20000,
+      "status_message": "Ok.",
+      "time": "0.2 sec.",
+      "cost": 0.0124,
+      "result_count": 1,
+      "path": [
+        "v3",
+        "dataforseo_labs",
+        "google",
+        "domain_intersection",
+        "live"
+      ],
+      "data": {
+        "api": "dataforseo_labs",
+        "function": "domain_intersection"
+      },
+      "result": [
+        {
+          "se_type": "google",
+          "target1": "example.com",
+          "target2": "rival.com",
+          "total_count": 2,
+          "items_count": 2,
+          "items": [
+            {
+              "se_type": "google",
+              "keyword_data": {
+                "se_type": "google",
+                "keyword": "spor ayakkabı",
+                "location_code": 2792,
+                "language_code": "tr",
+                "keyword_info": {
+                  "se_type": "google",
+                  "competition": 0.4,
+                  "cpc": 0.9,
+                  "search_volume": 40500,
+                  "monthly_searches": []
+                },
+                "keyword_properties": {
+                  "se_type": "google",
+                  "keyword_difficulty": 62
+                },
+                "search_intent_info": {
+                  "se_type": "google",
+                  "main_intent": "commercial",
+                  "foreign_intent": null
+                }
+              },
+              "first_domain_serp_element": {
+                "se_type": "google",
+                "type": "organic",
+                "rank_group": 7,
+                "rank_absolute": 8,
+                "position": "left",
+                "domain": "example.com",
+                "url": "https://example.com/spor",
+                "etv": 300.0
+              },
+              "second_domain_serp_element": {
+                "se_type": "google",
+                "type": "organic",
+                "rank_group": 2,
+                "rank_absolute": 3,
+                "position": "left",
+                "domain": "rival.com",
+                "url": "https://rival.com/spor",
+                "etv": 5100.0
+              }
+            },
+            {
+              "se_type": "google",
+              "keyword_data": {
+                "se_type": "google",
+                "keyword": "beyaz ayakkabı",
+                "location_code": 2792,
+                "language_code": "tr",
+                "keyword_info": {
+                  "se_type": "google",
+                  "competition": 0.4,
+                  "cpc": 0.9,
+                  "search_volume": 6600,
+                  "monthly_searches": []
+                },
+                "keyword_properties": {
+                  "se_type": "google",
+                  "keyword_difficulty": 40
+                },
+                "search_intent_info": {
+                  "se_type": "google",
+                  "main_intent": "transactional",
+                  "foreign_intent": null
+                }
+              },
+              "first_domain_serp_element": {
+                "se_type": "google",
+                "type": "organic",
+                "rank_group": 1,
+                "rank_absolute": 2,
+                "position": "left",
+                "domain": "example.com",
+                "url": "https://example.com/beyaz",
+                "etv": 2000.0
+              },
+              "second_domain_serp_element": {
+                "se_type": "google",
+                "type": "organic",
+                "rank_group": 4,
+                "rank_absolute": 5,
+                "position": "left",
+                "domain": "rival.com",
+                "url": "https://rival.com/beyaz",
+                "etv": 300.0
+              }
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

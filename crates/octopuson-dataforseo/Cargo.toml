@@ -1,0 +1,21 @@
+[package]
+name = "octopuson-dataforseo"
+description = "DataForSEO clients of the OctopusOn GEO-SEO Platform: Labs, Backlinks, SERP and AI Optimization live endpoints over the HTTP port, with costs."
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+repository.workspace = true
+authors.workspace = true
+publish.workspace = true
+
+[dependencies]
+base64.workspace = true
+octopuson-core.workspace = true
+octopuson-serp.workspace = true
+serde.workspace = true
+serde_json.workspace = true
+thiserror.workspace = true
+
+[lints]
+workspace = true

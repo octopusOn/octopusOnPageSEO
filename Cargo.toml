@@ -1,7 +1,7 @@
 [workspace]
 resolver = "3"
-members = ["crates/*", "apps/octopuson-log-cli", "apps/octopuson-crawler-cli", "apps/octopuson-index-cli", "apps/octopuson-serp-cli", "apps/octopuson-keywords-cli", "apps/log-analyser/src-tauri", "apps/seo-crawler/src-tauri", "apps/index-checker/src-tauri", "apps/serp-checker/src-tauri", "apps/seo-keyword-research/src-tauri", "xtask"]
-default-members = ["crates/*", "apps/octopuson-log-cli", "apps/octopuson-crawler-cli", "apps/octopuson-index-cli", "apps/octopuson-serp-cli", "apps/octopuson-keywords-cli"]
+members = ["crates/*", "apps/octopuson-log-cli", "apps/octopuson-crawler-cli", "apps/octopuson-index-cli", "apps/octopuson-serp-cli", "apps/octopuson-keywords-cli", "apps/octopuson-platform-cli", "apps/log-analyser/src-tauri", "apps/seo-crawler/src-tauri", "apps/index-checker/src-tauri", "apps/serp-checker/src-tauri", "apps/seo-keyword-research/src-tauri", "apps/geo-seo-platform/src-tauri", "apps/octopuson-platform-server", "xtask"]
+default-members = ["crates/*", "apps/octopuson-log-cli", "apps/octopuson-crawler-cli", "apps/octopuson-index-cli", "apps/octopuson-serp-cli", "apps/octopuson-keywords-cli", "apps/octopuson-platform-cli", "apps/octopuson-platform-server"]
 
 [workspace.package]
 version = "0.1.0"
@@ -48,6 +48,11 @@ octopuson-secrets = { path = "crates/octopuson-secrets" }
 octopuson-cloud = { path = "crates/octopuson-cloud" }
 octopuson-serp-store = { path = "crates/octopuson-serp-store" }
 octopuson-serp-app = { path = "crates/octopuson-serp-app" }
+octopuson-dataforseo = { path = "crates/octopuson-dataforseo" }
+octopuson-llm = { path = "crates/octopuson-llm" }
+octopuson-google = { path = "crates/octopuson-google" }
+octopuson-platform = { path = "crates/octopuson-platform" }
+octopuson-platform-app = { path = "crates/octopuson-platform-app" }
 
 # External crates
 anyhow = "1"

@@ -56,6 +56,9 @@ jobs:
       - run: pnpm --filter @octopusseo/serp-checker build
       - run: pnpm --filter @octopusseo/seo-keyword-research check
       - run: pnpm --filter @octopusseo/seo-keyword-research build
+      - run: pnpm --filter @octopusseo/ui check
+      - run: pnpm --filter @octopusseo/geo-seo-platform check
+      - run: pnpm --filter @octopusseo/geo-seo-platform build
       - run: pnpm --filter @octopusseo/web check
       - run: pnpm --filter @octopusseo/web build
 

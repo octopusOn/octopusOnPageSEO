@@ -1,0 +1,81 @@
+{
+  "version": "0.1.20260701",
+  "status_code": 20000,
+  "status_message": "Ok.",
+  "time": "0.2 sec.",
+  "cost": 0.0101,
+  "tasks_count": 1,
+  "tasks_error": 0,
+  "tasks": [
+    {
+      "id": "07281520-1535-0387-0000-6f9e1a2c6b11",
+      "status_code": 20000,
+      "status_message": "Ok.",
+      "time": "0.1 sec.",
+      "cost": 0.0101,
+      "result_count": 1,
+      "path": ["v3", "dataforseo_labs", "google", "domain_rank_overview", "live"],
+      "data": {
+        "api": "dataforseo_labs",
+        "function": "domain_rank_overview",
+        "se_type": "google",
+        "target": "example.com",
+        "location_name": "Turkey",
+        "language_code": "tr"
+      },
+      "result": [
+        {
+          "se_type": "google",
+          "target": "example.com",
+          "location_code": 2792,
+          "language_code": "tr",
+          "total_count": 1,
+          "items_count": 1,
+          "items": [
+            {
+              "se_type": "google",
+              "location_code": 2792,
+              "language_code": "tr",
+              "metrics": {
+                "organic": {
+                  "pos_1": 85,
+                  "pos_2_3": 112,
+                  "pos_4_10": 405,
+                  "pos_11_20": 530,
+                  "pos_21_30": 410,
+                  "pos_31_40": 300,
+                  "pos_41_50": 250,
+                  "pos_51_60": 220,
+                  "pos_61_70": 200,
+                  "pos_71_80": 190,
+                  "pos_81_90": 180,
+                  "pos_91_100": 170,
+                  "etv": 4256.6,
+                  "impressions_etv": 81234.1,
+                  "count": 3052,
+                  "estimated_paid_traffic_cost": 21310.9,
+                  "is_new": 52,
+                  "is_up": 330,
+                  "is_down": 343,
+                  "is_lost": 126
+                },
+                "paid": {
+                  "pos_1": 3,
+                  "pos_2_3": 1,
+                  "pos_4_10": 0,
+                  "etv": 120.5,
+                  "count": 4,
+                  "estimated_paid_traffic_cost": 310.2,
+                  "is_new": 1,
+                  "is_up": 0,
+                  "is_down": 1,
+                  "is_lost": 2
+                }
+              }
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

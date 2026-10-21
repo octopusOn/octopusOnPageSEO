@@ -1,0 +1,240 @@
+{
+  "version": "0.1.20260701",
+  "status_code": 20000,
+  "status_message": "Ok.",
+  "time": "0.2 sec.",
+  "cost": 0.0124,
+  "tasks_count": 1,
+  "tasks_error": 0,
+  "tasks": [
+    {
+      "id": "10211300-1535-0387-0000-ab12cd34ef56",
+      "status_code": 20000,
+      "status_message": "Ok.",
+      "time": "0.1 sec.",
+      "cost": 0.0124,
+      "result_count": 1,
+      "path": [
+        "v3",
+        "dataforseo_labs",
+        "google",
+        "keyword_suggestions",
+        "live"
+      ],
+      "data": {
+        "api": "dataforseo_labs",
+        "function": "keyword_suggestions",
+        "se_type": "google"
+      },
+      "result": [
+        {
+          "se_type": "google",
+          "seed_keyword": "ayakkabı",
+          "seed_keyword_data": {
+            "se_type": "google",
+            "keyword": "ayakkabı",
+            "location_code": 2792,
+            "language_code": "tr",
+            "keyword_info": {
+              "se_type": "google",
+              "last_updated_time": "2026-10-01 00:00:00 +00:00",
+              "competition": 0.5,
+              "competition_level": "MEDIUM",
+              "cpc": 0.82,
+              "search_volume": 90500,
+              "low_top_of_page_bid": 0.2,
+              "high_top_of_page_bid": 1.1,
+              "categories": [
+                10021
+              ],
+              "monthly_searches": [
+                {
+                  "year": 2026,
+                  "month": 8,
+                  "search_volume": 2400
+                },
+                {
+                  "year": 2026,
+                  "month": 9,
+                  "search_volume": 2900
+                },
+                {
+                  "year": 2026,
+                  "month": 7,
+                  "search_volume": 2100
+                }
+              ],
+              "search_volume_trend": {
+                "monthly": 21,
+                "quarterly": 38,
+                "yearly": -4
+              }
+            },
+            "keyword_properties": {
+              "se_type": "google",
+              "core_keyword": null,
+              "synonym_clustering_algorithm": "text_processing",
+              "keyword_difficulty": 71,
+              "detected_language": "tr",
+              "is_another_language": false
+            },
+            "serp_info": null,
+            "avg_backlinks_info": {
+              "se_type": "google",
+              "backlinks": 1520.4,
+              "dofollow": 900,
+              "referring_pages": 800,
+              "referring_domains": 96.3,
+              "referring_main_domains": 80,
+              "rank": 310,
+              "main_domain_rank": 540
+            },
+            "search_intent_info": {
+              "se_type": "google",
+              "main_intent": "commercial",
+              "foreign_intent": null
+            }
+          },
+          "location_code": 2792,
+          "language_code": "tr",
+          "total_count": 5210,
+          "items_count": 2,
+          "offset": 0,
+          "offset_token": "x",
+          "items": [
+            {
+              "se_type": "google",
+              "keyword": "ayakkabı numarası nasıl ölçülür",
+              "location_code": 2792,
+              "language_code": "tr",
+              "keyword_info": {
+                "se_type": "google",
+                "last_updated_time": "2026-10-01 00:00:00 +00:00",
+                "competition": 0.5,
+                "competition_level": "MEDIUM",
+                "cpc": 0.82,
+                "search_volume": 880,
+                "low_top_of_page_bid": 0.2,
+                "high_top_of_page_bid": 1.1,
+                "categories": [
+                  10021
+                ],
+                "monthly_searches": [
+                  {
+                    "year": 2026,
+                    "month": 8,
+                    "search_volume": 2400
+                  },
+                  {
+                    "year": 2026,
+                    "month": 9,
+                    "search_volume": 2900
+                  },
+                  {
+                    "year": 2026,
+                    "month": 7,
+                    "search_volume": 2100
+                  }
+                ],
+                "search_volume_trend": {
+                  "monthly": 21,
+                  "quarterly": 38,
+                  "yearly": -4
+                }
+              },
+              "keyword_properties": {
+                "se_type": "google",
+                "core_keyword": null,
+                "synonym_clustering_algorithm": "text_processing",
+                "keyword_difficulty": 15,
+                "detected_language": "tr",
+                "is_another_language": false
+              },
+              "serp_info": null,
+              "avg_backlinks_info": {
+                "se_type": "google",
+                "backlinks": 1520.4,
+                "dofollow": 900,
+                "referring_pages": 800,
+                "referring_domains": 96.3,
+                "referring_main_domains": 80,
+                "rank": 310,
+                "main_domain_rank": 540
+              },
+              "search_intent_info": {
+                "se_type": "google",
+                "main_intent": "informational",
+                "foreign_intent": null
+              }
+            },
+            {
+              "se_type": "google",
+              "keyword": "beyaz ayakkabı",
+              "location_code": 2792,
+              "language_code": "tr",
+              "keyword_info": {
+                "se_type": "google",
+                "last_updated_time": "2026-10-01 00:00:00 +00:00",
+                "competition": 0.5,
+                "competition_level": "MEDIUM",
+                "cpc": 0.82,
+                "search_volume": 6600,
+                "low_top_of_page_bid": 0.2,
+                "high_top_of_page_bid": 1.1,
+                "categories": [
+                  10021
+                ],
+                "monthly_searches": [
+                  {
+                    "year": 2026,
+                    "month": 8,
+                    "search_volume": 2400
+                  },
+                  {
+                    "year": 2026,
+                    "month": 9,
+                    "search_volume": 2900
+                  },
+                  {
+                    "year": 2026,
+                    "month": 7,
+                    "search_volume": 2100
+                  }
+                ],
+                "search_volume_trend": {
+                  "monthly": 21,
+                  "quarterly": 38,
+                  "yearly": -4
+                }
+              },
+              "keyword_properties": {
+                "se_type": "google",
+                "core_keyword": null,
+                "synonym_clustering_algorithm": "text_processing",
+                "keyword_difficulty": 40,
+                "detected_language": "tr",
+                "is_another_language": false
+              },
+              "serp_info": null,
+              "avg_backlinks_info": {
+                "se_type": "google",
+                "backlinks": 1520.4,
+                "dofollow": 900,
+                "referring_pages": 800,
+                "referring_domains": 96.3,
+                "referring_main_domains": 80,
+                "rank": 310,
+                "main_domain_rank": 540
+              },
+              "search_intent_info": {
+                "se_type": "google",
+                "main_intent": "transactional",
+                "foreign_intent": null
+              }
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

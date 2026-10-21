@@ -1,0 +1,113 @@
+{
+  "version": "0.1.20260701",
+  "status_code": 20000,
+  "status_message": "Ok.",
+  "time": "0.3 sec.",
+  "cost": 0.0124,
+  "tasks_count": 1,
+  "tasks_error": 0,
+  "tasks": [
+    {
+      "id": "10211500-1535-0390-0000-1a2b3c4d5e6f",
+      "status_code": 20000,
+      "status_message": "Ok.",
+      "time": "0.2 sec.",
+      "cost": 0.0124,
+      "result_count": 1,
+      "path": [
+        "v3",
+        "dataforseo_labs",
+        "google",
+        "domain_intersection",
+        "live"
+      ],
+      "data": {
+        "api": "dataforseo_labs",
+        "function": "domain_intersection"
+      },
+      "result": [
+        {
+          "se_type": "google",
+          "target1": "rival.com",
+          "target2": "example.com",
+          "total_count": 2,
+          "items_count": 2,
+          "items": [
+            {
+              "se_type": "google",
+              "keyword_data": {
+                "se_type": "google",
+                "keyword": "koşu ayakkabısı",
+                "location_code": 2792,
+                "language_code": "tr",
+                "keyword_info": {
+                  "se_type": "google",
+                  "competition": 0.4,
+                  "cpc": 0.9,
+                  "search_volume": 14800,
+                  "monthly_searches": []
+                },
+                "keyword_properties": {
+                  "se_type": "google",
+                  "keyword_difficulty": 51
+                },
+                "search_intent_info": {
+                  "se_type": "google",
+                  "main_intent": "commercial",
+                  "foreign_intent": null
+                }
+              },
+              "first_domain_serp_element": {
+                "se_type": "google",
+                "type": "organic",
+                "rank_group": 3,
+                "rank_absolute": 4,
+                "position": "left",
+                "domain": "rival.com",
+                "url": "https://rival.com/kosu",
+                "etv": 900.0
+              },
+              "second_domain_serp_element": null
+            },
+            {
+              "se_type": "google",
+              "keyword_data": {
+                "se_type": "google",
+                "keyword": "trail ayakkabı",
+                "location_code": 2792,
+                "language_code": "tr",
+                "keyword_info": {
+                  "se_type": "google",
+                  "competition": 0.4,
+                  "cpc": 0.9,
+                  "search_volume": 1900,
+                  "monthly_searches": []
+                },
+                "keyword_properties": {
+                  "se_type": "google",
+                  "keyword_difficulty": 30
+                },
+                "search_intent_info": {
+                  "se_type": "google",
+                  "main_intent": "commercial",
+                  "foreign_intent": null
+                }
+              },
+              "first_domain_serp_element": {
+                "se_type": "google",
+                "type": "organic",
+                "rank_group": 6,
+                "rank_absolute": 7,
+                "position": "left",
+                "domain": "rival.com",
+                "url": "https://rival.com/trail",
+                "etv": 80.0
+              },
+              "second_domain_serp_element": null
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

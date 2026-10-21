@@ -22,6 +22,9 @@
     "serp": "pnpm --filter @octopusseo/serp-checker tauri dev",
     "serp:build": "pnpm --filter @octopusseo/serp-checker tauri build",
     "serp:dev": "pnpm --filter @octopusseo/serp-checker dev",
+    "platform": "pnpm --filter @octopusseo/geo-seo-platform tauri dev",
+    "platform:build": "pnpm --filter @octopusseo/geo-seo-platform tauri build",
+    "platform:dev": "pnpm --filter @octopusseo/geo-seo-platform dev",
     "cms": "pnpm --filter @octopusseo/cms serve",
     "cms:build": "pnpm --filter @octopusseo/cms build",
     "release": "node scripts/release.mjs"

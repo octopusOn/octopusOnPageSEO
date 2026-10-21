@@ -18,6 +18,7 @@ apps/log-analyser/src-tauri/gen/
 
 apps/seo-crawler/src-tauri/gen/
 apps/serp-checker/src-tauri/gen/
+apps/geo-seo-platform/src-tauri/gen/
 
 # Next.js builds and local secrets (the credits portal and gateway)
 .next/
@@ -25,3 +26,5 @@ apps/serp-checker/src-tauri/gen/
 
 # TypeScript incremental build info
 *.tsbuildinfo
+# Local data of the GEO-SEO Platform web server (octopuson-platform-server).
+platform-data/

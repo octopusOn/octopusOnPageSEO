@@ -1,0 +1,32 @@
+{
+  "name": "@octopusseo/ui",
+  "private": true,
+  "version": "0.1.0",
+  "description": "React components of the OctopusOn SEO programs on top of the Deep Sea design (@octopusseo/design): brand mark, buttons, dialogs, fields, states and stats.",
+  "license": "MIT OR Apache-2.0",
+  "type": "module",
+  "exports": {
+    ".": "./src/index.tsx",
+    "./ui.css": "./src/ui.css"
+  },
+  "files": [
+    "src"
+  ],
+  "scripts": {
+    "typecheck": "tsc --noEmit",
+    "check": "tsc --noEmit"
+  },
+  "peerDependencies": {
+    "lucide-react": "1.48.0",
+    "react": "19.3.0",
+    "react-dom": "19.3.0"
+  },
+  "devDependencies": {
+    "@types/react": "19.3.0",
+    "@types/react-dom": "19.3.0",
+    "lucide-react": "1.48.0",
+    "react": "19.3.0",
+    "react-dom": "19.3.0",
+    "typescript": "5.9.3"
+  }
+}

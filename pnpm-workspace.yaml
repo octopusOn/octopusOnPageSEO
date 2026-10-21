@@ -4,8 +4,10 @@ packages:
   - apps/index-checker
   - apps/serp-checker
   - apps/seo-keyword-research
+  - apps/geo-seo-platform
   - apps/web
   - packages/design
+  - packages/ui
   - packages/cloud-core
   - apps/gateway
   - apps/portal

@@ -1,0 +1,65 @@
+{
+  "version": "0.1.20260701",
+  "status_code": 20000,
+  "status_message": "Ok.",
+  "time": "0.3 sec.",
+  "cost": 0.0124,
+  "tasks_count": 1,
+  "tasks_error": 0,
+  "tasks": [
+    {
+      "id": "10211500-1535-0390-0000-1a2b3c4d5e6f",
+      "status_code": 20000,
+      "status_message": "Ok.",
+      "time": "0.2 sec.",
+      "cost": 0.0124,
+      "result_count": 1,
+      "path": [
+        "v3",
+        "backlinks",
+        "google",
+        "domain_intersection",
+        "live"
+      ],
+      "data": {
+        "api": "backlinks",
+        "function": "domain_intersection"
+      },
+      "result": [
+        {
+          "targets": {
+            "1": "rival.com",
+            "2": "other.com.tr"
+          },
+          "total_count": 1,
+          "items_count": 1,
+          "items": [
+            {
+              "domain_intersection": {
+                "1": {
+                  "type": "backlinks_domain_intersection",
+                  "target": "haber.com.tr",
+                  "rank": 72,
+                  "backlinks": 12,
+                  "first_seen": "2020-01-01 00:00:00 +00:00",
+                  "referring_domains": 1
+                },
+                "2": {
+                  "type": "backlinks_domain_intersection",
+                  "target": "haber.com.tr",
+                  "rank": 72,
+                  "backlinks": 3,
+                  "first_seen": "2021-01-01 00:00:00 +00:00",
+                  "referring_domains": 1
+                }
+              },
+              "summary": {
+                "intersections_count": 2
+              }
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

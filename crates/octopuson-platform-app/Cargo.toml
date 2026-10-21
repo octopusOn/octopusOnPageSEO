@@ -1,0 +1,45 @@
+[package]
+name = "octopuson-platform-app"
+description = "Use cases of the OctopusOn GEO-SEO Platform behind one command router, shared by the desktop program, the web server and the command line."
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+repository.workspace = true
+authors.workspace = true
+publish.workspace = true
+
+[dependencies]
+base64.workspace = true
+directories.workspace = true
+getrandom.workspace = true
+octopuson-audit.workspace = true
+octopuson-cloud.workspace = true
+octopuson-core.workspace = true
+octopuson-crawl.workspace = true
+octopuson-crawl-store.workspace = true
+octopuson-dataforseo.workspace = true
+octopuson-google.workspace = true
+octopuson-keyword-sources.workspace = true
+octopuson-keywords.workspace = true
+octopuson-llm.workspace = true
+octopuson-net.workspace = true
+octopuson-oauth.workspace = true
+octopuson-platform.workspace = true
+octopuson-render.workspace = true
+octopuson-secrets.workspace = true
+octopuson-serp.workspace = true
+octopuson-serp-score.workspace = true
+octopuson-text.workspace = true
+rust_xlsxwriter.workspace = true
+serde.workspace = true
+serde_json.workspace = true
+thiserror.workspace = true
+tracing.workspace = true
+url.workspace = true
+
+[dev-dependencies]
+tempfile.workspace = true
+
+[lints]
+workspace = true

@@ -1,0 +1,65 @@
+{
+  "version": "0.1.20260701",
+  "status_code": 20000,
+  "status_message": "Ok.",
+  "time": "0.4 sec.",
+  "cost": 0.0276,
+  "tasks_count": 1,
+  "tasks_error": 0,
+  "tasks": [
+    {
+      "id": "10211400-1535-0389-0000-0b1c2d3e4f50",
+      "status_code": 20000,
+      "status_message": "Ok.",
+      "time": "0.3 sec.",
+      "cost": 0.0276,
+      "result_count": 1,
+      "path": [
+        "v3",
+        "backlinks",
+        "referring_domains",
+        "live"
+      ],
+      "data": {
+        "api": "backlinks",
+        "function": "referring_domains",
+        "target": "example.com"
+      },
+      "result": [
+        {
+          "target": "example.com",
+          "total_count": 2310,
+          "items_count": 2,
+          "items": [
+            {
+              "type": "backlinks_referring_domain",
+              "domain": "news.com.tr",
+              "rank": 72,
+              "backlinks": 340,
+              "first_seen": "2019-05-01 00:00:00 +00:00",
+              "lost_date": null,
+              "backlinks_spam_score": 2,
+              "broken_backlinks": 1,
+              "broken_pages": 0,
+              "referring_domains": 1,
+              "referring_domains_nofollow": 0,
+              "referring_main_domains": 1,
+              "referring_pages": 120,
+              "referring_pages_nofollow": 4
+            },
+            {
+              "type": "backlinks_referring_domain",
+              "domain": "forum.example.org",
+              "rank": 31,
+              "backlinks": 12,
+              "first_seen": "2024-01-11 00:00:00 +00:00",
+              "backlinks_spam_score": 40,
+              "referring_pages": 5,
+              "referring_pages_nofollow": 5
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

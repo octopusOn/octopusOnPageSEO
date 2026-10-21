@@ -1,0 +1,98 @@
+/* Layout of the shared components; colours and glass come from @octopusseo/design. */
+
+.ui-modal-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 16px;
+}
+
+.ui-modal-head h2 {
+  margin: 0;
+  font-size: 20px;
+}
+
+.ui-modal-body {
+  display: grid;
+  gap: 14px;
+}
+
+.ui-modal-foot {
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+  margin-top: 20px;
+}
+
+.ui-empty {
+  display: grid;
+  justify-items: center;
+  gap: 10px;
+  padding: 40px 20px;
+  text-align: center;
+  color: var(--text-2, rgba(255, 255, 255, 0.72));
+}
+
+.ui-empty strong {
+  color: var(--text-1, #fff);
+  font-size: 17px;
+}
+
+.oc-spin {
+  animation: oc-spin 0.9s linear infinite;
+}
+
+@keyframes oc-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .oc-spin {
+    animation-duration: 2.4s;
+  }
+}
+
+.ui-table {
+  display: grid;
+  gap: 10px;
+}
+
+.ui-table .oc-table-wrap {
+  overflow-x: auto;
+}
+
+.ui-sort {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 0;
+  border: 0;
+  background: none;
+  color: inherit;
+  font: inherit;
+  text-transform: inherit;
+  letter-spacing: inherit;
+  cursor: pointer;
+}
+
+.ui-sort:hover {
+  color: var(--ink, #fff);
+}
+
+.ui-pager {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 6px;
+  color: var(--ink-muted, rgba(255, 255, 255, 0.72));
+  font-size: 12px;
+}
+
+.ui-table-empty {
+  padding: 28px 16px;
+  text-align: center;
+  color: var(--ink-muted, rgba(255, 255, 255, 0.72));
+}

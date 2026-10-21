@@ -177,6 +177,15 @@ fn frontend(required: bool) -> Result<()> {
         "pnpm",
         &["--filter", "@octopusseo/seo-keyword-research", "build"],
     )?;
+    exec("pnpm", &["--filter", "@octopusseo/ui", "check"])?;
+    exec(
+        "pnpm",
+        &["--filter", "@octopusseo/geo-seo-platform", "check"],
+    )?;
+    exec(
+        "pnpm",
+        &["--filter", "@octopusseo/geo-seo-platform", "build"],
+    )?;
     exec("pnpm", &["--filter", "@octopusseo/web", "check"])?;
     exec("pnpm", &["--filter", "@octopusseo/web", "build"])?;
     exec("pnpm", &["--filter", "@octopusseo/cloud-core", "check"])?;

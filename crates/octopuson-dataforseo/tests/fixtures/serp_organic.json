@@ -1,0 +1,90 @@
+{
+  "version": "0.1.20260701",
+  "status_code": 20000,
+  "status_message": "Ok.",
+  "time": "0.2 sec.",
+  "cost": 0.0124,
+  "tasks_count": 1,
+  "tasks_error": 0,
+  "tasks": [
+    {
+      "id": "10211300-1535-0387-0000-ab12cd34ef56",
+      "status_code": 20000,
+      "status_message": "Ok.",
+      "time": "0.1 sec.",
+      "cost": 0.0124,
+      "result_count": 1,
+      "path": [
+        "v3",
+        "serp",
+        "google",
+        "organic",
+        "live"
+      ],
+      "data": {
+        "api": "serp",
+        "function": "organic",
+        "se_type": "google"
+      },
+      "result": [
+        {
+          "keyword": "spor ayakkabı",
+          "type": "organic",
+          "se_domain": "google.com.tr",
+          "location_code": 2792,
+          "language_code": "tr",
+          "check_url": "https://www.google.com.tr/search?q=spor+ayakkab%C4%B1&hl=tr&gl=TR",
+          "datetime": "2026-10-21 09:00:00 +00:00",
+          "spell": null,
+          "refinement_chips": null,
+          "item_types": [
+            "ai_overview",
+            "organic",
+            "people_also_ask",
+            "images"
+          ],
+          "se_results_count": 4200000,
+          "items_count": 4,
+          "items": [
+            {
+              "type": "ai_overview",
+              "rank_group": 1,
+              "rank_absolute": 1,
+              "position": "left",
+              "xpath": "/html",
+              "markdown": "..."
+            },
+            {
+              "type": "organic",
+              "rank_group": 2,
+              "rank_absolute": 4,
+              "position": "left",
+              "domain": "www.rival.com",
+              "title": "Spor Ayakkabı Modelleri",
+              "url": "https://www.rival.com/spor",
+              "description": "Yeni sezon..."
+            },
+            {
+              "type": "organic",
+              "rank_group": 1,
+              "rank_absolute": 2,
+              "position": "left",
+              "domain": "www.example.com",
+              "title": "Spor Ayakkabı",
+              "url": "https://www.example.com/spor-ayakkabi",
+              "description": "En iyi..."
+            },
+            {
+              "type": "people_also_ask",
+              "rank_group": 1,
+              "rank_absolute": 3,
+              "position": "left",
+              "title": null,
+              "items": []
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

@@ -1170,6 +1170,18 @@
   --surface-raised: rgba(11, 30, 62, 0.94);
 }
 
+/* GEO-SEO Platform: abyss indigo with an aqua accent (white ink 11.3:1 on ground-1; aqua 11.9:1
+   on the deepest ground). */
+[data-product="platform"] {
+  --ground-1: #24357a;
+  --ground-2: #182559;
+  --ground-3: #0b1a3a;
+  --bg: #0b1a3a;
+  --product: #7fe7f2;
+  --product-soft: rgba(127, 231, 242, 0.16);
+  --surface-raised: rgba(11, 26, 58, 0.94);
+}
+
 /* Keyword Miner: deep emerald with a lavender accent (white ink 7.5:1 on ground-1; lavender
    8.3:1 on the deepest ground). */
 [data-product="keywords"] {
