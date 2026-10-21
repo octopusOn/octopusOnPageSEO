@@ -10,6 +10,8 @@
 //! records and appends them in batches. A [`CrawlReader`] opens a finished (or running) crawl
 //! read-only and streams its [`CrawlTab`]s or any SQL query into a
 //! [`octopuson_core::table::TableSink`], which is how the exporters write CSV, XLSX and JSON.
+//! [`CrawlReader::geo_readiness`] reads how ready the site is for AI answers without adding
+//! findings.
 
 mod anchor_context;
 mod audit;
@@ -17,6 +19,7 @@ mod comparison;
 mod content_match;
 mod duplicates;
 mod error;
+mod geo;
 mod hreflang_context;
 mod inspect;
 mod library;
@@ -40,6 +43,7 @@ pub use comparison::{
 pub use content_match::ContentMatch;
 pub use duplicates::{DuplicateGroup, DuplicateKind, DuplicateScope};
 pub use error::CrawlStoreError;
+pub use geo::{GeoCrawler, GeoReadiness, GeoSignal, GeoStatus};
 pub use inspect::{
     CrawlOverview, IssueCount, LinkBreakdown, LinkClass, LinkCounts, LinkDirection, LinkScope,
     LinkSummary, PageRequest, TableExportRequest, TablePage, UrlDetail,
@@ -67,6 +71,8 @@ mod content_match_tests;
 mod duplicates_tests;
 #[cfg(test)]
 mod export_tests;
+#[cfg(test)]
+mod geo_tests;
 #[cfg(test)]
 mod hreflang_context_tests;
 #[cfg(test)]
