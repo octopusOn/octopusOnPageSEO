@@ -283,6 +283,17 @@ html:has(.product-ground[data-product="keywords"]) {
   --surface-raised: rgba(6, 42, 34, 0.94);
 }
 
+[data-product="platform"],
+html:has(.product-ground[data-product="platform"]) {
+  --ground-1: #24357a;
+  --ground-2: #182559;
+  --ground-3: #0b1a3a;
+  --bg: #0b1a3a;
+  --product: #7fe7f2;
+  --product-soft: rgba(127, 231, 242, 0.16);
+  --surface-raised: rgba(11, 26, 58, 0.94);
+}
+
 .header {
   background: color-mix(in srgb, var(--ground-3) 62%, transparent);
 }

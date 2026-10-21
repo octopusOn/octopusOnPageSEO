@@ -10,6 +10,7 @@ use App\Models\Page;
 use App\Models\PageTranslation;
 use App\Models\Redirect;
 use Database\Seeders\ContentSeeder;
+use Database\Seeders\ProgramSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Http\Client\Request;
 use Illuminate\Http\UploadedFile;
@@ -219,6 +220,43 @@ class AdminTest extends TestCase
         Http::assertSent(fn (Request $request) => $request->url() === 'http://web.test/api/revalidate'
             && $request->hasHeader('Authorization', 'Bearer shh')
             && $request['tags'] === ['cms']);
+    }
+
+    public function test_later_programs_arrive_as_drafts_after_the_other_programs(): void
+    {
+        Storage::fake('public');
+        $this->seed(ContentSeeder::class);
+        $this->seed(ProgramSeeder::class);
+        $this->seed(ProgramSeeder::class);
+
+        $platform = Page::query()->where('product', 'geo-seo-platform')->sole();
+        $this->assertSame(4, $platform->translations()->count());
+        $this->assertSame([PublishStatus::Draft], $platform->translations->pluck('status')->unique()->values()->all());
+        $order = Page::query()->whereNull('parent_id')->orderBy('position')->pluck('product')->all();
+        $this->assertSame(
+            [null, 'seo-crawler', 'log-analyser', 'serp-checker', 'seo-keyword-research', 'index-checker', 'geo-seo-platform', null],
+            array_slice($order, 0, 8),
+        );
+        $hero = $platform->translations->firstWhere('locale', 'en')->blocks[0];
+        $this->assertSame('hero', $hero['type']);
+        $this->assertNotNull(Media::query()->find($hero['data']['image']));
+
+        // A draft stays off the website until it is published in the admin.
+        $home = $this->getJson('/api/v1/pages/resolve?locale=en')->assertOk();
+        $this->assertNotContains('geo-seo-platform', array_column($home->json('data.blocks.1.products'), 'product'));
+        $this->getJson('/api/v1/pages/resolve?locale=en&path=geo-seo-platform')->assertNotFound();
+
+        // Published, it is a whole program page.
+        $platform->translations()->update(['status' => PublishStatus::Published, 'published_at' => now()]);
+        $page = $this->getJson('/api/v1/pages/resolve?locale=tr&path=geo-seo-platformu')->assertOk();
+        $this->assertSame(
+            ['hero', 'feature_grid', 'sections', 'credit_calculator', 'faq', 'code', 'product_downloads', 'cta'],
+            array_column($page->json('data.blocks'), 'type'),
+        );
+        $this->assertSame('geo-seo-platform', $page->json('data.blocks.0.data.product'));
+        $this->assertStringContainsString('octopuson-platform mcp', $page->json('data.blocks.0.data.code'));
+        $home = $this->getJson('/api/v1/pages/resolve?locale=en')->assertOk();
+        $this->assertSame('geo-seo-platform', array_column($home->json('data.blocks.1.products'), 'product')[5]);
     }
 
     public function test_the_seed_imports_the_website_content(): void

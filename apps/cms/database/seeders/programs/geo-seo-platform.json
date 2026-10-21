@@ -1,0 +1,1382 @@
+{
+  "key": "geo-seo-platform",
+  "type": "product",
+  "product": "geo-seo-platform",
+  "icon": "radar",
+  "in_header": false,
+  "footer_column": "product",
+  "translations": {
+    "tr": {
+      "slug": "geo-seo-platformu",
+      "title": "OctopusOn GEO-SEO Platform",
+      "nav_title": null,
+      "excerpt": "Alan adı genel bakış, anahtar kelime araştırması, backlink'ler, sıralama takibi, site denetimi ve AI görünürlüğü tek programda; kendi API anahtarlarınızla ya da krediyle.",
+      "seo_title": "Ahrefs ve Semrush Alternatifi: Açık Kaynak SEO ve GEO Platformu",
+      "seo_description": "Açık kaynak SEO ve GEO platformu: anahtar kelime araştırma, backlink analizi, sıralama takibi, site denetimi, AI görünürlüğü. Abonelik yok, veri başına ödeme.",
+      "blocks": [
+        {
+          "id": "xgeotrhero",
+          "type": "hero",
+          "data": {
+            "badge": "Ücretsiz ve açık kaynak · Abonelik yok",
+            "badge_link": "https://github.com/octopusOn/octopusOnPageSEO",
+            "title": "OctopusOn",
+            "highlight": "GEO-SEO Platform",
+            "subtitle": "Hepsi bir arada SEO ve GEO platformu, Ahrefs ve Semrush alternatifi: alan adı genel bakış, anahtar kelime araştırması, backlink'ler, boşluk analizi, sıralama takibi, site denetimi ve ChatGPT, Claude, Gemini, Perplexity ile Google AI Mode'da AI görünürlüğü. Program ücretsizdir; yalnızca kullandığınız veriye, kendi API anahtarlarınızla ya da OctopusOn kredisiyle ödersiniz.",
+            "product": "geo-seo-platform",
+            "download_label": "Ücretsiz indir",
+            "primary_link": "",
+            "secondary_label": "Tarayıcıda aç",
+            "secondary_link": "https://app.octopuson.com",
+            "note": "Windows, macOS, Linux ve web · SEO ve GEO · Kendi API anahtarlarınız ya da kredi",
+            "visual": "screenshot",
+            "image": "@media:screenshot-geo-seo-platform",
+            "code": "octopuson-platform projects\noctopuson-platform call rank_report '{\"project_id\":1}'\noctopuson-platform mcp"
+          }
+        },
+        {
+          "id": "xgeotrfeaturegri",
+          "type": "feature_grid",
+          "data": {
+            "eyebrow": "SEO ve GEO tek yerde",
+            "title": "Araştırma, takip, denetim ve AI görünürlüğü tek platformda",
+            "subtitle": "Bir proje alan adınızı, pazarınızı, rakiplerinizi ve marka adlarınızı tutar; her modül ondan çalışır. Her ücretli istek önce fiyatını gösterir.",
+            "items": [
+              {
+                "icon": "earth",
+                "title": "Alan adı genel bakış",
+                "text": "Her alan adı için Site Explorer: organik anahtar kelimeler, trafik ve trafik değeri, 24 aylık geçmiş, en iyi sayfalar, rakipler ve alt alan adları.",
+                "link": ""
+              },
+              {
+                "icon": "search",
+                "title": "Anahtar kelime araştırma aracı",
+                "text": "Hacim, zorluk (KD), TBM ve niyet; fikirler, ilgili aramalar ve öneriler; canlı SERP, Yandex Wordstat ve konulara ayrılan kelime listeleri.",
+                "link": ""
+              },
+              {
+                "icon": "link",
+                "title": "Backlink analizi",
+                "text": "OA otorite puanıyla (0–100) bağlantı profili; canlı, yeni, kaybedilen ve kırık bağlantılar, atıf yapan alan adları, anchor'lar ve en çok bağlantı alan sayfalar.",
+                "link": ""
+              },
+              {
+                "icon": "git-compare",
+                "title": "Boşluk analizi",
+                "text": "En fazla beş rakibin sıralanıp sizin sıralanmadığınız kelimeler, rakiplerin önde olduğu ortak kelimeler, backlink boşluğu ve çok siteyi yan yana karşılaştırma.",
+                "link": ""
+              },
+              {
+                "icon": "chart-line",
+                "title": "Sıralama takibi (rank tracker)",
+                "text": "Google, Bing ve Yandex'te en fazla 10 yerde, masaüstü ya da mobil, günlük ya da haftalık; görünürlük, rakip payı ve AI Overview'da kaynak gösterilme.",
+                "link": ""
+              },
+              {
+                "icon": "shield-check",
+                "title": "Site denetimi ve GEO hazırlığı",
+                "text": "118 teknik kontrol ve sağlık puanı, ayrıca GEO puanı: robots.txt'te AI botlarının erişimi, llms.txt, yapılandırılmış veri ve alıntılanabilir içerik.",
+                "link": ""
+              },
+              {
+                "icon": "bot",
+                "title": "AI görünürlüğü",
+                "text": "Müşterilerinizin sorularını ChatGPT, Claude, Gemini, Perplexity ve Google AI Mode'a sorun; anılma ve kaynak gösterilme oranını, ses payını ve kaynakları görün.",
+                "link": ""
+              },
+              {
+                "icon": "chart-column-big",
+                "title": "Search Console ve GA4",
+                "text": "Sorgular, sayfalar ve organik oturumlar sıralamalarınız ve son denetimle yan yana: ilk sıralara yakın sorgular, düşük TO ve yamyamlık.",
+                "link": ""
+              },
+              {
+                "icon": "file-text",
+                "title": "Beyaz etiketli raporlar",
+                "text": "Logonuz ve renklerinizle; PDF, Excel ve HTML. Webde salt okunur paylaşım bağlantıları ve planlı e-postalar.",
+                "link": ""
+              },
+              {
+                "icon": "bot-message-square",
+                "title": "AI asistanları ve komut satırı",
+                "text": "Claude, ChatGPT, Cursor gibi asistanlar verilerinizi MCP ile okur; octopuson-platform komutu her işlemi penceresiz çalıştırır.",
+                "link": ""
+              }
+            ]
+          }
+        },
+        {
+          "id": "xgeotrsections",
+          "type": "sections",
+          "data": {
+            "items": [
+              {
+                "anchor": "research",
+                "icon": "search",
+                "title": "Anahtar kelime araştırması, alan adı genel bakış ve backlink'ler",
+                "text": "Projenizin ülkesinde ve dilinde her alan adına ya da kelimeye bakın; getirdiğiniz veriler saklanır.",
+                "bullets": [
+                  "Alan adı genel bakış: organik ve ücretli kelimeler, trafik ve trafik değeri, sıra dağılımı ve 24 aylık geçmiş",
+                  "Organik kelimeler, en iyi sayfalar, organik rakipler ve alt alan adları; bir seferde 100 ila 1.000 satır",
+                  "Anahtar Kelime Gezgini: tek seferde 700 kelimeye kadar, fikirler, sorular, ilgili aramalar, canlı ilk 10 ve Yandex Wordstat",
+                  "Ücretsiz Google ve Yandex otomatik tamamlama; tek sayfanın hedefleyebileceği konulara ayrılan kelime listeleri",
+                  "Backlink'ler: OA otoritesi, canlı, yeni, kaybedilen ve kırık bağlantılar, atıf yapan alan adları, anchor'lar ve 12 ayda kazanılan ve kaybedilen alan adları",
+                  "En fazla 5 rakibe karşı boşluk analizi: eksik kelimeler, rakibin önde olduğu ortak kelimeler ve rakiplere bağlantı verip size vermeyen siteler"
+                ]
+              },
+              {
+                "anchor": "tracking",
+                "icon": "chart-line",
+                "title": "Search Console ve Analytics ile sıralama takibi",
+                "text": "Kelime pozisyonlarını zaman içinde izleyin ve kendi Google verilerinizle yan yana görün.",
+                "bullets": [
+                  "Google, Bing ve Yandex; ülke, dil, cihaz ve şehre göre en fazla 10 yer; en fazla 5.000 kelime",
+                  "Günlük, haftalık ya da elle denetim; webde kimse oturum açık tutmasa da sunucuda çalışır",
+                  "Görünürlük, ortalama sıra, hareket, rakip payı, öne çıkan snippet'ler ve yamyamlık",
+                  "Sonuç sayfasındaki AI Overview'lar ve sitenizi kaynak gösterip göstermedikleri",
+                  "Search Console ve Google Analytics 4: sorgular, sayfalar, cihazlar, ülkeler ve organik oturumlar önceki döneme göre; veri ücreti yok"
+                ]
+              },
+              {
+                "anchor": "audit",
+                "icon": "shield-check",
+                "title": "Site denetimi ve GEO hazırlığı",
+                "text": "Sitenizi tarayın, 118 teknik SEO kontrolünü çalıştırın ve sitenin AI yanıtlarına ne kadar hazır olduğunu ölçün.",
+                "bullets": [
+                  "Sağlık puanı ve GEO hazırlık puanı, ikisi de bir önceki denetime göre",
+                  "robots.txt'te AI arama botları ve AI asistanları: OAI-SearchBot, PerplexityBot, Claude-SearchBot, ChatGPT-User ve diğerleri",
+                  "llms.txt, snippet sınırları, yapılandırılmış veri, Organization ve WebSite şeması, soru biçimli başlıklar ve yeterli içerik",
+                  "Masaüstünde tarama bilgisayarınızda yapılır; 100.000 adrese kadar ve ücretsiz",
+                  "Webde sunucu herkese açık siteleri 5.000 adrese kadar tarar; her ay ilk 1.000 sayfa ücretsizdir"
+                ]
+              },
+              {
+                "anchor": "ai-visibility",
+                "icon": "bot",
+                "title": "ChatGPT, Claude, Gemini, Perplexity ve Google AI Mode'da AI görünürlüğü",
+                "text": "Müşterilerinizin sorduğu soruları yapay zekâ asistanlarına sorun; sizi ne sıklıkla andıklarını ve kaynak gösterdiklerini ölçün.",
+                "bullets": [
+                  "Projede en fazla 200 soru; markanızdan ve takip ettiğiniz kelimelerden ücretsiz öneriler",
+                  "Anılma oranı, kaynak gösterilme oranı, en fazla 10 rakip markaya karşı ses payı, ortalama sıra ve ton",
+                  "Asistanların en çok kaynak gösterdiği alan adları ve kaynak gösterilen sayfalarınız",
+                  "Kendi OpenAI, Anthropic, Gemini ve Perplexity anahtarlarınız ya da DataForSEO üzerinden asistanlar",
+                  "LLM Mentions: alan adınızın geçtiği AI yanıtlarındaki sorular, AI arama hacmiyle"
+                ]
+              },
+              {
+                "anchor": "reports",
+                "icon": "file-text",
+                "title": "Ajanslar için beyaz etiketli raporlar",
+                "text": "Müşterilerinize kendi markanızla, modüllerde zaten bulunan verilerden hazırlanan raporlar gönderin.",
+                "bullets": [
+                  "Şirket adınız, logonuz, vurgu renginiz, web siteniz ve alt bilgi satırınız; OctopusOn yazısı gizlenebilir",
+                  "Sıralamalar, rakipler, Search Console, site denetimi, AI görünürlüğü ve backlink'ler, istediğiniz sırayla",
+                  "Arayüzün dilinden bağımsız olarak Türkçe, İngilizce, Almanca ya da İspanyolca raporlar",
+                  "PDF, Excel ve HTML olarak indirme",
+                  "Webde salt okunur paylaşım bağlantıları ve en fazla 5 alıcıya haftalık ya da aylık e-posta"
+                ]
+              },
+              {
+                "anchor": "assistants",
+                "icon": "terminal",
+                "title": "AI asistanları ve komut satırı",
+                "text": "SEO sorularınızı Claude, ChatGPT ya da Cursor'a sorun; yanıtlar kendi projelerinizden gelsin.",
+                "bullets": [
+                  "Masaüstünde (octopuson-platform mcp) ve webde (kişisel erişim anahtarlarıyla app.octopuson.com/mcp) MCP sunucusu",
+                  "Asistanlar önce saklanan verileri okur; taze veri için fiyatı söyler ve onayınızı bekler",
+                  "Beş hazır beceri (skill): site denetimi, anahtar kelime araştırması, rakip analizi, GEO görünürlüğü ve haftalık SEO koçu",
+                  "octopuson-platform komutu her işlemi JSON alıp JSON döndürerek çalıştırır; betikler ve zamanlanmış işler için"
+                ]
+              }
+            ]
+          }
+        },
+        {
+          "id": "xgeotrcreditcalc",
+          "type": "credit_calculator",
+          "data": {
+            "eyebrow": "Kullandıkça öde · OctopusOn kredisi",
+            "title": "Verilerinizin kaç kredi tutacağını hesaplayın",
+            "text": "Program ücretsizdir ve aboneliği yoktur. Yalnızca sağlayıcılardan gelen veri ücretlidir: kendi DataForSEO ve AI asistanı anahtarlarınızla sağlayıcılara doğrudan ödersiniz ya da tek bağlantıyla ön ödemeli OctopusOn kredisi kullanırsınız. Daha önce getirilen veriler güncel kaldıkça ücretsiz yeniden kullanılır.",
+            "credit_usd": 0.001,
+            "items": [
+              {
+                "label": "Alan adı genel bakış (özet)",
+                "unit": "istek",
+                "credits": 16.4,
+                "quantity": 20,
+                "max": 2000
+              },
+              {
+                "label": "Organik anahtar kelimeler ya da kelime fikirleri, 100 satır",
+                "unit": "istek",
+                "credits": 32.4,
+                "quantity": 20,
+                "max": 2000
+              },
+              {
+                "label": "Backlink profili özeti",
+                "unit": "istek",
+                "credits": 32.4,
+                "quantity": 10,
+                "max": 2000
+              },
+              {
+                "label": "Backlink listesi, 100 satır",
+                "unit": "istek",
+                "credits": 37.3,
+                "quantity": 5,
+                "max": 2000
+              },
+              {
+                "label": "Sıralama denetimi, Google ilk 20 (varsayılan)",
+                "unit": "kelime denetimi",
+                "credits": 5.4,
+                "quantity": 1000,
+                "max": 100000
+              },
+              {
+                "label": "AI Overview ile sıralama denetimi, ilk 20",
+                "unit": "kelime denetimi",
+                "credits": 8.1,
+                "quantity": 0,
+                "max": 100000
+              },
+              {
+                "label": "Google AI Mode yanıtı",
+                "unit": "soru",
+                "credits": 5.4,
+                "quantity": 50,
+                "max": 20000
+              },
+              {
+                "label": "LLM Mentions özeti",
+                "unit": "istek",
+                "credits": 135,
+                "quantity": 0,
+                "max": 500
+              },
+              {
+                "label": "Aylık ücretsiz 1.000 sayfadan sonra sunucu taraması (web)",
+                "unit": "1.000 sayfa",
+                "credits": 200,
+                "quantity": 0,
+                "max": 1000
+              },
+              {
+                "label": "Aylık ücretsiz 30 PDF'ten sonra PDF rapor (web)",
+                "unit": "PDF",
+                "credits": 20,
+                "quantity": 0,
+                "max": 1000
+              }
+            ],
+            "note": "Sağlayıcıların liste fiyatlarıyla tahmindir. Kesin fiyat her istekten önce gösterilir; aylık bütçeyi aşacak istek yapılmaz. Kendi anahtarlarınızla kredi kullanmazsınız.",
+            "button_label": "Kredi al",
+            "link": ""
+          }
+        },
+        {
+          "id": "xgeotrfaq",
+          "type": "faq",
+          "data": {
+            "title": "GEO-SEO Platform hakkında sorular",
+            "items": [
+              {
+                "question": "Ahrefs ve Semrush'a alternatif mi?",
+                "answer": "Aynı temel işleri yapar: alan adı genel bakış, anahtar kelime araştırması, backlink'ler, boşluk analizi, sıralama takibi ve site denetimi; üstüne AI görünürlüğü ve GEO kontrolleri. Aylık abonelik yerine yalnızca getirdiğiniz veriye, her istekten önce gösterilen fiyatla ödersiniz."
+              },
+              {
+                "question": "GEO-SEO Platform ücretsiz mi?",
+                "answer": "Program ücretsiz ve açık kaynaktır (MIT ya da Apache-2.0), abonelik yoktur. Sağlayıcılardan gelen veri istek başına ücretlidir: kendi API anahtarlarınızı girip sağlayıcıya doğrudan ödersiniz ya da OctopusOn kredisi kullanırsınız. Search Console, Google Analytics, otomatik tamamlama, konulara ayırma ve masaüstündeki site denetimi ücretsizdir."
+              },
+              {
+                "question": "Veriler nereden geliyor?",
+                "answer": "Çoğunlukla DataForSEO'dan: alan adı, anahtar kelime, backlink, sonuç sayfası ve LLM Mentions verileri. AI görünürlüğü asistanları kendi OpenAI, Anthropic, Google Gemini ya da Perplexity anahtarınızla veya DataForSEO üzerinden sorar. Search Console ve Analytics kendi Google hesabınızdan okunur."
+              },
+              {
+                "question": "Masaüstü programıyla web sürümü arasındaki fark ne?",
+                "answer": "İkisinde de aynı modüller var. Masaüstü programı Windows, macOS ve Linux'ta çalışır, verilerinizi bilgisayarınızda tutar ve sitenizi orada ücretsiz tarar. app.octopuson.com'daki web sürümü my.octopuson.com hesabınızla açılır, verileri OctopusOn sunucusunda hesabınıza özel klasörde saklar, planlı işleri sunucuda çalıştırır; paylaşım bağlantıları ve rapor e-postaları da sunar. Sunucu taraması ayda 1.000 sayfaya, PDF rapor ayda 30'a kadar ücretsizdir; sonrası krediden düşer."
+              },
+              {
+                "question": "AI görünürlüğü (GEO) takibi nasıl çalışır?",
+                "answer": "Müşterilerinizin sorabileceği soruları eklersiniz. Platform bunları ChatGPT, Claude, Gemini, Perplexity ve Google AI Mode'a sorar ve her yanıtı markanız ve rakipleriniz için okur: anılıyor musunuz, siteniz kaynak gösteriliyor mu, ses payınız ne, ton nasıl. Ölçümler haftalık ya da aylık tekrarlanabilir."
+              },
+              {
+                "question": "Bir AI asistanı kredimi kendi başına harcayabilir mi?",
+                "answer": "Hayır. Asistanlar MCP üzerinden önce elinizdeki verileri okur. Taze veri gerekirse fiyatı kredi ve dolar olarak söyler ve onayınızı bekler; aylık bütçeleriniz de geçerlidir."
+              },
+              {
+                "question": "Sıralama takibi hangi arama motorlarını destekliyor?",
+                "answer": "Google, Bing ve Yandex; proje başına en fazla 10 yerde: ülke, dil, masaüstü ya da mobil ve isterseniz şehir. Denetimler günlük, haftalık ya da istediğinizde çalışır; Google'da AI Overview'ları ve sizi kaynak gösterip göstermediklerini de kaydedebilir."
+              },
+              {
+                "question": "Müşterilere beyaz etiketli rapor gönderebilir miyim?",
+                "answer": "Evet. Logonuzu, renklerinizi ve şirket adınızı bir kez girin, bölümleri seçin ve PDF, Excel ya da HTML indirin. Webde salt okunur bağlantı paylaşabilir ya da raporu haftalık veya aylık e-postayla gönderebilirsiniz. Raporlar elinizdeki verileri kullanır, yeni veri satın almaz."
+              }
+            ]
+          }
+        },
+        {
+          "id": "xgeotrcode",
+          "type": "code",
+          "data": {
+            "title": "Komut satırı ve AI asistanları",
+            "text": "Projelerinizi listeleyin, herhangi bir işlemi JSON ile çalıştırın ya da AI asistanınızın bağlanacağı MCP sunucusunu başlatın.",
+            "code": "octopuson-platform projects\noctopuson-platform call rank_report '{\"project_id\":1}'\noctopuson-platform mcp",
+            "copy": true
+          }
+        },
+        {
+          "id": "xgeotrproductdow",
+          "type": "product_downloads",
+          "data": {
+            "link_label": "Tüm indirmeler",
+            "link": "/tr/indir"
+          }
+        },
+        {
+          "id": "xgeotrcta",
+          "type": "cta",
+          "data": {
+            "title": "SEO ve GEO işinizi tek yerde toplayın",
+            "text": "OctopusOn GEO-SEO Platform'u Windows, macOS ya da Linux için indirin veya app.octopuson.com'da açın. Program ücretsizdir; yalnızca kullandığınız veriye ödersiniz.",
+            "button_label": "Ücretsiz indir",
+            "action": "download",
+            "product": "geo-seo-platform",
+            "link": ""
+          }
+        }
+      ]
+    },
+    "en": {
+      "slug": "geo-seo-platform",
+      "title": "OctopusOn GEO-SEO Platform",
+      "nav_title": null,
+      "excerpt": "Domain overview, keyword research, backlinks, rank tracking, site audits and AI visibility in one program, on your own API keys or credits.",
+      "seo_title": "Open-Source Ahrefs & Semrush Alternative for SEO and GEO",
+      "seo_description": "Open-source SEO and GEO platform: keyword research tool, backlink checker, rank tracker, site audit and AI visibility. No subscription; pay only for data.",
+      "blocks": [
+        {
+          "id": "xgeoenhero",
+          "type": "hero",
+          "data": {
+            "badge": "Free and open source · No subscription",
+            "badge_link": "https://github.com/octopusOn/octopusOnPageSEO",
+            "title": "OctopusOn",
+            "highlight": "GEO-SEO Platform",
+            "subtitle": "An all-in-one SEO and GEO platform and an alternative to Ahrefs and Semrush: domain overview, keyword research, backlinks, gap analysis, rank tracking, site audits and AI visibility in ChatGPT, Claude, Gemini, Perplexity and Google AI Mode. The program is free; you pay only for the data you use, with your own API keys or OctopusOn credits.",
+            "product": "geo-seo-platform",
+            "download_label": "Download free",
+            "primary_link": "",
+            "secondary_label": "Open in your browser",
+            "secondary_link": "https://app.octopuson.com",
+            "note": "Windows, macOS, Linux & web · SEO and GEO · Your own API keys or credits",
+            "visual": "screenshot",
+            "image": "@media:screenshot-geo-seo-platform",
+            "code": "octopuson-platform projects\noctopuson-platform call rank_report '{\"project_id\":1}'\noctopuson-platform mcp"
+          }
+        },
+        {
+          "id": "xgeoenfeaturegri",
+          "type": "feature_grid",
+          "data": {
+            "eyebrow": "SEO and GEO in one place",
+            "title": "Research, tracking, audits and AI visibility in one platform",
+            "subtitle": "A project holds your domain, market, competitors and brand names, and every module works from it. Every paid request shows its price first.",
+            "items": [
+              {
+                "icon": "earth",
+                "title": "Domain overview",
+                "text": "Site Explorer for any domain: organic keywords, traffic and traffic value, 24 months of history, top pages, competitors and subdomains.",
+                "link": ""
+              },
+              {
+                "icon": "search",
+                "title": "Keyword research tool",
+                "text": "Volume, difficulty, CPC and intent; ideas, related searches and suggestions; the live SERP, Yandex Wordstat and keyword lists grouped into topics.",
+                "link": ""
+              },
+              {
+                "icon": "link",
+                "title": "Backlink checker",
+                "text": "A link profile with an authority score (OA, 0–100); live, new, lost and broken links, referring domains, anchors and top linked pages.",
+                "link": ""
+              },
+              {
+                "icon": "git-compare",
+                "title": "Gap analysis",
+                "text": "Keywords up to five competitors rank for and you don't, shared keywords where they beat you, link gaps and many sites side by side.",
+                "link": ""
+              },
+              {
+                "icon": "chart-line",
+                "title": "Rank tracker",
+                "text": "Google, Bing and Yandex in up to 10 locations, desktop or mobile, daily or weekly, with visibility, competitor share and AI Overview citations.",
+                "link": ""
+              },
+              {
+                "icon": "shield-check",
+                "title": "Site audit and GEO readiness",
+                "text": "118 technical checks and a health score, plus a GEO score: AI crawler access in robots.txt, llms.txt, structured data and citable content.",
+                "link": ""
+              },
+              {
+                "icon": "bot",
+                "title": "AI visibility",
+                "text": "Ask ChatGPT, Claude, Gemini, Perplexity and Google AI Mode your customers' questions; see mention and citation rates, share of voice and cited sources.",
+                "link": ""
+              },
+              {
+                "icon": "chart-column-big",
+                "title": "Search Console and GA4",
+                "text": "Queries, pages and organic sessions next to your rankings and the latest audit: queries close to the top, low CTR and cannibalisation.",
+                "link": ""
+              },
+              {
+                "icon": "file-text",
+                "title": "White-label reports",
+                "text": "Your logo and colours; PDF, Excel and HTML. On the web, read-only share links and scheduled e-mails.",
+                "link": ""
+              },
+              {
+                "icon": "bot-message-square",
+                "title": "AI assistants and command line",
+                "text": "Claude, ChatGPT, Cursor and other assistants read your data through MCP; the octopuson-platform command runs everything without a window.",
+                "link": ""
+              }
+            ]
+          }
+        },
+        {
+          "id": "xgeoensections",
+          "type": "sections",
+          "data": {
+            "items": [
+              {
+                "anchor": "research",
+                "icon": "search",
+                "title": "Keyword research, domain overview and backlinks",
+                "text": "Look at any domain or keyword in your project's country and language, and keep what you fetch.",
+                "bullets": [
+                  "Domain overview: organic and paid keywords, traffic and traffic value, position spread and 24 months of history",
+                  "Organic keywords, top pages, organic competitors and subdomains, 100 to 1,000 rows at a time",
+                  "Keyword Explorer: up to 700 keywords at once, ideas, questions, related searches, the live top 10 and Yandex Wordstat",
+                  "Free Google and Yandex autocomplete, and keyword lists grouped into topics one page can target",
+                  "Backlinks: OA authority, live, new, lost and broken links, referring domains, anchors, and referring domains won and lost over 12 months",
+                  "Gap analysis against up to 5 competitors: missing keywords, shared keywords where they rank higher, and sites that link to them but not to you"
+                ]
+              },
+              {
+                "anchor": "tracking",
+                "icon": "chart-line",
+                "title": "Rank tracking with Search Console and Analytics",
+                "text": "Follow keyword positions over time and see them next to your own Google data.",
+                "bullets": [
+                  "Google, Bing and Yandex; up to 10 locations by country, language, device and city; up to 5,000 keywords",
+                  "Daily, weekly or manual checks; on the web they run on the server even when nobody is signed in",
+                  "Visibility, average position, movement, competitor share, featured snippets and cannibalisation",
+                  "AI Overviews on the result page, and whether they cite your site",
+                  "Search Console and Google Analytics 4: queries, pages, devices, countries and organic sessions against the period before, with no data cost"
+                ]
+              },
+              {
+                "anchor": "audit",
+                "icon": "shield-check",
+                "title": "Site audit and GEO readiness",
+                "text": "Crawl your site, run 118 technical SEO checks and measure how ready it is for AI answers.",
+                "bullets": [
+                  "A health score and a GEO readiness score, each compared with the previous audit",
+                  "AI search crawlers and AI assistants in robots.txt: OAI-SearchBot, PerplexityBot, Claude-SearchBot, ChatGPT-User and more",
+                  "llms.txt, snippet limits, structured data, Organization and WebSite schema, question headings and substantial content",
+                  "On the desktop the crawl runs on your computer, up to 100,000 URLs, at no cost",
+                  "On the web the server crawls public sites up to 5,000 URLs; the first 1,000 pages each month are free"
+                ]
+              },
+              {
+                "anchor": "ai-visibility",
+                "icon": "bot",
+                "title": "AI visibility in ChatGPT, Claude, Gemini, Perplexity and Google AI Mode",
+                "text": "Ask AI assistants the questions your customers ask, and measure how often they name and cite you.",
+                "bullets": [
+                  "Up to 200 questions per project, with free suggestions from your brand and tracked keywords",
+                  "Mention rate, citation rate, share of voice against up to 10 rival brands, average place and tone",
+                  "The domains assistants cite most, and which of your pages they cite",
+                  "Your own OpenAI, Anthropic, Gemini and Perplexity keys, or the assistants through DataForSEO",
+                  "LLM Mentions: questions whose AI answers mention your domain, with their AI search volume"
+                ]
+              },
+              {
+                "anchor": "reports",
+                "icon": "file-text",
+                "title": "White-label reports for agencies",
+                "text": "Send clients reports with your brand, drawn from data the modules already hold.",
+                "bullets": [
+                  "Your company name, logo, accent colour, website and footer line; the OctopusOn line can be hidden",
+                  "Rankings, competitors, Search Console, site audit, AI visibility and backlinks, in the order you choose",
+                  "Reports in Turkish, English, German or Spanish, whatever the interface language",
+                  "PDF, Excel and HTML downloads",
+                  "On the web, read-only share links and weekly or monthly e-mails to up to 5 recipients"
+                ]
+              },
+              {
+                "anchor": "assistants",
+                "icon": "terminal",
+                "title": "AI assistants and the command line",
+                "text": "Ask your SEO questions in Claude, ChatGPT or Cursor and get answers from your own projects.",
+                "bullets": [
+                  "An MCP server on the desktop (octopuson-platform mcp) and on the web (app.octopuson.com/mcp with personal access tokens)",
+                  "Assistants read kept data first; for fresh data they state the price and wait for your approval",
+                  "Five ready agent skills: site audit, keyword research, competitor analysis, GEO visibility and a weekly SEO coach",
+                  "The octopuson-platform command runs any command with JSON in and out, for scripts and scheduled jobs"
+                ]
+              }
+            ]
+          }
+        },
+        {
+          "id": "xgeoencreditcalc",
+          "type": "credit_calculator",
+          "data": {
+            "eyebrow": "Pay as you go · OctopusOn credits",
+            "title": "Estimate what your data costs",
+            "text": "The program is free and has no subscription. Only data from providers costs money: with your own DataForSEO and AI assistant keys you pay the providers directly, or you use prepaid OctopusOn credits through one connection. Data already fetched is reused free while it is fresh.",
+            "credit_usd": 0.001,
+            "items": [
+              {
+                "label": "Domain overview (summary)",
+                "unit": "request",
+                "credits": 16.4,
+                "quantity": 20,
+                "max": 2000
+              },
+              {
+                "label": "Organic keywords or keyword ideas, 100 rows",
+                "unit": "request",
+                "credits": 32.4,
+                "quantity": 20,
+                "max": 2000
+              },
+              {
+                "label": "Backlink profile summary",
+                "unit": "request",
+                "credits": 32.4,
+                "quantity": 10,
+                "max": 2000
+              },
+              {
+                "label": "Backlink list, 100 rows",
+                "unit": "request",
+                "credits": 37.3,
+                "quantity": 5,
+                "max": 2000
+              },
+              {
+                "label": "Rank check, Google top 20 (default)",
+                "unit": "keyword check",
+                "credits": 5.4,
+                "quantity": 1000,
+                "max": 100000
+              },
+              {
+                "label": "Rank check with AI Overview, top 20",
+                "unit": "keyword check",
+                "credits": 8.1,
+                "quantity": 0,
+                "max": 100000
+              },
+              {
+                "label": "Google AI Mode answer",
+                "unit": "question",
+                "credits": 5.4,
+                "quantity": 50,
+                "max": 20000
+              },
+              {
+                "label": "LLM Mentions summary",
+                "unit": "request",
+                "credits": 135,
+                "quantity": 0,
+                "max": 500
+              },
+              {
+                "label": "Server crawl beyond the free 1,000 pages a month (web)",
+                "unit": "1,000 pages",
+                "credits": 200,
+                "quantity": 0,
+                "max": 1000
+              },
+              {
+                "label": "PDF report beyond the free 30 a month (web)",
+                "unit": "PDF",
+                "credits": 20,
+                "quantity": 0,
+                "max": 1000
+              }
+            ],
+            "note": "Estimates at the providers' list prices. The exact price is shown before every request, and requests that would pass your monthly budget are not made. With your own keys you use no credits.",
+            "button_label": "Buy credits",
+            "link": ""
+          }
+        },
+        {
+          "id": "xgeoenfaq",
+          "type": "faq",
+          "data": {
+            "title": "GEO-SEO Platform questions",
+            "items": [
+              {
+                "question": "Is it an alternative to Ahrefs and Semrush?",
+                "answer": "It covers the same core work: domain overview, keyword research, backlinks, gap analysis, rank tracking and site audits, plus AI visibility and GEO checks. Instead of a monthly subscription, you pay only for the data you fetch, at the price shown before each request."
+              },
+              {
+                "question": "Is the GEO-SEO Platform free?",
+                "answer": "The program is free and open source (MIT or Apache-2.0), with no subscription. Data from providers is paid per request: enter your own API keys and pay the provider directly, or use OctopusOn credits. Search Console, Google Analytics, autocomplete, topic grouping and site audits on the desktop cost nothing."
+              },
+              {
+                "question": "Where does the data come from?",
+                "answer": "Mainly from DataForSEO: domain, keyword, backlink, result page and LLM Mentions data. AI visibility asks the assistants with your own OpenAI, Anthropic, Google Gemini or Perplexity key, or through DataForSEO. Search Console and Analytics are read from your own Google account."
+              },
+              {
+                "question": "What is the difference between the desktop program and the web version?",
+                "answer": "Both have the same modules. The desktop program runs on Windows, macOS and Linux, keeps your data on your computer and crawls your site there for free. The web version at app.octopuson.com opens with your my.octopuson.com account, keeps data in your account's own folder on OctopusOn's server, runs scheduled work on the server and adds share links and report e-mails. Server crawls are free up to 1,000 pages a month and PDF reports up to 30 a month; beyond that they use credits."
+              },
+              {
+                "question": "How does AI visibility (GEO) tracking work?",
+                "answer": "You add the questions your customers might ask. The platform asks them to ChatGPT, Claude, Gemini, Perplexity and Google AI Mode and reads every answer for your brand and your rivals: whether you are mentioned, whether your site is cited, your share of voice and the tone. Runs can repeat weekly or monthly."
+              },
+              {
+                "question": "Can an AI assistant spend my credits on its own?",
+                "answer": "No. Through MCP, assistants first read the data you already have. When fresh data is needed, they tell you the price in credits and dollars and wait for your approval, and your monthly budgets still apply."
+              },
+              {
+                "question": "Which search engines does the rank tracker support?",
+                "answer": "Google, Bing and Yandex, in up to 10 locations per project: country, language, desktop or mobile, and optionally a city. Checks run daily, weekly or when you ask, and on Google they can also record AI Overviews and whether they cite you."
+              },
+              {
+                "question": "Can I send white-label reports to clients?",
+                "answer": "Yes. Add your logo, colours and company name once, choose the sections and download PDF, Excel or HTML. On the web you can also share a read-only link or e-mail the report weekly or monthly. Reports use the data you already have and never buy new data."
+              }
+            ]
+          }
+        },
+        {
+          "id": "xgeoencode",
+          "type": "code",
+          "data": {
+            "title": "Command line and AI assistants",
+            "text": "List your projects, run any command with JSON in and out, or start the MCP server your AI assistant connects to.",
+            "code": "octopuson-platform projects\noctopuson-platform call rank_report '{\"project_id\":1}'\noctopuson-platform mcp",
+            "copy": true
+          }
+        },
+        {
+          "id": "xgeoenproductdow",
+          "type": "product_downloads",
+          "data": {
+            "link_label": "All downloads",
+            "link": "/en/download"
+          }
+        },
+        {
+          "id": "xgeoencta",
+          "type": "cta",
+          "data": {
+            "title": "Bring your SEO and GEO work into one place",
+            "text": "Download OctopusOn GEO-SEO Platform for Windows, macOS or Linux, or open it at app.octopuson.com. The program is free; you pay only for the data you use.",
+            "button_label": "Download free",
+            "action": "download",
+            "product": "geo-seo-platform",
+            "link": ""
+          }
+        }
+      ]
+    },
+    "de": {
+      "slug": "geo-seo-plattform",
+      "title": "OctopusOn GEO-SEO Platform",
+      "nav_title": null,
+      "excerpt": "Domain-Übersicht, Keyword-Recherche, Backlinks, Rank Tracking, Site-Audits und KI-Sichtbarkeit in einem Programm, mit eigenen API-Schlüsseln oder Credits.",
+      "seo_title": "Ahrefs- & Semrush-Alternative für SEO und GEO, Open Source",
+      "seo_description": "Open-Source-Plattform für SEO und GEO: Keyword-Recherche, Backlink Checker, Rank Tracker, Site-Audit, KI-Sichtbarkeit. Kein Abo, Sie zahlen nur genutzte Daten.",
+      "blocks": [
+        {
+          "id": "xgeodehero",
+          "type": "hero",
+          "data": {
+            "badge": "Kostenlos und Open Source · Kein Abo",
+            "badge_link": "https://github.com/octopusOn/octopusOnPageSEO",
+            "title": "OctopusOn",
+            "highlight": "GEO-SEO Platform",
+            "subtitle": "Eine All-in-one-Plattform für SEO und GEO und eine Alternative zu Ahrefs und Semrush: Domain-Übersicht, Keyword-Recherche, Backlinks, Gap-Analyse, Rank Tracking, Site-Audits und KI-Sichtbarkeit in ChatGPT, Claude, Gemini, Perplexity und Google AI Mode. Das Programm ist kostenlos; Sie zahlen nur für die Daten, die Sie nutzen – mit eigenen API-Schlüsseln oder OctopusOn-Credits.",
+            "product": "geo-seo-platform",
+            "download_label": "Kostenlos herunterladen",
+            "primary_link": "",
+            "secondary_label": "Im Browser öffnen",
+            "secondary_link": "https://app.octopuson.com",
+            "note": "Windows, macOS, Linux & Web · SEO und GEO · Eigene API-Schlüssel oder Credits",
+            "visual": "screenshot",
+            "image": "@media:screenshot-geo-seo-platform",
+            "code": "octopuson-platform projects\noctopuson-platform call rank_report '{\"project_id\":1}'\noctopuson-platform mcp"
+          }
+        },
+        {
+          "id": "xgeodefeaturegri",
+          "type": "feature_grid",
+          "data": {
+            "eyebrow": "SEO und GEO an einem Ort",
+            "title": "Recherche, Tracking, Audits und KI-Sichtbarkeit in einer Plattform",
+            "subtitle": "Ein Projekt enthält Ihre Domain, Ihren Markt, Ihre Wettbewerber und Markennamen; jedes Modul arbeitet damit. Jede kostenpflichtige Anfrage zeigt zuerst ihren Preis.",
+            "items": [
+              {
+                "icon": "earth",
+                "title": "Domain-Übersicht",
+                "text": "Site Explorer für jede Domain: organische Keywords, Traffic und Traffic-Wert, 24 Monate Verlauf, Top-Seiten, Wettbewerber und Subdomains.",
+                "link": ""
+              },
+              {
+                "icon": "search",
+                "title": "Keyword-Recherche Tool",
+                "text": "Suchvolumen, Schwierigkeit, CPC und Suchintention; Ideen, verwandte Suchen und Vorschläge; die Live-SERP, Yandex Wordstat und Keyword-Listen, nach Themen gruppiert.",
+                "link": ""
+              },
+              {
+                "icon": "link",
+                "title": "Backlink Checker",
+                "text": "Ein Linkprofil mit Autoritätswert (OA, 0–100); aktive, neue, verlorene und defekte Links, verweisende Domains, Ankertexte und meistverlinkte Seiten.",
+                "link": ""
+              },
+              {
+                "icon": "git-compare",
+                "title": "Gap-Analyse",
+                "text": "Keywords, für die bis zu fünf Wettbewerber ranken und Sie nicht, gemeinsame Keywords, bei denen sie vorn liegen, Link-Gaps und viele Websites im Vergleich.",
+                "link": ""
+              },
+              {
+                "icon": "chart-line",
+                "title": "Rank Tracker",
+                "text": "Google, Bing und Yandex an bis zu 10 Standorten, Desktop oder Mobil, täglich oder wöchentlich, mit Sichtbarkeit, Wettbewerberanteil und Zitierungen in AI Overviews.",
+                "link": ""
+              },
+              {
+                "icon": "shield-check",
+                "title": "Site-Audit und GEO-Bereitschaft",
+                "text": "118 technische Prüfungen und ein Health Score, dazu ein GEO-Score: Zugriff von KI-Crawlern in robots.txt, llms.txt, strukturierte Daten und zitierfähige Inhalte.",
+                "link": ""
+              },
+              {
+                "icon": "bot",
+                "title": "KI-Sichtbarkeit",
+                "text": "Stellen Sie ChatGPT, Claude, Gemini, Perplexity und Google AI Mode die Fragen Ihrer Kunden; sehen Sie Erwähnungs- und Zitierrate, Share of Voice und zitierte Quellen.",
+                "link": ""
+              },
+              {
+                "icon": "chart-column-big",
+                "title": "Search Console und GA4",
+                "text": "Suchanfragen, Seiten und organische Sitzungen neben Ihren Rankings und dem letzten Audit: Anfragen knapp unter den Top-Positionen, niedrige CTR und Kannibalisierung.",
+                "link": ""
+              },
+              {
+                "icon": "file-text",
+                "title": "White-Label-Berichte",
+                "text": "Ihr Logo und Ihre Farben; PDF, Excel und HTML. Im Web schreibgeschützte Freigabelinks und geplante E-Mails.",
+                "link": ""
+              },
+              {
+                "icon": "bot-message-square",
+                "title": "KI-Assistenten und Kommandozeile",
+                "text": "Claude, ChatGPT, Cursor und andere Assistenten lesen Ihre Daten über MCP; der Befehl octopuson-platform führt alles ohne Fenster aus.",
+                "link": ""
+              }
+            ]
+          }
+        },
+        {
+          "id": "xgeodesections",
+          "type": "sections",
+          "data": {
+            "items": [
+              {
+                "anchor": "research",
+                "icon": "search",
+                "title": "Keyword-Recherche, Domain-Übersicht und Backlinks",
+                "text": "Analysieren Sie jede Domain und jedes Keyword im Land und in der Sprache Ihres Projekts; abgerufene Daten bleiben gespeichert.",
+                "bullets": [
+                  "Domain-Übersicht: organische und bezahlte Keywords, Traffic und Traffic-Wert, Positionsverteilung und 24 Monate Verlauf",
+                  "Organische Keywords, Top-Seiten, organische Wettbewerber und Subdomains, 100 bis 1.000 Zeilen auf einmal",
+                  "Keyword Explorer: bis zu 700 Keywords auf einmal, Ideen, Fragen, verwandte Suchen, die aktuellen Top 10 und Yandex Wordstat",
+                  "Kostenlose Autovervollständigung von Google und Yandex und Keyword-Listen, gruppiert in Themen, die je eine Seite abdecken kann",
+                  "Backlinks: OA-Autorität, aktive, neue, verlorene und defekte Links, verweisende Domains, Ankertexte sowie gewonnene und verlorene Domains über 12 Monate",
+                  "Gap-Analyse gegen bis zu 5 Wettbewerber: fehlende Keywords, gemeinsame Keywords, bei denen sie höher ranken, und Websites, die auf sie verlinken, aber nicht auf Sie"
+                ]
+              },
+              {
+                "anchor": "tracking",
+                "icon": "chart-line",
+                "title": "Rank Tracking mit Search Console und Analytics",
+                "text": "Verfolgen Sie Keyword-Positionen im Zeitverlauf und sehen Sie sie neben Ihren eigenen Google-Daten.",
+                "bullets": [
+                  "Google, Bing und Yandex; bis zu 10 Standorte nach Land, Sprache, Gerät und Stadt; bis zu 5.000 Keywords",
+                  "Tägliche, wöchentliche oder manuelle Prüfungen; im Web laufen sie auf dem Server, auch wenn niemand angemeldet ist",
+                  "Sichtbarkeit, durchschnittliche Position, Bewegungen, Wettbewerberanteil, Featured Snippets und Kannibalisierung",
+                  "AI Overviews auf der Ergebnisseite und ob sie Ihre Website zitieren",
+                  "Search Console und Google Analytics 4: Suchanfragen, Seiten, Geräte, Länder und organische Sitzungen im Vergleich zum Vorzeitraum, ohne Datenkosten"
+                ]
+              },
+              {
+                "anchor": "audit",
+                "icon": "shield-check",
+                "title": "Site-Audit und GEO-Bereitschaft",
+                "text": "Crawlen Sie Ihre Website, führen Sie 118 technische SEO-Prüfungen aus und messen Sie, wie bereit sie für KI-Antworten ist.",
+                "bullets": [
+                  "Health Score und GEO-Score, jeweils im Vergleich zum vorigen Audit",
+                  "KI-Such-Crawler und KI-Assistenten in robots.txt: OAI-SearchBot, PerplexityBot, Claude-SearchBot, ChatGPT-User und weitere",
+                  "llms.txt, Snippet-Grenzen, strukturierte Daten, Organization- und WebSite-Schema, Fragen als Überschriften und ausreichend Inhalt",
+                  "Auf dem Desktop läuft der Crawl auf Ihrem Computer, bis zu 100.000 URLs, kostenlos",
+                  "Im Web crawlt der Server öffentliche Websites bis zu 5.000 URLs; die ersten 1.000 Seiten im Monat sind kostenlos"
+                ]
+              },
+              {
+                "anchor": "ai-visibility",
+                "icon": "bot",
+                "title": "KI-Sichtbarkeit in ChatGPT, Claude, Gemini, Perplexity und Google AI Mode",
+                "text": "Stellen Sie KI-Assistenten die Fragen Ihrer Kunden und messen Sie, wie oft sie Sie nennen und zitieren.",
+                "bullets": [
+                  "Bis zu 200 Fragen pro Projekt, mit kostenlosen Vorschlägen aus Ihrer Marke und Ihren verfolgten Keywords",
+                  "Erwähnungsrate, Zitierrate, Share of Voice gegenüber bis zu 10 konkurrierenden Marken, durchschnittliche Platzierung und Tonalität",
+                  "Die Domains, die Assistenten am häufigsten zitieren, und welche Ihrer Seiten sie zitieren",
+                  "Eigene Schlüssel für OpenAI, Anthropic, Gemini und Perplexity oder die Assistenten über DataForSEO",
+                  "LLM Mentions: Fragen, deren KI-Antworten Ihre Domain nennen, mit ihrem KI-Suchvolumen"
+                ]
+              },
+              {
+                "anchor": "reports",
+                "icon": "file-text",
+                "title": "White-Label-Berichte für Agenturen",
+                "text": "Senden Sie Kunden Berichte mit Ihrer Marke, erstellt aus den Daten, die in den Modulen bereits vorliegen.",
+                "bullets": [
+                  "Firmenname, Logo, Akzentfarbe, Website und Fußzeile; der OctopusOn-Hinweis lässt sich ausblenden",
+                  "Rankings, Wettbewerber, Search Console, Site-Audit, KI-Sichtbarkeit und Backlinks in der Reihenfolge Ihrer Wahl",
+                  "Berichte auf Türkisch, Englisch, Deutsch oder Spanisch, unabhängig von der Sprache der Oberfläche",
+                  "Download als PDF, Excel und HTML",
+                  "Im Web schreibgeschützte Freigabelinks und wöchentliche oder monatliche E-Mails an bis zu 5 Empfänger"
+                ]
+              },
+              {
+                "anchor": "assistants",
+                "icon": "terminal",
+                "title": "KI-Assistenten und Kommandozeile",
+                "text": "Stellen Sie Ihre SEO-Fragen in Claude, ChatGPT oder Cursor und erhalten Sie Antworten aus Ihren eigenen Projekten.",
+                "bullets": [
+                  "Ein MCP-Server auf dem Desktop (octopuson-platform mcp) und im Web (app.octopuson.com/mcp mit persönlichen Zugriffstoken)",
+                  "Assistenten lesen zuerst gespeicherte Daten; für frische Daten nennen sie den Preis und warten auf Ihre Freigabe",
+                  "Fünf fertige Agent Skills: Site-Audit, Keyword-Recherche, Wettbewerbsanalyse, GEO-Sichtbarkeit und ein wöchentlicher SEO-Coach",
+                  "Der Befehl octopuson-platform führt jeden Befehl mit JSON als Ein- und Ausgabe aus, für Skripte und geplante Aufgaben"
+                ]
+              }
+            ]
+          }
+        },
+        {
+          "id": "xgeodecreditcalc",
+          "type": "credit_calculator",
+          "data": {
+            "eyebrow": "Nach Verbrauch · OctopusOn-Credits",
+            "title": "Schätzen Sie, was Ihre Daten kosten",
+            "text": "Das Programm ist kostenlos und ohne Abo. Nur Daten von Anbietern kosten Geld: Mit eigenen Schlüsseln für DataForSEO und KI-Assistenten zahlen Sie die Anbieter direkt, oder Sie nutzen Prepaid-Credits von OctopusOn über eine einzige Verbindung. Bereits abgerufene Daten werden kostenlos wiederverwendet, solange sie aktuell sind.",
+            "credit_usd": 0.001,
+            "items": [
+              {
+                "label": "Domain-Übersicht (Zusammenfassung)",
+                "unit": "Anfrage",
+                "credits": 16.4,
+                "quantity": 20,
+                "max": 2000
+              },
+              {
+                "label": "Organische Keywords oder Keyword-Ideen, 100 Zeilen",
+                "unit": "Anfrage",
+                "credits": 32.4,
+                "quantity": 20,
+                "max": 2000
+              },
+              {
+                "label": "Backlink-Profil (Zusammenfassung)",
+                "unit": "Anfrage",
+                "credits": 32.4,
+                "quantity": 10,
+                "max": 2000
+              },
+              {
+                "label": "Backlink-Liste, 100 Zeilen",
+                "unit": "Anfrage",
+                "credits": 37.3,
+                "quantity": 5,
+                "max": 2000
+              },
+              {
+                "label": "Ranking-Prüfung, Google Top 20 (Standard)",
+                "unit": "Keyword-Prüfung",
+                "credits": 5.4,
+                "quantity": 1000,
+                "max": 100000
+              },
+              {
+                "label": "Ranking-Prüfung mit AI Overview, Top 20",
+                "unit": "Keyword-Prüfung",
+                "credits": 8.1,
+                "quantity": 0,
+                "max": 100000
+              },
+              {
+                "label": "Antwort von Google AI Mode",
+                "unit": "Frage",
+                "credits": 5.4,
+                "quantity": 50,
+                "max": 20000
+              },
+              {
+                "label": "LLM Mentions (Zusammenfassung)",
+                "unit": "Anfrage",
+                "credits": 135,
+                "quantity": 0,
+                "max": 500
+              },
+              {
+                "label": "Server-Crawl über die 1.000 freien Seiten im Monat hinaus (Web)",
+                "unit": "1.000 Seiten",
+                "credits": 200,
+                "quantity": 0,
+                "max": 1000
+              },
+              {
+                "label": "PDF-Bericht über die 30 freien im Monat hinaus (Web)",
+                "unit": "PDF",
+                "credits": 20,
+                "quantity": 0,
+                "max": 1000
+              }
+            ],
+            "note": "Schätzung zu den Listenpreisen der Anbieter. Den genauen Preis sehen Sie vor jeder Anfrage; Anfragen über Ihr Monatsbudget hinaus werden nicht gestellt. Mit eigenen Schlüsseln verbrauchen Sie keine Credits.",
+            "button_label": "Credits kaufen",
+            "link": ""
+          }
+        },
+        {
+          "id": "xgeodefaq",
+          "type": "faq",
+          "data": {
+            "title": "Fragen zur GEO-SEO Platform",
+            "items": [
+              {
+                "question": "Ist die GEO-SEO Platform eine Alternative zu Ahrefs und Semrush?",
+                "answer": "Sie deckt dieselbe Kernarbeit ab: Domain-Übersicht, Keyword-Recherche, Backlinks, Gap-Analyse, Rank Tracking und Site-Audits, dazu KI-Sichtbarkeit und GEO-Prüfungen. Statt eines Monatsabos zahlen Sie nur für die Daten, die Sie abrufen, zu dem Preis, der vor jeder Anfrage angezeigt wird."
+              },
+              {
+                "question": "Ist die GEO-SEO Platform kostenlos?",
+                "answer": "Das Programm ist kostenlos und Open Source (MIT oder Apache-2.0), ohne Abo. Daten von Anbietern werden pro Anfrage bezahlt: Hinterlegen Sie eigene API-Schlüssel und zahlen Sie den Anbieter direkt, oder nutzen Sie OctopusOn-Credits. Search Console, Google Analytics, Autovervollständigung, Themengruppierung und Site-Audits auf dem Desktop kosten nichts."
+              },
+              {
+                "question": "Woher kommen die Daten?",
+                "answer": "Überwiegend von DataForSEO: Domain-, Keyword-, Backlink-, Ergebnisseiten- und LLM-Mentions-Daten. Für die KI-Sichtbarkeit werden die Assistenten mit Ihrem eigenen Schlüssel für OpenAI, Anthropic, Google Gemini oder Perplexity gefragt oder über DataForSEO. Search Console und Analytics werden aus Ihrem eigenen Google-Konto gelesen."
+              },
+              {
+                "question": "Was unterscheidet das Desktop-Programm von der Web-Version?",
+                "answer": "Beide haben dieselben Module. Das Desktop-Programm läuft unter Windows, macOS und Linux, speichert Ihre Daten auf Ihrem Computer und crawlt Ihre Website dort kostenlos. Die Web-Version unter app.octopuson.com öffnen Sie mit Ihrem Konto bei my.octopuson.com; sie speichert die Daten im eigenen Ordner Ihres Kontos auf dem Server von OctopusOn, führt geplante Aufgaben auf dem Server aus und bietet zusätzlich Freigabelinks und Berichts-E-Mails. Server-Crawls sind bis 1.000 Seiten im Monat kostenlos, PDF-Berichte bis 30 im Monat; darüber hinaus kosten sie Credits."
+              },
+              {
+                "question": "Wie funktioniert das Tracking der KI-Sichtbarkeit (GEO)?",
+                "answer": "Sie hinterlegen die Fragen, die Ihre Kunden stellen könnten. Die Plattform stellt sie ChatGPT, Claude, Gemini, Perplexity und Google AI Mode und wertet jede Antwort für Ihre Marke und Ihre Wettbewerber aus: ob Sie genannt werden, ob Ihre Website zitiert wird, Ihren Share of Voice und die Tonalität. Messungen lassen sich wöchentlich oder monatlich wiederholen."
+              },
+              {
+                "question": "Kann ein KI-Assistent selbstständig meine Credits ausgeben?",
+                "answer": "Nein. Über MCP lesen Assistenten zuerst die Daten, die Sie bereits haben. Sind frische Daten nötig, nennen sie den Preis in Credits und Dollar und warten auf Ihre Zustimmung; Ihre Monatsbudgets gelten weiterhin."
+              },
+              {
+                "question": "Welche Suchmaschinen unterstützt der Rank Tracker?",
+                "answer": "Google, Bing und Yandex, an bis zu 10 Standorten pro Projekt: Land, Sprache, Desktop oder Mobil und optional eine Stadt. Prüfungen laufen täglich, wöchentlich oder auf Anfrage; bei Google können sie auch AI Overviews erfassen und ob diese Sie zitieren."
+              },
+              {
+                "question": "Kann ich Kunden White-Label-Berichte senden?",
+                "answer": "Ja. Hinterlegen Sie einmal Logo, Farben und Firmennamen, wählen Sie die Abschnitte und laden Sie PDF, Excel oder HTML herunter. Im Web können Sie zusätzlich einen schreibgeschützten Link teilen oder den Bericht wöchentlich oder monatlich per E-Mail senden. Berichte nutzen vorhandene Daten und kaufen nie neue Daten ein."
+              }
+            ]
+          }
+        },
+        {
+          "id": "xgeodecode",
+          "type": "code",
+          "data": {
+            "title": "Kommandozeile und KI-Assistenten",
+            "text": "Listen Sie Ihre Projekte auf, führen Sie jeden Befehl mit JSON aus oder starten Sie den MCP-Server, mit dem sich Ihr KI-Assistent verbindet.",
+            "code": "octopuson-platform projects\noctopuson-platform call rank_report '{\"project_id\":1}'\noctopuson-platform mcp",
+            "copy": true
+          }
+        },
+        {
+          "id": "xgeodeproductdow",
+          "type": "product_downloads",
+          "data": {
+            "link_label": "Alle Downloads",
+            "link": "/de/download"
+          }
+        },
+        {
+          "id": "xgeodecta",
+          "type": "cta",
+          "data": {
+            "title": "Bündeln Sie Ihre SEO- und GEO-Arbeit an einem Ort",
+            "text": "Laden Sie OctopusOn GEO-SEO Platform für Windows, macOS oder Linux herunter oder öffnen Sie sie unter app.octopuson.com. Das Programm ist kostenlos; Sie zahlen nur für die Daten, die Sie nutzen.",
+            "button_label": "Kostenlos herunterladen",
+            "action": "download",
+            "product": "geo-seo-platform",
+            "link": ""
+          }
+        }
+      ]
+    },
+    "es": {
+      "slug": "plataforma-geo-seo",
+      "title": "OctopusOn GEO-SEO Platform",
+      "nav_title": null,
+      "excerpt": "Visión general de dominios, investigación de palabras clave, backlinks, seguimiento de posiciones, auditorías y visibilidad en IA en un solo programa, con tus propias claves de API o con créditos.",
+      "seo_title": "Alternativa a Ahrefs y Semrush de código abierto: SEO y GEO",
+      "seo_description": "Plataforma SEO y GEO de código abierto: palabras clave, backlinks, rank tracker, auditoría web y visibilidad en IA. Sin suscripción; paga solo por los datos.",
+      "blocks": [
+        {
+          "id": "xgeoeshero",
+          "type": "hero",
+          "data": {
+            "badge": "Gratis y de código abierto · Sin suscripción",
+            "badge_link": "https://github.com/octopusOn/octopusOnPageSEO",
+            "title": "OctopusOn",
+            "highlight": "GEO-SEO Platform",
+            "subtitle": "Una plataforma SEO y GEO todo en uno y una alternativa a Ahrefs y Semrush: visión general de dominios, investigación de palabras clave, backlinks, análisis de brechas, seguimiento de posiciones, auditorías web y visibilidad en ChatGPT, Claude, Gemini, Perplexity y Google AI Mode. El programa es gratuito; pagas solo por los datos que usas, con tus propias claves de API o con créditos de OctopusOn.",
+            "product": "geo-seo-platform",
+            "download_label": "Descargar gratis",
+            "primary_link": "",
+            "secondary_label": "Abrir en el navegador",
+            "secondary_link": "https://app.octopuson.com",
+            "note": "Windows, macOS, Linux y web · SEO y GEO · Tus propias claves de API o créditos",
+            "visual": "screenshot",
+            "image": "@media:screenshot-geo-seo-platform",
+            "code": "octopuson-platform projects\noctopuson-platform call rank_report '{\"project_id\":1}'\noctopuson-platform mcp"
+          }
+        },
+        {
+          "id": "xgeoesfeaturegri",
+          "type": "feature_grid",
+          "data": {
+            "eyebrow": "SEO y GEO en un solo lugar",
+            "title": "Investigación, seguimiento, auditorías y visibilidad en IA en una plataforma",
+            "subtitle": "Un proyecto reúne tu dominio, tu mercado, tus competidores y tus nombres de marca, y todos los módulos trabajan a partir de él. Cada solicitud de pago muestra antes su precio.",
+            "items": [
+              {
+                "icon": "earth",
+                "title": "Visión general del dominio",
+                "text": "Site Explorer para cualquier dominio: palabras clave orgánicas, tráfico y valor del tráfico, 24 meses de historial, páginas principales, competidores y subdominios.",
+                "link": ""
+              },
+              {
+                "icon": "search",
+                "title": "Herramienta de investigación de palabras clave",
+                "text": "Volumen, dificultad, CPC e intención; ideas, búsquedas relacionadas y sugerencias; la SERP en directo, Yandex Wordstat y listas de palabras clave agrupadas por temas.",
+                "link": ""
+              },
+              {
+                "icon": "link",
+                "title": "Comprobador de backlinks",
+                "text": "Un perfil de enlaces con una puntuación de autoridad (OA, 0–100); enlaces activos, nuevos, perdidos y rotos, dominios de referencia, textos de anclaje y páginas más enlazadas.",
+                "link": ""
+              },
+              {
+                "icon": "git-compare",
+                "title": "Análisis de brechas",
+                "text": "Palabras clave por las que posicionan hasta cinco competidores y tú no, palabras compartidas en las que te superan, brechas de enlaces y muchos sitios comparados a la vez.",
+                "link": ""
+              },
+              {
+                "icon": "chart-line",
+                "title": "Rank tracker",
+                "text": "Google, Bing y Yandex en hasta 10 ubicaciones, escritorio o móvil, a diario o cada semana, con visibilidad, cuota de competidores y citas en AI Overviews.",
+                "link": ""
+              },
+              {
+                "icon": "shield-check",
+                "title": "Auditoría web y preparación para GEO",
+                "text": "118 comprobaciones técnicas y una puntuación de salud, además de una puntuación GEO: acceso de los rastreadores de IA en robots.txt, llms.txt, datos estructurados y contenido citable.",
+                "link": ""
+              },
+              {
+                "icon": "bot",
+                "title": "Visibilidad en IA",
+                "text": "Haz a ChatGPT, Claude, Gemini, Perplexity y Google AI Mode las preguntas de tus clientes; ve la tasa de menciones y de citas, la cuota de voz y las fuentes citadas.",
+                "link": ""
+              },
+              {
+                "icon": "chart-column-big",
+                "title": "Search Console y GA4",
+                "text": "Consultas, páginas y sesiones orgánicas junto a tus posiciones y la última auditoría: consultas cerca de los primeros puestos, CTR bajo y canibalización.",
+                "link": ""
+              },
+              {
+                "icon": "file-text",
+                "title": "Informes de marca blanca",
+                "text": "Tu logotipo y tus colores; PDF, Excel y HTML. En la web, enlaces de solo lectura y envíos programados por correo electrónico.",
+                "link": ""
+              },
+              {
+                "icon": "bot-message-square",
+                "title": "Asistentes de IA y línea de comandos",
+                "text": "Claude, ChatGPT, Cursor y otros asistentes leen tus datos mediante MCP; el comando octopuson-platform lo ejecuta todo sin ventana.",
+                "link": ""
+              }
+            ]
+          }
+        },
+        {
+          "id": "xgeoessections",
+          "type": "sections",
+          "data": {
+            "items": [
+              {
+                "anchor": "research",
+                "icon": "search",
+                "title": "Investigación de palabras clave, visión general de dominios y backlinks",
+                "text": "Analiza cualquier dominio o palabra clave en el país y el idioma de tu proyecto; los datos obtenidos se guardan.",
+                "bullets": [
+                  "Visión general del dominio: palabras clave orgánicas y de pago, tráfico y valor del tráfico, distribución de posiciones e historial de 24 meses",
+                  "Palabras clave orgánicas, páginas principales, competidores orgánicos y subdominios, de 100 a 1.000 filas cada vez",
+                  "Keyword Explorer: hasta 700 palabras clave a la vez, ideas, preguntas, búsquedas relacionadas, el top 10 en directo y Yandex Wordstat",
+                  "Autocompletado gratuito de Google y Yandex, y listas de palabras clave agrupadas en temas que una sola página puede cubrir",
+                  "Backlinks: autoridad OA, enlaces activos, nuevos, perdidos y rotos, dominios de referencia, textos de anclaje y dominios ganados y perdidos en 12 meses",
+                  "Análisis de brechas frente a hasta 5 competidores: palabras clave que te faltan, palabras compartidas en las que ellos están por encima y sitios que les enlazan a ellos pero no a ti"
+                ]
+              },
+              {
+                "anchor": "tracking",
+                "icon": "chart-line",
+                "title": "Seguimiento de posiciones con Search Console y Analytics",
+                "text": "Sigue la posición de tus palabras clave a lo largo del tiempo y mírala junto a tus propios datos de Google.",
+                "bullets": [
+                  "Google, Bing y Yandex; hasta 10 ubicaciones por país, idioma, dispositivo y ciudad; hasta 5.000 palabras clave",
+                  "Comprobaciones diarias, semanales o manuales; en la web se ejecutan en el servidor aunque nadie tenga la sesión abierta",
+                  "Visibilidad, posición media, movimientos, cuota de competidores, fragmentos destacados y canibalización",
+                  "AI Overviews en la página de resultados y si citan tu sitio",
+                  "Search Console y Google Analytics 4: consultas, páginas, dispositivos, países y sesiones orgánicas frente al periodo anterior, sin coste de datos"
+                ]
+              },
+              {
+                "anchor": "audit",
+                "icon": "shield-check",
+                "title": "Auditoría web y preparación para GEO",
+                "text": "Rastrea tu sitio, ejecuta 118 comprobaciones técnicas de SEO y mide lo preparado que está para las respuestas de IA.",
+                "bullets": [
+                  "Puntuación de salud y puntuación de preparación GEO, ambas comparadas con la auditoría anterior",
+                  "Rastreadores de búsqueda con IA y asistentes de IA en robots.txt: OAI-SearchBot, PerplexityBot, Claude-SearchBot, ChatGPT-User y otros",
+                  "llms.txt, límites de fragmentos, datos estructurados, esquemas Organization y WebSite, encabezados en forma de pregunta y contenido suficiente",
+                  "En el escritorio, el rastreo se hace en tu ordenador, hasta 100.000 URL y sin coste",
+                  "En la web, el servidor rastrea sitios públicos hasta 5.000 URL; las primeras 1.000 páginas de cada mes son gratis"
+                ]
+              },
+              {
+                "anchor": "ai-visibility",
+                "icon": "bot",
+                "title": "Visibilidad en ChatGPT, Claude, Gemini, Perplexity y Google AI Mode",
+                "text": "Haz a los asistentes de IA las preguntas que hacen tus clientes y mide con qué frecuencia te mencionan y te citan.",
+                "bullets": [
+                  "Hasta 200 preguntas por proyecto, con sugerencias gratuitas a partir de tu marca y de tus palabras clave seguidas",
+                  "Tasa de menciones, tasa de citas, cuota de voz frente a hasta 10 marcas rivales, posición media y tono",
+                  "Los dominios que más citan los asistentes y cuáles de tus páginas citan",
+                  "Tus propias claves de OpenAI, Anthropic, Gemini y Perplexity, o los asistentes a través de DataForSEO",
+                  "LLM Mentions: preguntas cuyas respuestas de IA mencionan tu dominio, con su volumen de búsqueda en IA"
+                ]
+              },
+              {
+                "anchor": "reports",
+                "icon": "file-text",
+                "title": "Informes de marca blanca para agencias",
+                "text": "Envía a tus clientes informes con tu marca, elaborados con los datos que los módulos ya tienen.",
+                "bullets": [
+                  "Nombre de la empresa, logotipo, color de acento, sitio web y pie de página; la mención de OctopusOn se puede ocultar",
+                  "Posiciones, competidores, Search Console, auditoría web, visibilidad en IA y backlinks, en el orden que elijas",
+                  "Informes en turco, inglés, alemán o español, sea cual sea el idioma de la interfaz",
+                  "Descarga en PDF, Excel y HTML",
+                  "En la web, enlaces de solo lectura y correos semanales o mensuales a hasta 5 destinatarios"
+                ]
+              },
+              {
+                "anchor": "assistants",
+                "icon": "terminal",
+                "title": "Asistentes de IA y línea de comandos",
+                "text": "Haz tus preguntas de SEO en Claude, ChatGPT o Cursor y obtén respuestas a partir de tus propios proyectos.",
+                "bullets": [
+                  "Un servidor MCP en el escritorio (octopuson-platform mcp) y en la web (app.octopuson.com/mcp con tokens de acceso personales)",
+                  "Los asistentes leen primero los datos guardados; para datos nuevos indican el precio y esperan tu aprobación",
+                  "Cinco skills listas para agentes: auditoría web, investigación de palabras clave, análisis de competidores, visibilidad GEO y un coach SEO semanal",
+                  "El comando octopuson-platform ejecuta cualquier comando con JSON de entrada y salida, para scripts y tareas programadas"
+                ]
+              }
+            ]
+          }
+        },
+        {
+          "id": "xgeoescreditcalc",
+          "type": "credit_calculator",
+          "data": {
+            "eyebrow": "Pago por uso · créditos de OctopusOn",
+            "title": "Calcula lo que cuestan tus datos",
+            "text": "El programa es gratuito y no tiene suscripción. Solo cuestan dinero los datos de los proveedores: con tus propias claves de DataForSEO y de los asistentes de IA pagas directamente a los proveedores, o usas créditos prepago de OctopusOn con una sola conexión. Los datos ya obtenidos se reutilizan gratis mientras siguen vigentes.",
+            "credit_usd": 0.001,
+            "items": [
+              {
+                "label": "Visión general del dominio (resumen)",
+                "unit": "solicitud",
+                "credits": 16.4,
+                "quantity": 20,
+                "max": 2000
+              },
+              {
+                "label": "Palabras clave orgánicas o ideas de palabras clave, 100 filas",
+                "unit": "solicitud",
+                "credits": 32.4,
+                "quantity": 20,
+                "max": 2000
+              },
+              {
+                "label": "Resumen del perfil de backlinks",
+                "unit": "solicitud",
+                "credits": 32.4,
+                "quantity": 10,
+                "max": 2000
+              },
+              {
+                "label": "Lista de backlinks, 100 filas",
+                "unit": "solicitud",
+                "credits": 37.3,
+                "quantity": 5,
+                "max": 2000
+              },
+              {
+                "label": "Comprobación de posición, top 20 de Google (por defecto)",
+                "unit": "comprobación",
+                "credits": 5.4,
+                "quantity": 1000,
+                "max": 100000
+              },
+              {
+                "label": "Comprobación de posición con AI Overview, top 20",
+                "unit": "comprobación",
+                "credits": 8.1,
+                "quantity": 0,
+                "max": 100000
+              },
+              {
+                "label": "Respuesta de Google AI Mode",
+                "unit": "pregunta",
+                "credits": 5.4,
+                "quantity": 50,
+                "max": 20000
+              },
+              {
+                "label": "Resumen de LLM Mentions",
+                "unit": "solicitud",
+                "credits": 135,
+                "quantity": 0,
+                "max": 500
+              },
+              {
+                "label": "Rastreo en el servidor más allá de las 1.000 páginas gratis al mes (web)",
+                "unit": "1.000 páginas",
+                "credits": 200,
+                "quantity": 0,
+                "max": 1000
+              },
+              {
+                "label": "Informe PDF más allá de los 30 gratis al mes (web)",
+                "unit": "PDF",
+                "credits": 20,
+                "quantity": 0,
+                "max": 1000
+              }
+            ],
+            "note": "Estimación con los precios de lista de los proveedores. El precio exacto se muestra antes de cada solicitud, y no se hace ninguna solicitud que supere tu presupuesto mensual. Con tus propias claves no usas créditos.",
+            "button_label": "Comprar créditos",
+            "link": ""
+          }
+        },
+        {
+          "id": "xgeoesfaq",
+          "type": "faq",
+          "data": {
+            "title": "Preguntas sobre GEO-SEO Platform",
+            "items": [
+              {
+                "question": "¿Es una alternativa a Ahrefs y Semrush?",
+                "answer": "Cubre el mismo trabajo principal: visión general de dominios, investigación de palabras clave, backlinks, análisis de brechas, seguimiento de posiciones y auditorías web, además de visibilidad en IA y comprobaciones GEO. En lugar de una suscripción mensual, pagas solo por los datos que obtienes, al precio que se muestra antes de cada solicitud."
+              },
+              {
+                "question": "¿GEO-SEO Platform es gratis?",
+                "answer": "El programa es gratuito y de código abierto (MIT o Apache-2.0), sin suscripción. Los datos de los proveedores se pagan por solicitud: introduce tus propias claves de API y paga directamente al proveedor, o usa créditos de OctopusOn. Search Console, Google Analytics, el autocompletado, la agrupación por temas y las auditorías en el escritorio no cuestan nada."
+              },
+              {
+                "question": "¿De dónde salen los datos?",
+                "answer": "Principalmente de DataForSEO: datos de dominios, palabras clave, backlinks, páginas de resultados y LLM Mentions. Para la visibilidad en IA, los asistentes se consultan con tu propia clave de OpenAI, Anthropic, Google Gemini o Perplexity, o a través de DataForSEO. Search Console y Analytics se leen de tu propia cuenta de Google."
+              },
+              {
+                "question": "¿Qué diferencia hay entre el programa de escritorio y la versión web?",
+                "answer": "Ambos tienen los mismos módulos. El programa de escritorio funciona en Windows, macOS y Linux, guarda tus datos en tu ordenador y rastrea tu sitio allí sin coste. La versión web de app.octopuson.com se abre con tu cuenta de my.octopuson.com, guarda los datos en la carpeta propia de tu cuenta en el servidor de OctopusOn, ejecuta las tareas programadas en el servidor y añade enlaces para compartir y envíos de informes por correo. Los rastreos en el servidor son gratis hasta 1.000 páginas al mes y los informes PDF hasta 30 al mes; a partir de ahí consumen créditos."
+              },
+              {
+                "question": "¿Cómo funciona el seguimiento de la visibilidad en IA (GEO)?",
+                "answer": "Añades las preguntas que podrían hacer tus clientes. La plataforma se las hace a ChatGPT, Claude, Gemini, Perplexity y Google AI Mode y analiza cada respuesta para tu marca y tus rivales: si te mencionan, si citan tu sitio, tu cuota de voz y el tono. Las mediciones pueden repetirse cada semana o cada mes."
+              },
+              {
+                "question": "¿Puede un asistente de IA gastar mis créditos por su cuenta?",
+                "answer": "No. Mediante MCP, los asistentes leen primero los datos que ya tienes. Cuando hacen falta datos nuevos, te indican el precio en créditos y en dólares y esperan tu aprobación; tus presupuestos mensuales siguen aplicándose."
+              },
+              {
+                "question": "¿Qué buscadores admite el rank tracker?",
+                "answer": "Google, Bing y Yandex, en hasta 10 ubicaciones por proyecto: país, idioma, escritorio o móvil y, si quieres, una ciudad. Las comprobaciones se ejecutan a diario, cada semana o cuando lo pidas; en Google también pueden registrar los AI Overviews y si te citan."
+              },
+              {
+                "question": "¿Puedo enviar informes de marca blanca a mis clientes?",
+                "answer": "Sí. Añade una vez tu logotipo, tus colores y el nombre de tu empresa, elige las secciones y descarga PDF, Excel o HTML. En la web también puedes compartir un enlace de solo lectura o enviar el informe por correo cada semana o cada mes. Los informes usan los datos que ya tienes y nunca compran datos nuevos."
+              }
+            ]
+          }
+        },
+        {
+          "id": "xgeoescode",
+          "type": "code",
+          "data": {
+            "title": "Línea de comandos y asistentes de IA",
+            "text": "Lista tus proyectos, ejecuta cualquier comando con JSON o inicia el servidor MCP al que se conecta tu asistente de IA.",
+            "code": "octopuson-platform projects\noctopuson-platform call rank_report '{\"project_id\":1}'\noctopuson-platform mcp",
+            "copy": true
+          }
+        },
+        {
+          "id": "xgeoesproductdow",
+          "type": "product_downloads",
+          "data": {
+            "link_label": "Todas las descargas",
+            "link": "/es/descargas"
+          }
+        },
+        {
+          "id": "xgeoescta",
+          "type": "cta",
+          "data": {
+            "title": "Reúne tu trabajo de SEO y GEO en un solo lugar",
+            "text": "Descarga OctopusOn GEO-SEO Platform para Windows, macOS o Linux, o ábrela en app.octopuson.com. El programa es gratuito; pagas solo por los datos que usas.",
+            "button_label": "Descargar gratis",
+            "action": "download",
+            "product": "geo-seo-platform",
+            "link": ""
+          }
+        }
+      ]
+    }
+  }
+}

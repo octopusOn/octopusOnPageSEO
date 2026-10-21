@@ -18,7 +18,7 @@ export const githubUrl = (path = "") => (site.repo ? `https://github.com/${site.
 /** A program's own GitHub project (its releases, stars and issues). */
 export const programUrl = (product: Product, path = "") => (site.repo ? `https://github.com/${product.repo}${path}` : null);
 
-export type ProductId = "seo-crawler" | "log-analyser" | "serp-checker" | "seo-keyword-research" | "index-checker";
+export type ProductId = "seo-crawler" | "log-analyser" | "serp-checker" | "seo-keyword-research" | "index-checker" | "geo-seo-platform";
 
 export interface Product {
   id: ProductId;
@@ -42,6 +42,10 @@ export interface Product {
   repo: string;
   /** The program's window ground in @octopusseo/design (`data-product`); `log` is the default violet. */
   ground: string;
+  /** Its web version, for a program that also runs in the browser (`https://app.octopuson.com`). */
+  web?: string;
+  /** Cargo package of its web server, built for Linux into every release (scripts/deploy-platform.sh installs it). */
+  server?: string;
   /** Folders whose commits belong to this program's release notes (scripts/release.mjs). */
   paths: string[];
 }

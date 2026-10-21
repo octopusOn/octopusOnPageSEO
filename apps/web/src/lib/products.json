@@ -66,5 +66,20 @@
     "ground": "finder",
     "repo": "octopusOn/index-checker",
     "paths": ["apps/index-checker", "apps/octopuson-index-cli", "crates/octopuson-finder"]
+  },
+  {
+    "id": "geo-seo-platform",
+    "key": "platform",
+    "name": "OctopusOn GEO-SEO Platform",
+    "short": "GEO-SEO Platform",
+    "tagPrefix": "platform-v",
+    "cli": "octopuson-platform",
+    "package": "octopuson-platform-cli",
+    "app": "apps/geo-seo-platform",
+    "ground": "platform",
+    "repo": "octopusOn/geo-seo-platform",
+    "web": "https://app.octopuson.com",
+    "server": "octopuson-platform-server",
+    "paths": ["apps/geo-seo-platform", "apps/octopuson-platform-cli", "apps/octopuson-platform-server", "crates/octopuson-platform", "crates/octopuson-platform-app", "crates/octopuson-dataforseo", "crates/octopuson-llm", "crates/octopuson-google", "packages/ui"]
   }
 ]

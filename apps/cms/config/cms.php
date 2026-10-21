@@ -53,6 +53,7 @@ return [
         'serp-checker' => 'SERP Checker',
         'seo-keyword-research' => 'SEO Keyword Research',
         'index-checker' => 'Index Checker',
+        'geo-seo-platform' => 'GEO-SEO Platform',
     ],
 
     /*
