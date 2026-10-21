@@ -456,7 +456,46 @@ describe("one-click sign-in", () => {
     const granted = await swap({ code, code_verifier: verifier });
     expect(granted.status).toBe(200);
     const { access_token: token } = (await granted.json()) as { access_token: string };
-    expect(await (await call("/v1/me", {}, token)).json()).toMatchObject({ email: "oneclick@example.com" });
+    expect(await (await call("/v1/me", {}, token)).json()).toMatchObject({ user_id: person, email: "oneclick@example.com" });
     expect(await (await swap({ code, code_verifier: verifier })).json()).toEqual({ error: "invalid_grant" });
+  });
+});
+
+describe("metered server work", () => {
+  const meter = (body: unknown, bearer: string | null) =>
+    call("/v1/meter", { method: "POST", body: JSON.stringify(body), headers: { "content-type": "application/json", "x-octopus-app": "geo-seo-platform-web" } }, bearer);
+
+  it("lists its prices in the catalog", async () => {
+    const body = (await (await call("/v1/catalog", {}, null)).json()) as { meters: unknown };
+    expect(body.meters).toEqual([
+      { sku: "crawl.page", micros_per_unit: 200, free_per_month: 1000 },
+      { sku: "report.pdf", micros_per_unit: 20_000, free_per_month: 30 },
+    ]);
+  });
+
+  it("charges pages after the free ones, each batch once", async () => {
+    const person = await addUser(db, "crawler@example.com");
+    await credit(db, person, "purchase", 1_000_000);
+    const { value } = await createToken(db, person, "Web");
+    expect((await meter({ sku: "crawl.page", units: 10, idempotency_key: "x" }, null)).status).toBe(401);
+    for (const wrong of [{ sku: "render.page", units: 1, idempotency_key: "k" }, { sku: "crawl.page", units: 0, idempotency_key: "k" }, { sku: "crawl.page", units: 1.5, idempotency_key: "k" }, { sku: "crawl.page", units: 1 }]) {
+      expect((await meter(wrong, value)).status).toBe(400);
+    }
+    const free = await meter({ sku: "crawl.page", units: 1000, idempotency_key: "audit-7:0" }, value);
+    expect(await free.json()).toMatchObject({ free_units: 1000, charged_micros: 0, free_left: 0, duplicate: false });
+    const paid = await meter({ sku: "crawl.page", units: 50, idempotency_key: "audit-7:1" }, value);
+    expect(await paid.json()).toMatchObject({ free_units: 0, charged_micros: 10_000, available_micros: 990_000 });
+    const repeated = await meter({ sku: "crawl.page", units: 50, idempotency_key: "audit-7:1" }, value);
+    expect(await repeated.json()).toMatchObject({ duplicate: true, available_micros: 990_000 });
+    expect((await wallet(db, person)).balanceMicros).toBe(990_000);
+  });
+
+  it("answers 402 once the free pages are used and no credits are left", async () => {
+    const person = await addUser(db, "nocredit@example.com");
+    const { value } = await createToken(db, person, "Web");
+    expect((await meter({ sku: "crawl.page", units: 1000, idempotency_key: "a" }, value)).status).toBe(200);
+    const refused = await meter({ sku: "crawl.page", units: 1, idempotency_key: "b" }, value);
+    expect(refused.status).toBe(402);
+    expect(await refused.json()).toMatchObject({ error: "insufficient_credits", available_micros: 0 });
   });
 });

@@ -222,9 +222,24 @@ describe("connector schema", () => {
       "/v3/dataforseo_labs/google/related_keywords/live",
       "/v3/dataforseo_labs/google/search_intent/live",
       "/v3/backlinks/summary/live",
+      "/v3/backlinks/backlinks/live",
+      "/v3/backlinks/referring_domains/live",
+      "/v3/backlinks/timeseries_new_lost_summary/live",
+      "/v3/backlinks/bulk_ranks/live",
+      "/v3/serp/google/ai_mode/live/advanced",
+      "/v3/ai_optimization/chat_gpt/llm_responses/live",
+      "/v3/ai_optimization/perplexity/llm_responses/live",
+      "/v3/ai_optimization/llm_mentions/target_metrics/live",
+      "/v3/ai_optimization/llm_mentions/search_mentions/live",
     ]) {
       expect(allowed("dataforseo", "POST", path), path).toBe(true);
     }
+    // AI answers only live: no task queues or scraper downloads.
+    expect(allowed("dataforseo", "POST", "/v3/ai_optimization/chat_gpt/llm_responses/task_post")).toBe(false);
+    expect(allowed("dataforseo", "POST", "/v3/ai_optimization/chat_gpt/llm_scraper/live/html")).toBe(false);
+    // Only live reports: no task queues or account data of the backlink index.
+    expect(allowed("dataforseo", "POST", "/v3/backlinks/index")).toBe(false);
+    expect(allowed("dataforseo", "POST", "/v3/backlinks/backlinks/task_post")).toBe(false);
     for (const path of [
       "/v3/appendix/user_data",
       "/v3/serp/google/organic/task_get/advanced/0001",
@@ -261,6 +276,8 @@ describe("pricing", () => {
     expect(settle(dataforseo, 0.35, 200, failed)).toEqual({ error: true, upstreamMicros: 2000, chargeMicros: 0 });
     expect(settle(dataforseo, 0.35, 500, null)).toEqual({ error: true, upstreamMicros: 0, chargeMicros: 0 });
     expect(holdFor(dataforseo)).toBe(500_000);
+    expect(holdFor(dataforseo, "POST", "/v3/backlinks/summary/live")).toBe(500_000);
+    expect(holdFor(dataforseo, "post", "/v3/ai_optimization/llm_mentions/search_mentions/live")).toBe(2_000_000);
   });
 
   it("prices Serper credits, SerpApi searches and counted items", () => {

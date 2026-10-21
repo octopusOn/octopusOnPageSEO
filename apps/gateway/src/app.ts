@@ -1,10 +1,16 @@
-// api.octopuson.com routes: device sign-in, catalog, account and the connector passthrough.
+// api.octopuson.com routes: device sign-in, catalog, account, metered server work and the
+// connector passthrough.
 
 import type { HttpBindings } from "@hono/node-server";
 import {
   accountOf,
   catalogEntry,
   type Db,
+  InsufficientFunds,
+  isMeterSku,
+  meterCatalog,
+  meterTerms,
+  meterUsage,
   pollDevice,
   recordSupportMessage,
   redeemConnectCode,
@@ -68,7 +74,7 @@ export function createApp(deps: AppDeps): Hono<Env> {
       .map(({ connector }) => catalogEntry(connector, settings.markup))
       .filter((entry) => entry && (entry.status === "active" || caller?.role === "admin"));
     return c.json(
-      { credit_unit_micros: settings.creditUnitMicros, portal_url: deps.portalUrl, connectors },
+      { credit_unit_micros: settings.creditUnitMicros, portal_url: deps.portalUrl, connectors, meters: meterCatalog(settings) },
       200,
       { "cache-control": "no-store" },
     );
@@ -138,6 +144,7 @@ export function createApp(deps: AppDeps): Hono<Env> {
   app.use("/v1/me", signedIn);
   app.use("/v1/support", signedIn);
   app.use("/v1/logout", signedIn);
+  app.use("/v1/meter", signedIn);
   app.use("/v1/p/*", signedIn);
 
   app.get("/v1/me", async (c) => {
@@ -147,6 +154,7 @@ export function createApp(deps: AppDeps): Hono<Env> {
     const current = await wallet(db, signedIn.userId);
     return c.json(
       {
+        user_id: signedIn.userId,
         email: person?.email ?? null,
         name: person?.name ?? null,
         balance_micros: current.balanceMicros,
@@ -171,6 +179,41 @@ export function createApp(deps: AppDeps): Hono<Env> {
     if (outcome === "empty") return problem(400, "invalid_request", "Write a message or send the error it is about.");
     if (outcome === "too_many") return problem(429, "too_many_messages", "Too many messages this hour; try again later.");
     return c.json({ ok: true }, 201);
+  });
+
+  // Server work a web program did for the account (pages crawled), charged in batches: the
+  // month's free units first, then credits. A batch sent twice is charged once.
+  app.post("/v1/meter", async (c) => {
+    const { userId, tokenId } = c.get("owner");
+    const body = (await c.req.json().catch(() => null)) as { sku?: unknown; units?: unknown; idempotency_key?: unknown } | null;
+    const sku = typeof body?.sku === "string" ? body.sku : "";
+    const units = body?.units;
+    const key = typeof body?.idempotency_key === "string" ? body.idempotency_key.trim() : "";
+    if (!isMeterSku(sku) || typeof units !== "number" || !Number.isInteger(units) || units < 1 || units > 100_000 || !key || key.length > 200) {
+      return problem(400, "invalid_request", "Send a known sku, 1–100000 whole units and an idempotency_key.");
+    }
+    const settings = await deps.registry.settings();
+    try {
+      const receipt = await meterUsage(db, userId, { sku, units, idempotencyKey: key, tokenId, app: appName(c) }, meterTerms(sku, settings));
+      return c.json(
+        {
+          sku: receipt.sku,
+          units: receipt.units,
+          free_units: receipt.freeUnits,
+          charged_micros: receipt.chargedMicros,
+          free_left: receipt.freeLeft,
+          available_micros: receipt.wallet.availableMicros,
+          duplicate: receipt.duplicate,
+        },
+        200,
+        { "cache-control": "no-store" },
+      );
+    } catch (error) {
+      if (error instanceof InsufficientFunds) {
+        return problem(402, "insufficient_credits", "Not enough OctopusOn SEO credits.", {}, { available_micros: error.availableMicros });
+      }
+      throw error;
+    }
   });
 
   app.post("/v1/logout", async (c) => {

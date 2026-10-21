@@ -159,7 +159,7 @@ export async function forward(
 
   try {
     const settings = await deps.registry.settings();
-    const holdMicros = holdFor(connector);
+    const holdMicros = holdFor(connector, method, path);
     if (owner.monthlyCapMicros !== null && (await monthSpend(deps.db, owner.tokenId)) + holdMicros > owner.monthlyCapMicros) {
       return problem(402, "token_limit", "This device reached its monthly spending limit.");
     }

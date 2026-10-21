@@ -286,6 +286,32 @@ export const usageEvents = pgTable(
   ],
 );
 
+/**
+ * Server work charged by the unit (pages a web program crawls on the server), with the free
+ * allowance used. Usage only: the money moves in the ledger.
+ */
+export const meterEvents = pgTable(
+  "meter_events",
+  {
+    id: bigserial("id", { mode: "number" }).primaryKey(),
+    userId: text("user_id")
+      .notNull()
+      .references(() => user.id, { onDelete: "restrict" }),
+    tokenId: uuid("token_id"),
+    /** What was used (`crawl.page`). */
+    sku: text("sku").notNull(),
+    units: integer("units").notNull(),
+    /** Units taken from the month's free allowance. */
+    freeUnits: integer("free_units").notNull(),
+    chargedMicros: money("charged_micros").notNull().default(0),
+    /** The program's key for this batch, namespaced by user; a repeat is not charged again. */
+    idempotencyKey: text("idempotency_key").notNull().unique(),
+    app: text("app"),
+    createdAt: created(),
+  },
+  (table) => [index("meter_user_sku_time").on(table.userId, table.sku, table.createdAt)],
+);
+
 // ------------------------------------------------------------------ Orders and invoices
 
 export const orders = pgTable(

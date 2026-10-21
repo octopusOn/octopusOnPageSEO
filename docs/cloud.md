@@ -10,10 +10,34 @@ People who don't want their own provider accounts can buy credits in TL at `my.o
                  ▲
                  │
  programs ──▶ apps/gateway  api.octopuson.com  (Hono: catalog, balance, device and one-click
-                                                sign-in, /v1/p/<connector>/… forwarding)
+                                                sign-in, /v1/p/<connector>/… forwarding,
+                                                /v1/meter for server work)
 ```
 
 Both apps share the database and `OCTOPUS_MASTER_KEY`, which seals our provider credentials and device tokens.
+
+**Metered server work.** The web GEO-SEO Platform crawls sites and prints report PDFs on its own server, so it pays for that work by the unit through `POST /v1/meter { sku, units, idempotency_key }` with the account's token. Each account gets the month's free units of every unit first.
+
+| Unit | Price setting (default) | Free each month (default) |
+|---|---|---|
+| `crawl.page` | `crawlPageMicros` (200 = $0.0002, 200 credits per 1,000 pages at the default credit unit) | `freeCrawlPages` (1,000) |
+| `report.pdf` | `reportPdfMicros` (20,000 = $0.02, 20 credits) | `freeReportPdfs` (30) |
+
+- **One transaction.** `meterUsage` locks the wallet, so two batches can never use the same free pages or money.
+- **Records.** It writes a `meter_events` row (migration `0004_meter_events`) and a `usage_events` row with connector `server`, so the portal's usage page shows it. A charge also adds a `capture` ledger entry.
+- **Retries.** A repeated idempotency key (namespaced by account) returns the first batch's figures and charges nothing.
+- **Not enough credits.** The answer is 402 `insufficient_credits` and nothing is recorded.
+- **Prices for programs.** `/v1/catalog` lists the prices under `meters`.
+- **Admin.** Admin → Settings shows the four settings: the crawl price per 1,000 pages and the PDF price in credits, and the free pages and PDFs a month.
+
+**AI visibility routes.** The seeded DataForSEO connector also allows the GEO-SEO Platform's AI visibility requests:
+- `/v3/serp/google/ai_mode/live/advanced` (Google AI Mode);
+- `/v3/ai_optimization/*/llm_responses/live` (ChatGPT, Claude, Gemini and Perplexity answers);
+- `/v3/ai_optimization/llm_mentions/*/live` (LLM Mentions).
+
+**Holds per route.** A route can reserve its own amount (`"hold_usd"` on the route) instead of the connector's `pricing.hold_usd`; the gateway reserves the matching route's hold before forwarding and charges the real price after. LLM Mentions holds $2, since a task with 1,000 rows costs about $1.10 upstream.
+
+Queued `task_post` requests and the LLM Scraper stay closed. `seed` adds only missing connectors, so a DataForSEO connector already in the database needs these routes added when the platform is released. Assistants asked with the user's own OpenAI, Anthropic, Gemini or Perplexity key never pass through the gateway.
 
 ## Running locally
 

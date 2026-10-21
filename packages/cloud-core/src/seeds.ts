@@ -9,7 +9,7 @@ export const SEED_CONNECTORS: ConnectorInput[] = [
   {
     id: "dataforseo",
     name: "DataForSEO",
-    description: "Google, Bing and Yandex result pages, keyword volumes and ideas, Labs data, autocomplete and backlink summaries.",
+    description: "Google, Bing and Yandex result pages, keyword volumes and ideas, Labs data, autocomplete and backlink reports.",
     upstream: "https://api.dataforseo.com",
     auth: { type: "basic", secret: "credentials" },
     routes: [
@@ -17,7 +17,13 @@ export const SEED_CONNECTORS: ConnectorInput[] = [
       { method: "POST", path: "/v3/serp/google/autocomplete/live/advanced" },
       { method: "POST", path: "/v3/keywords_data/google_ads/*/live" },
       { method: "POST", path: "/v3/dataforseo_labs/google/*/live" },
-      { method: "POST", path: "/v3/backlinks/summary/live" },
+      // Every live Backlinks report: summary, backlinks, referring domains, anchors, pages,
+      // new and lost over time, bulk ranks and intersections (the GEO-SEO Platform).
+      { method: "POST", path: "/v3/backlinks/*/live" },
+      { method: "POST", path: "/v3/serp/google/ai_mode/live/advanced" },
+      { method: "POST", path: "/v3/ai_optimization/*/llm_responses/live" },
+      // $0.10 a task plus $0.001 a row: up to 1,000 rows cost more than the usual hold.
+      { method: "POST", path: "/v3/ai_optimization/llm_mentions/*/live", hold_usd: 2 },
     ],
     // Account data and asynchronous tasks (task ids are readable by anyone on our account).
     deny: ["/v3/appendix/**", "/v3/**/task_get/**", "/v3/**/task_post", "/v3/**/tasks_ready", "/v3/**/tasks_fixed"],

@@ -37,6 +37,9 @@ pub enum DevicePoll {
 /// The signed-in account.
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 pub struct Account {
+    /// The account's id (the web version keeps each account's data under it).
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub user_id: Option<String>,
     /// E-mail.
     pub email: Option<String>,
     /// Name.
@@ -101,6 +104,51 @@ pub struct Catalog {
     pub portal_url: String,
     /// Connectors.
     pub connectors: Vec<Connector>,
+    /// Server work sold by the unit (pages a web program crawls on the server).
+    #[serde(default)]
+    pub meters: Vec<MeterPrice>,
+}
+
+/// The price of metered server work.
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+pub struct MeterPrice {
+    /// What is metered (`crawl.page`).
+    pub sku: String,
+    /// Micro-dollars a unit after the free ones.
+    pub micros_per_unit: i64,
+    /// Units free every month.
+    pub free_per_month: i64,
+}
+
+/// What a metered batch cost.
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+pub struct MeterReceipt {
+    /// What was metered.
+    pub sku: String,
+    /// Units in the batch.
+    pub units: i64,
+    /// Units taken from the month's free allowance.
+    pub free_units: i64,
+    /// Micro-dollars charged.
+    pub charged_micros: i64,
+    /// Free units left this month.
+    pub free_left: i64,
+    /// Micro-dollars left to spend.
+    pub available_micros: i64,
+    /// The batch was already metered; nothing was charged now.
+    pub duplicate: bool,
+}
+
+/// How metering a batch went.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub enum Metered {
+    /// Charged (or free).
+    Charged(MeterReceipt),
+    /// The free units are used and the credits do not cover the batch; nothing was charged.
+    NoCredits {
+        /// Micro-dollars left.
+        available_micros: i64,
+    },
 }
 
 impl Catalog {
@@ -270,6 +318,45 @@ impl<'a> CloudClient<'a> {
             request = request.header("authorization", format!("Bearer {token}"));
         }
         Self::json(&self.send(request)?)
+    }
+
+    /// Meters server work done for the account: `units` of `sku` under `key`, which the gateway
+    /// charges once however often the batch is sent.
+    ///
+    /// # Errors
+    /// [`CloudError::SignedOut`] for a token no longer valid; [`CloudError::Unavailable`] when the
+    /// gateway cannot be reached or refuses the batch.
+    pub fn meter(
+        &self,
+        token: &str,
+        sku: &str,
+        units: u32,
+        key: &str,
+    ) -> Result<Metered, CloudError> {
+        let response = self.send(
+            HttpRequest::post(
+                format!("{}/v1/meter", self.base),
+                serde_json::json!({ "sku": sku, "units": units, "idempotency_key": key })
+                    .to_string()
+                    .into_bytes(),
+            )
+            .header("content-type", "application/json")
+            .header("authorization", format!("Bearer {token}")),
+        )?;
+        if response.status == 402 {
+            #[derive(Deserialize)]
+            struct Refused {
+                #[serde(default)]
+                available_micros: i64,
+            }
+            let refused: Refused = serde_json::from_slice(&response.body).unwrap_or(Refused {
+                available_micros: 0,
+            });
+            return Ok(Metered::NoCredits {
+                available_micros: refused.available_micros,
+            });
+        }
+        Ok(Metered::Charged(Self::json(&response)?))
     }
 
     /// Ends the session: the gateway stops accepting the token.

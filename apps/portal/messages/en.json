@@ -375,7 +375,11 @@
       "signupBonusMicros": "Sign-up gift (credits)",
       "lowBalanceMicros": "Low balance warning (credits)",
       "holdTtlMinutes": "Hold lifetime (min)",
-      "dailyLimitMicros": "Daily limit per user (credits, 0 = none)"
+      "dailyLimitMicros": "Daily limit per user (credits, 0 = none)",
+      "crawlPageMicros": "Platform server crawl (credits per 1,000 pages)",
+      "freeCrawlPages": "Free server crawl pages per month",
+      "reportPdfMicros": "Platform report PDF (credits)",
+      "freeReportPdfs": "Free report PDFs per month"
     },
     "reportsLead": "Revenue, provider cost and margin per connector and day (last 30 days).",
     "day": "Day",

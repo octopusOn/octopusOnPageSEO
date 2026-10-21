@@ -3,8 +3,9 @@ use octopuson_core::http::{HttpMethod, HttpRequest, HttpTransport};
 use octopuson_secrets::FileBackend;
 
 use crate::{
-    CloudClient, CloudError, Connector, CreditTransport, DevicePoll, Route, SourceMode, TokenStore,
-    Via, api_base, choose, connector_for, matches_pattern, sign_in_with_browser,
+    Catalog, CloudClient, CloudError, Connector, CreditTransport, DevicePoll, Metered, Route,
+    SourceMode, TokenStore, Via, api_base, choose, connector_for, matches_pattern,
+    sign_in_with_browser,
 };
 
 const BASE: &str = "https://api.octopuson.com";
@@ -146,6 +147,57 @@ fn reads_the_account_and_the_catalog() {
         header(&transport.requests()[0], "authorization"),
         Some("Bearer oct_t")
     );
+}
+
+#[test]
+fn meters_server_work_and_reads_its_prices() {
+    let transport = FakeTransport::new()
+        .reply(
+            200,
+            r#"{"credit_unit_micros":1000,"portal_url":"https://my.octopuson.com","connectors":[],"meters":[{"sku":"crawl.page","micros_per_unit":200,"free_per_month":1000}]}"#,
+        )
+        .reply(
+            200,
+            r#"{"sku":"crawl.page","units":100,"free_units":40,"charged_micros":12000,"free_left":0,"available_micros":988000,"duplicate":false}"#,
+        )
+        .reply(402, r#"{"error":"insufficient_credits","message":"x","available_micros":150}"#)
+        .reply(401, r#"{"error":"invalid_token"}"#);
+    let client = CloudClient::new(&transport, BASE, "geo-seo-platform-web");
+    let catalog = client.catalog(None).unwrap();
+    assert_eq!(catalog.meters[0].sku, "crawl.page");
+    assert_eq!(catalog.meters[0].free_per_month, 1000);
+    let Metered::Charged(receipt) = client
+        .meter("oct_t", "crawl.page", 100, "audit-1:0")
+        .unwrap()
+    else {
+        panic!("charged");
+    };
+    assert_eq!((receipt.free_units, receipt.charged_micros), (40, 12_000));
+    assert_eq!(
+        client
+            .meter("oct_t", "crawl.page", 100, "audit-1:1")
+            .unwrap(),
+        Metered::NoCredits {
+            available_micros: 150
+        }
+    );
+    assert_eq!(
+        client.meter("oct_t", "crawl.page", 1, "audit-1:2"),
+        Err(CloudError::SignedOut)
+    );
+    let body: serde_json::Value =
+        serde_json::from_slice(transport.requests()[1].body.as_deref().unwrap()).unwrap();
+    assert_eq!(
+        body,
+        serde_json::json!({ "sku": "crawl.page", "units": 100, "idempotency_key": "audit-1:0" })
+    );
+    assert!(transport.requests()[1].url.ends_with("/v1/meter"));
+    // An older gateway without meters still gives a catalog.
+    let old: Catalog = serde_json::from_str(
+        r#"{"credit_unit_micros":1000,"portal_url":"https://my.octopuson.com","connectors":[]}"#,
+    )
+    .unwrap();
+    assert_eq!(old.meters, [] as [crate::MeterPrice; 0]);
 }
 
 #[test]

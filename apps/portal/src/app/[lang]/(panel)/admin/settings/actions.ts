@@ -50,6 +50,11 @@ export async function saveSettings(_: ActionResult, form: FormData): Promise<Act
       lowBalanceMicros: credits("lowBalanceMicros"),
       holdTtlMinutes: Math.round(decimal(form.get("holdTtlMinutes"))),
       dailyLimitMicros: credits("dailyLimitMicros"),
+      // The form shows the crawl price per 1,000 pages; it is kept per page.
+      crawlPageMicros: Math.round(credits("crawlPageMicros") / 1000),
+      freeCrawlPages: Math.round(decimal(form.get("freeCrawlPages"))),
+      reportPdfMicros: credits("reportPdfMicros"),
+      freeReportPdfs: Math.round(decimal(form.get("freeReportPdfs"))),
     };
     const changed = Object.fromEntries(
       Object.entries(changes).filter(([name, value]) => JSON.stringify(value) !== JSON.stringify(current[name as keyof CloudSettings])),

@@ -101,7 +101,16 @@ export const connectorSchema = z
     inject: z.array(injectSchema).default([]),
     /** Query parameters removed from forwarded requests (the apps' own key parameters). */
     strip_query: z.array(z.string().min(1)).default([]),
-    routes: z.array(z.object({ method: z.enum(["GET", "POST"]), path: routePath })).min(1),
+    routes: z
+      .array(
+        z.object({
+          method: z.enum(["GET", "POST"]),
+          path: routePath,
+          /** Reserved for this route instead of `pricing.hold_usd` (a route that can cost more, or much less). */
+          hold_usd: z.number().positive().max(100).optional(),
+        }),
+      )
+      .min(1),
     deny: z.array(routePath).default([]),
     pricing: pricingSchema,
     limits: limitsSchema.default({ rpm: 60, concurrency: 4, timeout_s: 60, max_body_kb: 256 }),

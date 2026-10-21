@@ -28,6 +28,11 @@ export default async function Settings() {
     lowBalanceMicros: n(settings.lowBalanceMicros / unit),
     holdTtlMinutes: n(settings.holdTtlMinutes),
     dailyLimitMicros: n(settings.dailyLimitMicros / unit),
+    // Metered work of the web GEO-SEO Platform.
+    crawlPageMicros: n((settings.crawlPageMicros * 1000) / unit),
+    freeCrawlPages: n(settings.freeCrawlPages),
+    reportPdfMicros: n(settings.reportPdfMicros / unit),
+    freeReportPdfs: n(settings.freeReportPdfs),
   };
   return (
     <>

@@ -34,6 +34,14 @@ export const settingsSchema = z.object({
   holdTtlMinutes: z.number().int().min(1).max(1440).default(15),
   /** Spending limit per user and day, 0 for none. */
   dailyLimitMicros: z.number().int().min(0).default(50_000_000),
+  /** Price of a page the web platform crawls on the server, after the free pages (200 = $0.0002). */
+  crawlPageMicros: z.number().int().min(0).max(1_000_000).default(200),
+  /** Pages each account crawls free every month on the web platform. */
+  freeCrawlPages: z.number().int().min(0).max(10_000_000).default(1000),
+  /** Price of a report PDF the web platform prints on the server, after the free ones (20,000 = $0.02). */
+  reportPdfMicros: z.number().int().min(0).max(10_000_000).default(20_000),
+  /** Report PDFs each account prints free every month on the web platform. */
+  freeReportPdfs: z.number().int().min(0).max(100_000).default(30),
 });
 
 export type CloudSettings = z.infer<typeof settingsSchema>;

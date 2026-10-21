@@ -375,7 +375,11 @@
       "signupBonusMicros": "Kayıt hediyesi (kredi)",
       "lowBalanceMicros": "Düşük bakiye uyarısı (kredi)",
       "holdTtlMinutes": "Ayırma süresi (dk)",
-      "dailyLimitMicros": "Günlük kullanıcı sınırı (kredi, 0 = yok)"
+      "dailyLimitMicros": "Günlük kullanıcı sınırı (kredi, 0 = yok)",
+      "crawlPageMicros": "Platform sunucu taraması (1.000 sayfa başına kredi)",
+      "freeCrawlPages": "Aylık ücretsiz sunucu tarama sayfası",
+      "reportPdfMicros": "Platform rapor PDF'i (kredi)",
+      "freeReportPdfs": "Aylık ücretsiz rapor PDF'i"
     },
     "reportsLead": "Bağlayıcı ve gün bazında gelir, sağlayıcı maliyeti ve kâr (son 30 gün).",
     "day": "Gün",

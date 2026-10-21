@@ -3,8 +3,10 @@ import { afterAll, beforeAll, describe, expect, it } from "vitest";
 
 import { connect, type Db } from "./db/client.ts";
 import { migrate } from "./db/migrate.ts";
-import { holds, ledger } from "./db/schema.ts";
-import { credit, DuplicateRequest, hold, InsufficientFunds, ledgerBalances, releaseStaleHolds, settleHold, wallet } from "./ledger.ts";
+import { holds, ledger, meterEvents, usageEvents } from "./db/schema.ts";
+import { credit, DuplicateRequest, hold, InsufficientFunds, ledgerBalances, meterUsage, releaseStaleHolds, settleHold, wallet } from "./ledger.ts";
+import { DEFAULT_SETTINGS } from "./settings.ts";
+import { isMeterSku, meterCatalog, meterTerms } from "./meter.ts";
 import { addUser, testDb } from "./testing.ts";
 
 let db: Db;
@@ -123,6 +125,45 @@ describe("ledger", () => {
     expect(await wallet(db, id)).toEqual({ balanceMicros: 0, heldMicros: 0, availableMicros: 0 });
     expect(await ledgerBalances(db, id)).toBe(true);
   });
+  it("meters server work: free units first, then the wallet, each batch once", async () => {
+    const id = await funded(1_000_000);
+    const terms = { microsPerUnit: 200, freePerMonth: 1000 };
+    const october = new Date(Date.UTC(2026, 9, 21));
+    const first = await meterUsage(db, id, { sku: "crawl.page", units: 800, idempotencyKey: "audit-1:0", app: "geo-seo-platform-web" }, terms, october);
+    expect(first).toMatchObject({ freeUnits: 800, chargedMicros: 0, freeLeft: 200, duplicate: false });
+    const second = await meterUsage(db, id, { sku: "crawl.page", units: 500, idempotencyKey: "audit-1:1" }, terms, october);
+    expect(second).toMatchObject({ freeUnits: 200, chargedMicros: 300 * 200, freeLeft: 0 });
+    expect(second.wallet.balanceMicros).toBe(1_000_000 - 60_000);
+    // A batch sent twice is charged once.
+    const again = await meterUsage(db, id, { sku: "crawl.page", units: 500, idempotencyKey: "audit-1:1" }, terms, october);
+    expect(again).toMatchObject({ duplicate: true, chargedMicros: 60_000 });
+    expect((await wallet(db, id)).balanceMicros).toBe(940_000);
+    // Beyond the balance: refused, nothing recorded.
+    await expect(meterUsage(db, id, { sku: "crawl.page", units: 10_000, idempotencyKey: "audit-1:2" }, terms, october)).rejects.toBeInstanceOf(InsufficientFunds);
+    const batches = await db.select().from(meterEvents).where(eq(meterEvents.userId, id));
+    expect(batches.map((batch) => batch.units)).toEqual([800, 500]);
+    const usage = await db.select().from(usageEvents).where(eq(usageEvents.userId, id));
+    expect(usage.map((row) => [row.connectorId, row.route, row.chargedMicros])).toEqual([
+      ["server", "crawl.page", 0],
+      ["server", "crawl.page", 60_000],
+    ]);
+    expect(await ledgerBalances(db, id)).toBe(true);
+    // Another user's identical key is a different batch.
+    const other = await funded(0);
+    expect((await meterUsage(db, other, { sku: "crawl.page", units: 1, idempotencyKey: "audit-1:1" }, terms, october)).duplicate).toBe(false);
+  });
+
+  it("prices metered work from the settings", () => {
+    expect(isMeterSku("crawl.page")).toBe(true);
+    expect(isMeterSku("render.page")).toBe(false);
+    expect(isMeterSku("report.pdf")).toBe(true);
+    expect(meterTerms("crawl.page", DEFAULT_SETTINGS)).toEqual({ microsPerUnit: 200, freePerMonth: 1000 });
+    expect(meterTerms("report.pdf", DEFAULT_SETTINGS)).toEqual({ microsPerUnit: 20_000, freePerMonth: 30 });
+    expect(meterCatalog({ ...DEFAULT_SETTINGS, crawlPageMicros: 500 })).toEqual([
+      { sku: "crawl.page", micros_per_unit: 500, free_per_month: 1000 },
+      { sku: "report.pdf", micros_per_unit: 20_000, free_per_month: 30 },
+    ]);
+  });
 });
 
 // PGlite runs one transaction at a time, so row locks are only exercised on a real server:
@@ -151,4 +192,5 @@ describe.runIf(url)("ledger on PostgreSQL", () => {
       await server.close();
     }
   }, 60_000);
+
 });

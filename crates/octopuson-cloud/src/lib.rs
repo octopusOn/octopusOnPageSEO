@@ -28,7 +28,10 @@ mod transport;
 #[cfg(test)]
 mod tests;
 
-pub use client::{Account, Catalog, CloudClient, Connector, DevicePoll, Route, SignIn};
+pub use client::{
+    Account, Catalog, CloudClient, Connector, DevicePoll, MeterPrice, MeterReceipt, Metered, Route,
+    SignIn,
+};
 pub use connect::{DEFAULT_PORTAL, SIGN_IN_TIMEOUT, sign_in_with_browser};
 pub use modes::{SourceMode, Via, choose, connector_for};
 pub use session::{AccountSession, AccountStatus};

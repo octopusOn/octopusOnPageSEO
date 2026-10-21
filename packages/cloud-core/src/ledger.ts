@@ -2,10 +2,10 @@
 // ledger entry, so the balance always equals the sum of the ledger and two requests can never
 // spend the same money.
 
-import { and, eq, lt, sql } from "drizzle-orm";
+import { and, eq, gte, lt, sql } from "drizzle-orm";
 
 import type { Db, Tx } from "./db/client.ts";
-import { holds, ledger, wallets } from "./db/schema.ts";
+import { holds, ledger, meterEvents, usageEvents, wallets } from "./db/schema.ts";
 
 /** Not enough available balance for a hold. */
 export class InsufficientFunds extends Error {
@@ -181,6 +181,112 @@ export async function settleHold(db: Db, holdId: string, chargeMicros: number): 
       },
       before,
     );
+  });
+}
+
+/** What one metered batch used and cost. */
+export interface MeterReceipt {
+  sku: string;
+  units: number;
+  /** Units taken from the month's free allowance. */
+  freeUnits: number;
+  chargedMicros: number;
+  /** Free units left this month after this batch. */
+  freeLeft: number;
+  wallet: Wallet;
+  /** The idempotency key was seen before: nothing was charged now. */
+  duplicate: boolean;
+}
+
+/** What a metered unit costs and how many are free each month. */
+export interface MeterTerms {
+  microsPerUnit: number;
+  freePerMonth: number;
+}
+
+/** The first moment of the current UTC month. */
+function monthStart(now: Date): Date {
+  return new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), 1));
+}
+
+/**
+ * Charges a batch of metered server work (pages crawled on the server): the month's free
+ * allowance first, the rest from the wallet, in one transaction that locks the wallet so two
+ * batches cannot use the same free units or money. A repeated idempotency key returns the first
+ * batch's figures without charging again. Throws {@link InsufficientFunds} when the wallet cannot
+ * pay; nothing is recorded then.
+ */
+export async function meterUsage(
+  db: Db,
+  userId: string,
+  batch: { sku: string; units: number; idempotencyKey: string; tokenId?: string | null; app?: string | null },
+  terms: MeterTerms,
+  now: Date = new Date(),
+): Promise<MeterReceipt> {
+  if (!Number.isInteger(batch.units) || batch.units <= 0) throw new RangeError("units are a positive whole number");
+  const key = `meter:${userId}:${batch.idempotencyKey}`;
+  return db.transaction(async (tx) => {
+    const before = await lockWallet(tx, userId);
+    const since = monthStart(now);
+    const [usedRow] = await tx
+      .select({ units: sql<string>`coalesce(sum(${meterEvents.units}), 0)` })
+      .from(meterEvents)
+      .where(and(eq(meterEvents.userId, userId), eq(meterEvents.sku, batch.sku), gte(meterEvents.createdAt, since)));
+    const used = Number(usedRow?.units ?? 0);
+    const [seen] = await tx.select().from(meterEvents).where(eq(meterEvents.idempotencyKey, key));
+    if (seen) {
+      return {
+        sku: seen.sku,
+        units: seen.units,
+        freeUnits: seen.freeUnits,
+        chargedMicros: seen.chargedMicros,
+        freeLeft: Math.max(0, terms.freePerMonth - used),
+        wallet: { ...before, availableMicros: before.balanceMicros - before.heldMicros },
+        duplicate: true,
+      };
+    }
+    const freeUnits = Math.min(batch.units, Math.max(0, terms.freePerMonth - used));
+    const chargedMicros = (batch.units - freeUnits) * terms.microsPerUnit;
+    const available = before.balanceMicros - before.heldMicros;
+    if (chargedMicros > available) throw new InsufficientFunds(available);
+    const after =
+      chargedMicros > 0
+        ? await write(
+            tx,
+            userId,
+            { kind: "capture", amountMicros: -chargedMicros, refType: "meter", refId: batch.sku, idempotencyKey: key, note: `${batch.units} ${batch.sku}` },
+            before,
+          )
+        : { ...before, availableMicros: available };
+    await tx.insert(meterEvents).values({
+      userId,
+      tokenId: batch.tokenId ?? null,
+      sku: batch.sku,
+      units: batch.units,
+      freeUnits,
+      chargedMicros,
+      idempotencyKey: key,
+      app: batch.app ?? null,
+    });
+    await tx.insert(usageEvents).values({
+      userId,
+      tokenId: batch.tokenId ?? null,
+      connectorId: "server",
+      method: "METER",
+      route: batch.sku,
+      status: 200,
+      chargedMicros,
+      app: batch.app ?? null,
+    });
+    return {
+      sku: batch.sku,
+      units: batch.units,
+      freeUnits,
+      chargedMicros,
+      freeLeft: Math.max(0, terms.freePerMonth - used - freeUnits),
+      wallet: after,
+      duplicate: false,
+    };
   });
 }
 

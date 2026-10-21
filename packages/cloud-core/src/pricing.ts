@@ -2,6 +2,7 @@
 
 import type { Connector } from "./connector.ts";
 import { select, selectNumber } from "./jsonpath.ts";
+import { matchesPattern } from "./routes.ts";
 import { usdToMicros } from "./money.ts";
 
 /** The charge for an upstream cost: the cost plus markup, rounded up, at least the minimum. */
@@ -54,7 +55,9 @@ export function settle(connector: Connector, defaultMarkup: number, status: numb
   return { error, upstreamMicros: reported, chargeMicros: charged };
 }
 
-/** The amount reserved before forwarding. */
-export function holdFor(connector: Connector): number {
-  return usdToMicros(connector.pricing.hold_usd);
+/** The amount reserved before forwarding a request: its route's own hold, else the connector's. */
+export function holdFor(connector: Connector, method?: string, path?: string): number {
+  const route =
+    method && path ? connector.routes.find((candidate) => candidate.method === method.toUpperCase() && matchesPattern(path, candidate.path)) : undefined;
+  return usdToMicros(route?.hold_usd ?? connector.pricing.hold_usd);
 }

@@ -375,7 +375,11 @@
       "signupBonusMicros": "Geschenk bei der Registrierung (Credits)",
       "lowBalanceMicros": "Warnung bei niedrigem Guthaben (Credits)",
       "holdTtlMinutes": "Lebensdauer einer Reservierung (min)",
-      "dailyLimitMicros": "Tageslimit pro Nutzer (Credits, 0 = keins)"
+      "dailyLimitMicros": "Tageslimit pro Nutzer (Credits, 0 = keins)",
+      "crawlPageMicros": "Server-Crawl der Plattform (Credits pro 1.000 Seiten)",
+      "freeCrawlPages": "Kostenlose Server-Crawl-Seiten pro Monat",
+      "reportPdfMicros": "Berichts-PDF der Plattform (Credits)",
+      "freeReportPdfs": "Kostenlose Berichts-PDFs pro Monat"
     },
     "reportsLead": "Umsatz, Anbieterkosten und Marge pro Konnektor und Tag (letzte 30 Tage).",
     "day": "Tag",

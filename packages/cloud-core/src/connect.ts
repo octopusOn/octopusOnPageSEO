@@ -1,7 +1,8 @@
 // One-click sign-in for the desktop programs (RFC 8252 loopback redirect with PKCE): the
 // program listens on 127.0.0.1 and opens my.octopuson.com/baglan; a signed-in person is sent
 // straight back with a one-time code, which only the program holding the PKCE verifier can
-// turn into a token. Nothing needs to be typed or compared.
+// turn into a token. Nothing needs to be typed or compared. Web applications of our own (the
+// GEO-SEO Platform at app.octopuson.com) use the same flow with an allowed https return address.
 
 import { createHash, randomBytes } from "node:crypto";
 
@@ -26,14 +27,36 @@ export interface ConnectRequest {
   client: string;
 }
 
-/** Checks a sign-in request from the URL; null when anything is off. */
-export function parseConnectRequest(params: URLSearchParams): ConnectRequest | null {
+/** A web application's return address: https (or http on localhost, for trials) with a path. */
+const WEB_REDIRECT = /^(?:https:\/\/[a-z0-9.-]+(?::\d{2,5})?|http:\/\/localhost(?::\d{2,5})?)\/[A-Za-z0-9/_.-]*$/;
+
+/** The loopback address of a desktop program on this computer. */
+const LOOPBACK = /^http:\/\/127\.0\.0\.1:(\d{2,5})$/;
+
+/**
+ * Web applications allowed to receive codes, from a comma-separated list of exact return
+ * addresses (`CONNECT_WEB_REDIRECTS`, e.g. `https://app.octopuson.com/auth/callback`).
+ */
+export function webRedirects(value: string | undefined): string[] {
+  return (value ?? "")
+    .split(",")
+    .map((entry) => entry.trim())
+    .filter((entry) => WEB_REDIRECT.test(entry));
+}
+
+/**
+ * Checks a sign-in request from the URL; null when anything is off. Codes go back to a desktop
+ * program's loopback address, or to one of the exact `allowedWeb` addresses.
+ */
+export function parseConnectRequest(params: URLSearchParams, allowedWeb: readonly string[] = []): ConnectRequest | null {
   const redirectUri = params.get("redirect_uri") ?? "";
-  const match = /^http:\/\/127\.0\.0\.1:(\d{2,5})$/.exec(redirectUri);
+  const match = LOOPBACK.exec(redirectUri);
   const port = Number(match?.[1]);
   const state = params.get("state") ?? "";
   const challenge = params.get("code_challenge") ?? "";
-  if (!match || port < 1024 || port > 65_535) return null;
+  const loopback = match !== null && port >= 1024 && port <= 65_535;
+  const web = !match && allowedWeb.includes(redirectUri) && WEB_REDIRECT.test(redirectUri);
+  if (!loopback && !web) return null;
   if (params.get("code_challenge_method") !== "S256" || !/^[A-Za-z0-9_-]{43}$/.test(challenge)) return null;
   if (!/^[A-Za-z0-9_-]{8,128}$/.test(state)) return null;
   const client = (params.get("client") ?? "OctopusOn SEO").replace(/[^\w./ ()-]/g, "").slice(0, 120) || "OctopusOn SEO";
@@ -50,7 +73,8 @@ export async function createConnectCode(db: Db, userId: string, request: Connect
     client: request.client,
     expiresAt: new Date(Date.now() + CONNECT_CODE_TTL_SECONDS * 1000),
   });
-  const url = new URL(`${request.redirectUri}/`);
+  // A program listens at its loopback root; a web application at its exact return path.
+  const url = new URL(LOOPBACK.test(request.redirectUri) ? `${request.redirectUri}/` : request.redirectUri);
   url.searchParams.set("code", code);
   url.searchParams.set("state", request.state);
   return url.toString();

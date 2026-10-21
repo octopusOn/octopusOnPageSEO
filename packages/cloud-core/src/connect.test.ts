@@ -3,7 +3,7 @@ import { createHash } from "node:crypto";
 import { eq } from "drizzle-orm";
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
 
-import { createConnectCode, parseConnectRequest, redeemConnectCode } from "./connect.ts";
+import { createConnectCode, parseConnectRequest, redeemConnectCode, webRedirects } from "./connect.ts";
 import type { Db } from "./db/client.ts";
 import { connectCodes } from "./db/schema.ts";
 import { addUser, testDb } from "./testing.ts";
@@ -50,6 +50,31 @@ describe("one-click sign-in", () => {
     for (const changes of bad) {
       expect(parseConnectRequest(params(changes)), JSON.stringify(changes)).toBeNull();
     }
+  });
+
+  it("accepts only the web return addresses it was given", () => {
+    const allowed = webRedirects(" https://app.octopuson.com/auth/callback , javascript:alert(1), http://evil.example/cb");
+    expect(allowed).toEqual(["https://app.octopuson.com/auth/callback"]);
+    const web = params({ redirect_uri: "https://app.octopuson.com/auth/callback", client: "geo-seo-platform-web" });
+    expect(parseConnectRequest(web)).toBeNull();
+    expect(parseConnectRequest(web, allowed)).toMatchObject({ redirectUri: "https://app.octopuson.com/auth/callback" });
+    for (const other of ["https://app.octopuson.com/auth/callback/x", "https://app.octopuson.com.evil.example/auth/callback", "http://app.octopuson.com/auth/callback"]) {
+      expect(parseConnectRequest(params({ redirect_uri: other }), allowed), other).toBeNull();
+    }
+    expect(webRedirects("http://localhost:8796/auth/callback")).toEqual(["http://localhost:8796/auth/callback"]);
+  });
+
+  it("sends the code to a web application's exact return address", async () => {
+    const userId = await addUser(db, "web-connect@example.com");
+    const allowed = ["https://app.octopuson.com/auth/callback"];
+    const request = parseConnectRequest(params({ redirect_uri: allowed[0]!, client: "geo-seo-platform-web" }), allowed)!;
+    const back = new URL(await createConnectCode(db, userId, request));
+    expect(`${back.origin}${back.pathname}`).toBe("https://app.octopuson.com/auth/callback");
+    const code = back.searchParams.get("code")!;
+    const redeemed = await redeemConnectCode(db, code, verifier);
+    expect(redeemed?.userId).toBe(userId);
+    const tokens = await listTokens(db, userId);
+    expect(tokens.some((token) => token.name === "geo-seo-platform-web")).toBe(true);
   });
 
   it("sends a one-time code back to the program and swaps it for a token once", async () => {
