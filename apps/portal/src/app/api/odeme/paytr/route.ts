@@ -21,7 +21,7 @@ export async function POST(request: NextRequest): Promise<Response> {
   if (!order || order.status !== "created") return ok();
   if (notice.paid) {
     const outcome = await markOrderPaid(db(), order.id, { paidKurus: notice.amountKurus ?? notice.totalKurus });
-    if (outcome === "credited") after(() => invoiceAfterPayment(db(), order.id, "PayTR"));
+    if (outcome === "credited") after(() => invoiceAfterPayment(db(), order.id, "paytr"));
   } else {
     await markOrderFailed(db(), order.id, notice.reason ?? "failed");
   }

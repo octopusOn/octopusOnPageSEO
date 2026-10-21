@@ -26,7 +26,8 @@ export default async function Confirm({ searchParams }: { searchParams: Promise<
     hasPaidOrder(db(), user.id),
     legalTexts(locale),
   ]);
-  if (!paymentProvider() || !rate || !Number.isInteger(amountKurus) || amountKurus <= 0) redirect(url("credits"));
+  const provider = paymentProvider();
+  if (!provider || !rate || !Number.isInteger(amountKurus) || amountKurus <= 0) redirect(url("credits"));
   const legalLink = (key: string) => {
     const text = legal.find((item) => item.key === key);
     return { href: url("legal/[slug]", { slug: legalSlug(legal, key) }), label: text?.label ?? key };
@@ -93,7 +94,8 @@ export default async function Confirm({ searchParams }: { searchParams: Promise<
       </div>
       {!problem && profile?.phone ? (
         <section className="oc-card">
-          <ActionForm action={pay} submit={`${t.buy.pay} · ${formatTry(priced.amountKurus, locale)}`}>
+          <ActionForm action={pay} submit={provider.kind === "transfer" ? t.buy.transferSubmit : `${t.buy.pay} · ${formatTry(priced.amountKurus, locale)}`}>
+            {provider.kind === "transfer" ? <p className="small">{t.buy.transferNote}</p> : null}
             <input type="hidden" name="amount" value={amountKurus} />
             <p className="small">
               {["pre-contract-information", "distance-sales", "credit-terms"].map((key, index) => (

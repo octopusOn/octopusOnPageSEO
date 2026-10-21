@@ -1,5 +1,7 @@
 // Payment and invoicing providers, configured by environment variables. Without them the
-// credits page shows that payments open soon.
+// credits page shows that payments open soon. `transfer` is a bank transfer: the buyer gets the
+// bank details and the order's reference, and an admin marks the order paid when the money
+// arrives.
 
 import {
   currentRate,
@@ -14,7 +16,18 @@ import {
 } from "@octopusseo/cloud-core";
 import { eq } from "drizzle-orm";
 
-export type PaymentProvider = { kind: "iyzico"; config: IyzicoConfig } | { kind: "paytr"; config: PaytrConfig };
+/** The account bank transfers go to; `currency` is the account's (USD amounts at the order's rate). */
+export interface TransferConfig {
+  bank: string;
+  holder: string;
+  iban: string;
+  currency: "TRY" | "USD";
+}
+
+export type PaymentProvider =
+  | { kind: "iyzico"; config: IyzicoConfig }
+  | { kind: "paytr"; config: PaytrConfig }
+  | { kind: "transfer"; config: TransferConfig };
 
 export function paymentProvider(env: NodeJS.ProcessEnv = process.env): PaymentProvider | null {
   const wanted = env.PAYMENT_PROVIDER;
@@ -35,7 +48,29 @@ export function paymentProvider(env: NodeJS.ProcessEnv = process.env): PaymentPr
       },
     };
   }
+  if (wanted === "transfer" && env.TRANSFER_HOLDER?.trim() && env.TRANSFER_IBAN?.trim()) {
+    return {
+      kind: "transfer",
+      config: {
+        bank: env.TRANSFER_BANK?.trim() ?? "",
+        holder: env.TRANSFER_HOLDER.trim(),
+        iban: env.TRANSFER_IBAN.replace(/\s+/g, "").replace(/(.{4})(?=.)/g, "$1 "),
+        currency: env.TRANSFER_CURRENCY?.trim().toUpperCase() === "USD" ? "USD" : "TRY",
+      },
+    };
+  }
   return null;
+}
+
+/** What a transfer of an order sends: lira as priced, or dollars at the order's rate, rounded up to the cent. */
+export function transferAmount(order: { amountKurus: number; fxRate: string }, currency: TransferConfig["currency"]): { currency: TransferConfig["currency"]; cents: number } {
+  return currency === "USD" ? { currency, cents: Math.ceil(order.amountKurus / Number(order.fxRate)) } : { currency, cents: order.amountKurus };
+}
+
+/** How an order was paid, for its invoice: the intermediary, or the bank for a transfer. */
+export function saleChannel(provider: string): { platform: string; paymentType: "ODEMEARACISI" | "EFT/HAVALE" } {
+  if (provider === "transfer") return { platform: "Havale/EFT", paymentType: "EFT/HAVALE" };
+  return { platform: provider === "paytr" ? "PayTR" : "iyzico", paymentType: "ODEMEARACISI" };
 }
 
 export function parasut(env: NodeJS.ProcessEnv = process.env): Parasut | null {
@@ -67,7 +102,7 @@ export function clientIp(forwardedFor: string | null): string {
 }
 
 /** Issues the invoice of a just-paid order, or leaves it for the accountant without Paraşüt. */
-export async function invoiceAfterPayment(db: Db, orderId: string, platform: string): Promise<void> {
+export async function invoiceAfterPayment(db: Db, orderId: string, provider: string): Promise<void> {
   const client = parasut();
   if (!client) {
     await db.update(schema.invoices).set({ provider: "manual", status: "manual" }).where(eq(schema.invoices.orderId, orderId));
@@ -75,7 +110,7 @@ export async function invoiceAfterPayment(db: Db, orderId: string, platform: str
   }
   const { vatRate } = await getSettings(db);
   try {
-    await issueInvoice(db, client, orderId, { url: siteUrl(), platform, vatRate });
+    await issueInvoice(db, client, orderId, { url: siteUrl(), ...saleChannel(provider), vatRate });
   } catch (error) {
     console.error(JSON.stringify({ event: "invoice_failed", orderId, message: error instanceof Error ? error.message : String(error) }));
   }

@@ -163,7 +163,17 @@
     "pending": "Ihre Zahlung wird verarbeitet; diese Seite aktualisiert sich alle paar Sekunden.",
     "failed": "Die Zahlung wurde nicht abgeschlossen: {reason}",
     "backToCredits": "Zurück zu den Credits",
-    "toDashboard": "Zur Übersicht"
+    "toDashboard": "Zur Übersicht",
+    "transferNote": "Vorerst zahlen Sie per Banküberweisung: Wählen Sie einen Betrag, danach erhalten Sie die Bankverbindung und die Referenz der Bestellung. Ihre Credits werden gutgeschrieben, sobald die Überweisung eingeht, meist innerhalb eines Werktags.",
+    "transferSubmit": "Bankverbindung anzeigen",
+    "transferTitle": "Zahlung per Überweisung",
+    "transferLead": "Überweisen Sie den folgenden Betrag auf dieses Konto und geben Sie die Referenz als Verwendungszweck an. Ihre Credits werden gutgeschrieben, sobald das Geld eingeht.",
+    "transferAmount": "Zu überweisender Betrag",
+    "transferBank": "Bank",
+    "transferHolder": "Kontoinhaber",
+    "transferReference": "Referenz (Verwendungszweck)",
+    "transferSteps": "Geben Sie die Referenz genau so als Verwendungszweck an, damit wir Ihre Überweisung zuordnen können. Credits werden meist innerhalb eines Werktags gutgeschrieben; die Bestellung erscheint dann unter Rechnungen als bezahlt.",
+    "transferOrders": "Meine Bestellungen"
   },
   "billing": {
     "title": "Rechnungen",
@@ -373,7 +383,12 @@
     "action": "Aktion",
     "actor": "Von",
     "target": "Ziel",
-    "details": "Details"
+    "details": "Details",
+    "transferReceived": "Überweisung erhalten",
+    "transferReceivedConfirm": "Ist die Überweisung dieser Bestellung vollständig eingegangen? Die Credits werden jetzt gutgeschrieben.",
+    "cancelOrder": "Stornieren",
+    "cancelOrderConfirm": "Diese offene Bestellung ohne Credits schließen?",
+    "transferDone": "Als bezahlt markiert; die Credits wurden gutgeschrieben."
   },
   "common": {
     "back": "Zurück",

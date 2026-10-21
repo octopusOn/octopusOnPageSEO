@@ -5,7 +5,8 @@ import { notFound } from "next/navigation";
 import { PageHead } from "@/components/Shell";
 import { fill, getDictionary } from "@/i18n";
 import { db } from "@/lib/db";
-import { formatCredits } from "@/lib/format";
+import { formatCredits, formatTry, formatUsd } from "@/lib/format";
+import { paymentProvider, transferAmount } from "@/lib/payments";
 import { requireUser } from "@/lib/session";
 
 export default async function Result({ searchParams }: { searchParams: Promise<{ order?: string }> }) {
@@ -14,6 +15,51 @@ export default async function Result({ searchParams }: { searchParams: Promise<{
   if (!order || order.userId !== user.id) notFound();
   const settings = await getSettings(db());
   const credits = formatCredits(order.creditsMicros, settings.creditUnitMicros, locale);
+  const provider = paymentProvider();
+  // A waiting bank transfer: where to send how much, with the order's reference.
+  const transfer = order.provider === "transfer" && order.status === "created" && provider?.kind === "transfer" ? provider.config : null;
+  if (transfer) {
+    const amount = transferAmount(order, transfer.currency);
+    const shown = amount.currency === "USD" ? formatUsd(amount.cents * 10_000, locale) : formatTry(amount.cents, locale);
+    return (
+      <>
+        <PageHead title={t.buy.transferTitle} lead={t.buy.transferLead} />
+        <section className="oc-card narrow">
+          <dl className="facts large">
+            <dt>{t.buy.transferAmount}</dt>
+            <dd>
+              <strong>{shown}</strong>
+              {amount.currency === "USD" ? <div className="muted small">{formatTry(order.amountKurus, locale)}</div> : null}
+            </dd>
+            {transfer.bank ? (
+              <>
+                <dt>{t.buy.transferBank}</dt>
+                <dd>{transfer.bank}</dd>
+              </>
+            ) : null}
+            <dt>{t.buy.transferHolder}</dt>
+            <dd>{transfer.holder}</dd>
+            <dt>IBAN</dt>
+            <dd className="mono">{transfer.iban}</dd>
+            <dt>{t.buy.transferReference}</dt>
+            <dd className="mono">
+              <strong>{order.conversationId}</strong>
+            </dd>
+            <dt>{t.buy.youGet}</dt>
+            <dd>
+              {credits} {t.buy.credits}
+            </dd>
+          </dl>
+          <div className="oc-banner info">{t.buy.transferSteps}</div>
+          <div className="form-foot">
+            <Link className="oc-btn" href={url("invoices")}>
+              {t.buy.transferOrders}
+            </Link>
+          </div>
+        </section>
+      </>
+    );
+  }
   return (
     <>
       {order.status === "created" ? <meta httpEquiv="refresh" content="3" /> : null}

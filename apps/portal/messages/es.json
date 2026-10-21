@@ -163,7 +163,17 @@
     "pending": "Su pago se está procesando; esta página se actualiza cada pocos segundos.",
     "failed": "El pago no se completó: {reason}",
     "backToCredits": "Volver a los créditos",
-    "toDashboard": "Ir al panel"
+    "toDashboard": "Ir al panel",
+    "transferNote": "Por ahora se paga por transferencia bancaria: elija un importe y verá los datos bancarios y la referencia del pedido. Sus créditos se añaden cuando llega la transferencia, normalmente en un día hábil.",
+    "transferSubmit": "Ver los datos bancarios",
+    "transferTitle": "Pago por transferencia bancaria",
+    "transferLead": "Envíe el importe indicado a esta cuenta y escriba la referencia en el concepto de la transferencia. Sus créditos se añaden cuando llega el dinero.",
+    "transferAmount": "Importe a enviar",
+    "transferBank": "Banco",
+    "transferHolder": "Titular de la cuenta",
+    "transferReference": "Referencia (concepto)",
+    "transferSteps": "Escriba la referencia exactamente en el concepto para que podamos identificar su transferencia. Los créditos se añaden normalmente en un día hábil; el pedido aparece entonces como pagado en Facturas.",
+    "transferOrders": "Mis pedidos"
   },
   "billing": {
     "title": "Facturas",
@@ -373,7 +383,12 @@
     "action": "Acción",
     "actor": "Por",
     "target": "Objetivo",
-    "details": "Detalles"
+    "details": "Detalles",
+    "transferReceived": "Transferencia recibida",
+    "transferReceivedConfirm": "¿Ha llegado completa la transferencia de este pedido? Sus créditos se añaden a la cuenta ahora.",
+    "cancelOrder": "Cancelar",
+    "cancelOrderConfirm": "¿Cerrar este pedido pendiente sin añadir créditos?",
+    "transferDone": "Marcado como pagado; se añadieron los créditos."
   },
   "common": {
     "back": "Volver",

@@ -163,7 +163,17 @@
     "pending": "Your payment is being processed; this page refreshes every few seconds.",
     "failed": "The payment did not complete: {reason}",
     "backToCredits": "Back to credits",
-    "toDashboard": "Go to the dashboard"
+    "toDashboard": "Go to the dashboard",
+    "transferNote": "For now you pay by bank transfer: choose an amount, then you get the bank details and the order's reference. Your credits are added when the transfer arrives, usually within one business day.",
+    "transferSubmit": "Show the bank details",
+    "transferTitle": "Pay by bank transfer",
+    "transferLead": "Send the amount below to this account and write the reference in the transfer's description. Your credits are added when the money arrives.",
+    "transferAmount": "Amount to send",
+    "transferBank": "Bank",
+    "transferHolder": "Account holder",
+    "transferReference": "Reference (description)",
+    "transferSteps": "Write the reference exactly in the description so we can match your transfer. Credits are usually added within one business day; the order then shows as paid under Invoices.",
+    "transferOrders": "My orders"
   },
   "billing": {
     "title": "Invoices",
@@ -373,7 +383,12 @@
     "action": "Action",
     "actor": "By",
     "target": "Target",
-    "details": "Details"
+    "details": "Details",
+    "transferReceived": "Transfer received",
+    "transferReceivedConfirm": "Did this order's transfer arrive in full? Its credits are added to the account now.",
+    "cancelOrder": "Cancel",
+    "cancelOrderConfirm": "Close this waiting order without adding credits?",
+    "transferDone": "Marked paid; the credits were added."
   },
   "common": {
     "back": "Back",

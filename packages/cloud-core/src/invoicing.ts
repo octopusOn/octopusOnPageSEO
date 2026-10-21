@@ -169,8 +169,10 @@ function contactAttributes(profile: BillingProfile, email: string): Record<strin
 export interface SaleChannel {
   /** The shop address printed on e-Arşiv invoices (https://my.octopuson.com). */
   url: string;
-  /** The payment intermediary (iyzico, PayTR). */
+  /** The payment intermediary (iyzico, PayTR), or the bank for a transfer. */
   platform: string;
+  /** How the buyer paid: through the intermediary (the default) or by bank transfer. */
+  paymentType?: "ODEMEARACISI" | "EFT/HAVALE";
   vatRate: number;
 }
 
@@ -263,7 +265,7 @@ export async function issueInvoice(db: Db, parasut: Parasut, orderId: string, ch
         kind = "e_archive";
         jobId = (
           await parasut.createEArchive(externalId, {
-            internet_sale: { url: channel.url, payment_type: "ODEMEARACISI", payment_platform: channel.platform, payment_date: day },
+            internet_sale: { url: channel.url, payment_type: channel.paymentType ?? "ODEMEARACISI", payment_platform: channel.platform, payment_date: day },
           })
         ).id;
       }

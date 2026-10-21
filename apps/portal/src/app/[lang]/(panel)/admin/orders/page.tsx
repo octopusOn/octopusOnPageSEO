@@ -8,7 +8,7 @@ import { db } from "@/lib/db";
 import { formatCredits, formatTime, formatTry } from "@/lib/format";
 import { parasut, paymentProvider } from "@/lib/payments";
 
-import { retryInvoice, reverse } from "./actions";
+import { cancelOrder, retryInvoice, reverse, transferReceived } from "./actions";
 
 export default async function Orders({ searchParams }: { searchParams: Promise<{ status?: string }> }) {
   const [{ t, locale, url }, { status: shown }] = await Promise.all([getDictionary(), searchParams]);
@@ -85,6 +85,15 @@ export default async function Orders({ searchParams }: { searchParams: Promise<{
                       <ActionForm action={reverse} submit={t.admin.chargeback} tone="danger" confirm={t.admin.chargebackConfirm} inline>
                         <input type="hidden" name="id" value={order.id} />
                         <input type="hidden" name="kind" value="chargeback" />
+                      </ActionForm>
+                    </div>
+                  ) : order.status === "created" && order.provider === "transfer" ? (
+                    <div className="row-actions">
+                      <ActionForm action={transferReceived} submit={t.admin.transferReceived} confirm={t.admin.transferReceivedConfirm} inline>
+                        <input type="hidden" name="id" value={order.id} />
+                      </ActionForm>
+                      <ActionForm action={cancelOrder} submit={t.admin.cancelOrder} tone="ghost" confirm={t.admin.cancelOrderConfirm} inline>
+                        <input type="hidden" name="id" value={order.id} />
                       </ActionForm>
                     </div>
                   ) : null}

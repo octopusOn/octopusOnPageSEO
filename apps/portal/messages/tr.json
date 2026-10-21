@@ -163,7 +163,17 @@
     "pending": "Ödemeniz işleniyor; bu sayfa birkaç saniyede bir yenilenir.",
     "failed": "Ödeme tamamlanmadı: {reason}",
     "backToCredits": "Kredi sayfasına dön",
-    "toDashboard": "Panele git"
+    "toDashboard": "Panele git",
+    "transferNote": "Şimdilik ödeme havale/EFT ile yapılıyor: bir tutar seçin, ardından banka bilgilerini ve siparişin referans kodunu görürsünüz. Krediler para hesaba geçince, genellikle bir iş günü içinde eklenir.",
+    "transferSubmit": "Banka bilgilerini göster",
+    "transferTitle": "Havale/EFT ile ödeme",
+    "transferLead": "Aşağıdaki tutarı bu hesaba gönderin ve açıklamaya referans kodunu yazın. Para hesaba geçince kredileriniz eklenir.",
+    "transferAmount": "Gönderilecek tutar",
+    "transferBank": "Banka",
+    "transferHolder": "Hesap sahibi",
+    "transferReference": "Referans (açıklama)",
+    "transferSteps": "Ödemenizi eşleştirebilmemiz için referans kodunu açıklamaya aynen yazın. Krediler genellikle bir iş günü içinde eklenir; sipariş de Faturalar sayfasında ödendi olarak görünür.",
+    "transferOrders": "Siparişlerim"
   },
   "billing": {
     "title": "Faturalar",
@@ -373,7 +383,12 @@
     "action": "İşlem",
     "actor": "Yapan",
     "target": "Hedef",
-    "details": "Ayrıntı"
+    "details": "Ayrıntı",
+    "transferReceived": "Havale geldi",
+    "transferReceivedConfirm": "Bu siparişin havalesi tam olarak hesaba geçti mi? Kredileri şimdi hesaba eklenecek.",
+    "cancelOrder": "İptal et",
+    "cancelOrderConfirm": "Bekleyen bu sipariş kredi eklenmeden kapatılsın mı?",
+    "transferDone": "Ödendi olarak işaretlendi; krediler eklendi."
   },
   "common": {
     "back": "Geri",

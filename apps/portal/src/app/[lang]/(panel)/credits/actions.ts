@@ -56,6 +56,8 @@ export async function pay(_: ActionResult, form: FormData): Promise<ActionResult
     quote: quote(amountKurus, settings, rate.rate),
     buyerIp: ip,
   });
+  // A bank transfer has nothing to start: the result page shows where to send the money.
+  if (provider.kind === "transfer") redirect(url("credits/result", {}, { order: order.id }));
   const itemName = "OctopusOn SEO kredi";
   let next: string;
   try {
@@ -84,7 +86,7 @@ export async function pay(_: ActionResult, form: FormData): Promise<ActionResult
       });
       await setOrderReference(db(), order.id, started.token);
       next = started.paymentPageUrl;
-    } else {
+    } else if (provider.kind === "paytr") {
       const started = await startPaytr(provider.config, {
         merchantOid: order.conversationId,
         email: user.email,
@@ -100,6 +102,8 @@ export async function pay(_: ActionResult, form: FormData): Promise<ActionResult
       });
       await setOrderReference(db(), order.id, started.token);
       next = url("credits/payment/[id]", { id: order.id });
+    } else {
+      next = url("credits");
     }
   } catch (error) {
     const reason = error instanceof Error ? error.message : String(error);

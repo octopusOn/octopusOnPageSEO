@@ -72,6 +72,8 @@ Things to know about the master key:
 - It cannot be replaced: without it, the stored provider credentials and every desktop sign-in are lost. Keep a copy outside the server.
 - Both services must see the same key, which is why it lives in the shared file.
 
+**Payments by bank transfer.** `PAYMENT_PROVIDER=transfer` with `TRANSFER_HOLDER`, `TRANSFER_IBAN`, optionally `TRANSFER_BANK` and `TRANSFER_CURRENCY` (`TRY`, or `USD` for a dollar account: the order's lira at its rate, rounded up to the cent) sells credits without a card processor. The buyer confirms an amount as usual and gets the bank details with the order's reference (`OCT…`) to write in the description; the order waits. When the money arrives, Admin → Orders → **Transfer received** marks it paid, adds its credits once and hands the invoice to Paraşüt (payment type EFT/HAVALE) or to the accountant; **Cancel** closes a transfer that will not come. `EMAIL_VERIFICATION=off` lets accounts in without confirming their address, while no SMTP server is set up.
+
 After changing a settings file, restart the service that reads it: `systemctl restart octopuson-portal` (and `octopuson-gateway` for `cloud.env`).
 
 ### Updating
@@ -100,6 +102,7 @@ Database chores run with the services' settings through `scripts/account-cli.sh`
 ```bash
 bash /home/octopuson/octopusOnPageSEO/scripts/account-cli.sh seed                      # add missing connectors as drafts
 bash /home/octopuson/octopusOnPageSEO/scripts/account-cli.sh promote you@example.com   # make a signed-up account an admin
+bash /home/octopuson/octopusOnPageSEO/scripts/account-cli.sh adjust you@example.com 5000 "reason"   # add credits by hand (negative takes), audited
 ```
 
 ### First installation
