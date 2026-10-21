@@ -157,3 +157,48 @@ fn refreshes_and_reports_an_expired_grant() {
     revoke(&transport, "1//r").unwrap();
     assert!(transport.requests()[2].url.starts_with(REVOKE_URL));
 }
+
+#[test]
+fn a_web_consent_returns_to_its_address_and_exchanges_its_code() {
+    let pkce = Pkce::new().unwrap();
+    let state = new_state().unwrap();
+    assert_eq!(state.len(), 32);
+    let url = consent_url(
+        &client(),
+        &[scopes::SEARCH_CONSOLE, scopes::ANALYTICS],
+        "https://app.octopuson.com/auth/google/callback",
+        &state,
+        &pkce,
+    )
+    .unwrap();
+    assert!(url.starts_with(AUTH_URL));
+    assert_eq!(
+        query(&url, "redirect_uri"),
+        "https://app.octopuson.com/auth/google/callback"
+    );
+    assert_eq!(query(&url, "state"), state);
+    assert_eq!(query(&url, "code_challenge"), pkce.challenge);
+    assert_eq!(query(&url, "access_type"), "offline");
+    assert_eq!(
+        query(&url, "scope"),
+        format!("{} {}", scopes::SEARCH_CONSOLE, scopes::ANALYTICS)
+    );
+
+    let transport = FakeTransport::new().reply(
+        200,
+        r#"{"access_token":"ya29.a","expires_in":3599,"refresh_token":"1//r","scope":"https://www.googleapis.com/auth/webmasters.readonly"}"#,
+    );
+    let code = AuthorizationCode::new(
+        "4/code".to_owned(),
+        pkce.verifier.clone(),
+        "https://app.octopuson.com/auth/google/callback".to_owned(),
+    );
+    let tokens = exchange(&transport, &client(), &code).unwrap();
+    assert_eq!(tokens.refresh_token.as_deref(), Some("1//r"));
+    assert!(!tokens.has_scope(scopes::ANALYTICS));
+    let body = String::from_utf8(transport.requests()[0].body.clone().unwrap()).unwrap();
+    assert!(
+        body.contains("redirect_uri=https%3A%2F%2Fapp.octopuson.com%2Fauth%2Fgoogle%2Fcallback")
+    );
+    assert!(body.contains(&format!("code_verifier={}", pkce.verifier)));
+}

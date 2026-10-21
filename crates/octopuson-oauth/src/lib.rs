@@ -6,6 +6,10 @@
 //! with a short page. [`exchange`] trades the code for tokens; [`refresh`] gets new access
 //! tokens from the refresh token; [`revoke`] ends the grant. Nothing is logged, and the
 //! listener accepts nothing but the redirect.
+//!
+//! A web application signs in through its own return address instead of a listener:
+//! [`consent_url`] builds the consent page for it, and the code the callback receives becomes
+//! an [`AuthorizationCode`] with [`AuthorizationCode::new`].
 
 use std::io::{BufRead, BufReader, Write};
 use std::net::{Ipv4Addr, SocketAddr, TcpListener, TcpStream};
@@ -33,6 +37,8 @@ pub mod scopes {
     pub const SEARCH_CONSOLE: &str = "https://www.googleapis.com/auth/webmasters.readonly";
     /// Google Ads.
     pub const ADS: &str = "https://www.googleapis.com/auth/adwords";
+    /// Google Analytics, read only.
+    pub const ANALYTICS: &str = "https://www.googleapis.com/auth/analytics.readonly";
 }
 
 /// Longest request line or header the listener reads.
@@ -150,6 +156,16 @@ pub struct AuthorizationCode {
 }
 
 impl AuthorizationCode {
+    /// The code a web application's callback received, with the PKCE verifier of its consent
+    /// and the return address the consent named.
+    pub fn new(code: String, verifier: String, redirect_uri: String) -> Self {
+        Self {
+            code,
+            redirect_uri,
+            verifier,
+        }
+    }
+
     /// The code to exchange.
     pub fn code(&self) -> &str {
         &self.code
@@ -172,6 +188,41 @@ impl std::fmt::Debug for AuthorizationCode {
             .field("redirect_uri", &self.redirect_uri)
             .finish_non_exhaustive()
     }
+}
+
+/// A random `state` for a consent request.
+///
+/// # Errors
+/// [`OAuthError::Random`] without a random source.
+pub fn new_state() -> Result<String, OAuthError> {
+    random(24)
+}
+
+/// Google's consent page for a web application: `scopes` for `client`, returning to
+/// `redirect_uri` with `state`, a PKCE challenge, and offline access (a refresh token).
+///
+/// # Errors
+/// [`OAuthError::Io`] for an unusable page address (never with Google's).
+pub fn consent_url(
+    client: &OAuthClient,
+    scopes: &[&str],
+    redirect_uri: &str,
+    state: &str,
+    pkce: &Pkce,
+) -> Result<String, OAuthError> {
+    let mut url = Url::parse(AUTH_URL).map_err(|error| OAuthError::Io(error.to_string()))?;
+    url.query_pairs_mut()
+        .append_pair("client_id", &client.client_id)
+        .append_pair("redirect_uri", redirect_uri)
+        .append_pair("response_type", "code")
+        .append_pair("scope", &scopes.join(" "))
+        .append_pair("code_challenge", &pkce.challenge)
+        .append_pair("code_challenge_method", "S256")
+        .append_pair("state", state)
+        .append_pair("access_type", "offline")
+        .append_pair("include_granted_scopes", "true")
+        .append_pair("prompt", "consent");
+    Ok(url.into())
 }
 
 /// Starts a sign-in for `scopes`: listens on `127.0.0.1` and builds the consent address.
