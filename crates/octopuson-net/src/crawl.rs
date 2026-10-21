@@ -3,6 +3,10 @@ use std::time::{Duration, Instant};
 
 use octopuson_crawl::{FetchError, FetchRequest, FetchResponse, Fetcher};
 use ureq::Agent;
+use ureq::config::Config;
+use ureq::unversioned::transport::DefaultConnector;
+
+use crate::guard::PublicOnly;
 
 /// What crawl requests accept, like a browser.
 const ACCEPT: &str = "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8";
@@ -15,20 +19,41 @@ pub struct CrawlFetcher {
     accept_language: Option<String>,
 }
 
+fn config(user_agent: &str, timeout: Duration) -> Config {
+    Agent::config_builder()
+        .user_agent(user_agent)
+        .accept(ACCEPT)
+        .timeout_global(Some(timeout))
+        .max_redirects(0)
+        .max_redirects_will_error(false)
+        .http_status_as_error(false)
+        .max_idle_connections_per_host(16)
+        .build()
+}
+
 impl CrawlFetcher {
     /// A fetcher sending `user_agent` and giving up after `timeout` per request.
     pub fn new(user_agent: &str, timeout: Duration, accept_language: Option<String>) -> Self {
-        let config = Agent::config_builder()
-            .user_agent(user_agent)
-            .accept(ACCEPT)
-            .timeout_global(Some(timeout))
-            .max_redirects(0)
-            .max_redirects_will_error(false)
-            .http_status_as_error(false)
-            .max_idle_connections_per_host(16)
-            .build();
         Self {
-            agent: Agent::new_with_config(config),
+            agent: Agent::new_with_config(config(user_agent, timeout)),
+            accept_language,
+        }
+    }
+
+    /// The same, reaching public addresses only: a host that resolves to a private, local or
+    /// reserved address (the server itself, its network, cloud metadata) is refused, on every
+    /// request and every redirect. For crawls of addresses people type on a shared server.
+    pub fn public_only(
+        user_agent: &str,
+        timeout: Duration,
+        accept_language: Option<String>,
+    ) -> Self {
+        Self {
+            agent: Agent::with_parts(
+                config(user_agent, timeout),
+                DefaultConnector::new(),
+                PublicOnly::default(),
+            ),
             accept_language,
         }
     }
@@ -150,6 +175,43 @@ mod tests {
             .unwrap();
         assert_eq!(cut.body, b"0123");
         assert!(cut.truncated);
+    }
+
+    #[test]
+    fn public_only_fetchers_refuse_local_and_private_hosts() {
+        // A server that would answer: the guard must stop the request before it connects.
+        let base = serve(vec![
+            "HTTP/1.1 200 OK\r\nContent-Length: 2\r\nConnection: close\r\n\r\nok",
+        ]);
+        let fetcher = CrawlFetcher::public_only("test-agent", Duration::from_secs(5), None);
+        for url in [
+            format!("{base}/"),
+            "http://localhost/".to_owned(),
+            "http://169.254.169.254/latest/meta-data/".to_owned(),
+            "http://[::1]/".to_owned(),
+            "http://10.0.0.1/".to_owned(),
+        ] {
+            let error = fetcher
+                .fetch(&FetchRequest {
+                    url: &url,
+                    body_limit: 16,
+                })
+                .unwrap_err();
+            assert!(
+                matches!(&error, FetchError::Connection(message) if message.contains("private")),
+                "{url}: {error:?}"
+            );
+        }
+        // The open fetcher still reaches the same server.
+        let open = CrawlFetcher::new("test-agent", Duration::from_secs(5), None);
+        let url = format!("{base}/");
+        let page = open
+            .fetch(&FetchRequest {
+                url: &url,
+                body_limit: 16,
+            })
+            .unwrap();
+        assert_eq!(page.body, b"ok");
     }
 
     #[test]
