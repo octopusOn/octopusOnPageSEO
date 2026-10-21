@@ -103,12 +103,13 @@ export function SignUpForm({ t, next }: { t: Strings; next: string | null }) {
       onSubmit={(event) => {
         const { email = "", password = "", name = "" } = fields(event);
         void state.run(async () => {
-          const { error } = await authClient.signUp.email({ email, password, name, callbackURL: safeNext(next) });
+          const { data, error } = await authClient.signUp.email({ email, password, name, callbackURL: safeNext(next) });
           if (error) {
             state.setError(error.message ?? t.failed);
             return;
           }
-          window.location.href = url("verify", {}, { email });
+          // Without e-mail verification (EMAIL_VERIFICATION=off) the new account is signed in at once.
+          window.location.href = data?.token ? safeNext(next) : url("verify", {}, { email });
         });
       }}
     >

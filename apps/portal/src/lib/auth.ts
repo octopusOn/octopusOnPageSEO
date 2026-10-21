@@ -22,6 +22,9 @@ async function mailTexts(request?: Request): Promise<Dictionary["mail"]> {
 }
 
 function createAuth() {
+  // EMAIL_VERIFICATION=off lets new accounts in without confirming their address (for example
+  // while no SMTP server is set up); anything else asks for the confirmation e-mail.
+  const verifyEmails = process.env.EMAIL_VERIFICATION?.trim().toLowerCase() !== "off";
   return betterAuth({
     appName: "OctopusOn SEO",
     baseURL: process.env.BETTER_AUTH_URL,
@@ -38,7 +41,7 @@ function createAuth() {
     }),
     emailAndPassword: {
       enabled: true,
-      requireEmailVerification: true,
+      requireEmailVerification: verifyEmails,
       minPasswordLength: 10,
       revokeSessionsOnPasswordReset: true,
       sendResetPassword: async ({ user, url }, request) => {
@@ -47,7 +50,7 @@ function createAuth() {
       },
     },
     emailVerification: {
-      sendOnSignUp: true,
+      sendOnSignUp: verifyEmails,
       autoSignInAfterVerification: true,
       sendVerificationEmail: async ({ user, url }, request) => {
         const t = await mailTexts(request);
