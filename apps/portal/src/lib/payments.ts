@@ -1,7 +1,7 @@
 // Payment and invoicing providers, configured by environment variables. Without them the
-// credits page shows that payments open soon. `transfer` is a bank transfer: the buyer gets the
-// bank details and the order's reference, and an admin marks the order paid when the money
-// arrives.
+// credits page shows that payments open soon. `transfer` is paying by hand: the buyer gets the
+// bank details and/or a Payoneer payment link with the order's reference, and an admin marks the
+// order paid when the money arrives.
 
 import {
   currentRate,
@@ -16,12 +16,23 @@ import {
 } from "@octopusseo/cloud-core";
 import { eq } from "drizzle-orm";
 
-/** The account bank transfers go to; `currency` is the account's (USD amounts at the order's rate). */
+/** Where buyers pay by hand: a bank account, a Payoneer payment link, or both. */
 export interface TransferConfig {
-  bank: string;
-  holder: string;
-  iban: string;
+  bank: { name: string; holder: string; iban: string } | null;
+  /** A Payoneer payment link (https://…payoneer.com/…): card, bank or PayPal, in dollars. */
+  payoneer: string | null;
+  /** The bank account's currency; USD amounts are the order's lira at its rate. */
   currency: "TRY" | "USD";
+}
+
+/** A Payoneer payment link, or null for anything else. */
+function payoneerLink(value: string | undefined): string | null {
+  try {
+    const url = new URL(value?.trim() ?? "");
+    return url.protocol === "https:" && (url.hostname === "payoneer.com" || url.hostname.endsWith(".payoneer.com")) ? url.toString() : null;
+  } catch {
+    return null;
+  }
 }
 
 export type PaymentProvider =
@@ -48,16 +59,14 @@ export function paymentProvider(env: NodeJS.ProcessEnv = process.env): PaymentPr
       },
     };
   }
-  if (wanted === "transfer" && env.TRANSFER_HOLDER?.trim() && env.TRANSFER_IBAN?.trim()) {
-    return {
-      kind: "transfer",
-      config: {
-        bank: env.TRANSFER_BANK?.trim() ?? "",
-        holder: env.TRANSFER_HOLDER.trim(),
-        iban: env.TRANSFER_IBAN.replace(/\s+/g, "").replace(/(.{4})(?=.)/g, "$1 "),
-        currency: env.TRANSFER_CURRENCY?.trim().toUpperCase() === "USD" ? "USD" : "TRY",
-      },
-    };
+  if (wanted === "transfer") {
+    const holder = env.TRANSFER_HOLDER?.trim();
+    const iban = env.TRANSFER_IBAN?.replace(/\s+/g, "");
+    const bank = holder && iban ? { name: env.TRANSFER_BANK?.trim() ?? "", holder, iban: iban.replace(/(.{4})(?=.)/g, "$1 ") } : null;
+    const payoneer = payoneerLink(env.PAYONEER_LINK);
+    if (bank || payoneer) {
+      return { kind: "transfer", config: { bank, payoneer, currency: env.TRANSFER_CURRENCY?.trim().toUpperCase() === "USD" ? "USD" : "TRY" } };
+    }
   }
   return null;
 }
@@ -67,9 +76,16 @@ export function transferAmount(order: { amountKurus: number; fxRate: string }, c
   return currency === "USD" ? { currency, cents: Math.ceil(order.amountKurus / Number(order.fxRate)) } : { currency, cents: order.amountKurus };
 }
 
+/** What the credits pages say about paying by hand, by the ways that are set up. */
+export function manualNote(config: TransferConfig, texts: { transferNote: string; payoneerNote: string; transferPayoneerNote: string }): string {
+  if (config.bank && config.payoneer) return texts.transferPayoneerNote;
+  return config.payoneer ? texts.payoneerNote : texts.transferNote;
+}
+
 /** How an order was paid, for its invoice: the intermediary, or the bank for a transfer. */
 export function saleChannel(provider: string): { platform: string; paymentType: "ODEMEARACISI" | "EFT/HAVALE" } {
   if (provider === "transfer") return { platform: "Havale/EFT", paymentType: "EFT/HAVALE" };
+  if (provider === "payoneer") return { platform: "Payoneer", paymentType: "ODEMEARACISI" };
   return { platform: provider === "paytr" ? "PayTR" : "iyzico", paymentType: "ODEMEARACISI" };
 }
 

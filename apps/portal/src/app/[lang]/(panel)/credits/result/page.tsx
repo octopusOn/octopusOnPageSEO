@@ -21,42 +21,65 @@ export default async function Result({ searchParams }: { searchParams: Promise<{
   if (transfer) {
     const amount = transferAmount(order, transfer.currency);
     const shown = amount.currency === "USD" ? formatUsd(amount.cents * 10_000, locale) : formatTry(amount.cents, locale);
+    const dollars = formatUsd(transferAmount(order, "USD").cents * 10_000, locale);
+    const reference = (
+      <>
+        <dt>{t.buy.transferReference}</dt>
+        <dd className="mono">
+          <strong>{order.conversationId}</strong>
+        </dd>
+      </>
+    );
     return (
       <>
-        <PageHead title={t.buy.transferTitle} lead={t.buy.transferLead} />
-        <section className="oc-card narrow">
-          <dl className="facts large">
-            <dt>{t.buy.transferAmount}</dt>
-            <dd>
-              <strong>{shown}</strong>
-              {amount.currency === "USD" ? <div className="muted small">{formatTry(order.amountKurus, locale)}</div> : null}
-            </dd>
-            {transfer.bank ? (
-              <>
-                <dt>{t.buy.transferBank}</dt>
-                <dd>{transfer.bank}</dd>
-              </>
-            ) : null}
-            <dt>{t.buy.transferHolder}</dt>
-            <dd>{transfer.holder}</dd>
-            <dt>IBAN</dt>
-            <dd className="mono">{transfer.iban}</dd>
-            <dt>{t.buy.transferReference}</dt>
-            <dd className="mono">
-              <strong>{order.conversationId}</strong>
-            </dd>
-            <dt>{t.buy.youGet}</dt>
-            <dd>
-              {credits} {t.buy.credits}
-            </dd>
-          </dl>
-          <div className="oc-banner info">{t.buy.transferSteps}</div>
-          <div className="form-foot">
-            <Link className="oc-btn" href={url("invoices")}>
-              {t.buy.transferOrders}
-            </Link>
-          </div>
-        </section>
+        <PageHead title={t.buy.transferTitle} lead={fill(t.buy.transferLead, { credits })} />
+        <div className="oc-cards two">
+          {transfer.bank ? (
+            <section className="oc-card">
+              <h2 className="oc-card-title">{t.buy.byBank}</h2>
+              <dl className="facts">
+                <dt>{t.buy.transferAmount}</dt>
+                <dd>
+                  <strong>{shown}</strong>
+                  {amount.currency === "USD" ? <div className="muted small">{formatTry(order.amountKurus, locale)}</div> : null}
+                </dd>
+                {transfer.bank.name ? (
+                  <>
+                    <dt>{t.buy.transferBank}</dt>
+                    <dd>{transfer.bank.name}</dd>
+                  </>
+                ) : null}
+                <dt>{t.buy.transferHolder}</dt>
+                <dd>{transfer.bank.holder}</dd>
+                <dt>IBAN</dt>
+                <dd className="mono">{transfer.bank.iban}</dd>
+                {reference}
+              </dl>
+              <p className="muted small">{t.buy.transferSteps}</p>
+            </section>
+          ) : null}
+          {transfer.payoneer ? (
+            <section className="oc-card">
+              <h2 className="oc-card-title">{t.buy.byPayoneer}</h2>
+              <dl className="facts">
+                <dt>{t.buy.transferAmount}</dt>
+                <dd>
+                  <strong>{dollars}</strong>
+                </dd>
+                {reference}
+              </dl>
+              <p className="muted small">{t.buy.payoneerSteps}</p>
+              <a className="oc-btn primary" href={transfer.payoneer} target="_blank" rel="noopener noreferrer">
+                {t.buy.payoneerOpen}
+              </a>
+            </section>
+          ) : null}
+        </div>
+        <div className="form-foot">
+          <Link className="oc-btn" href={url("invoices")}>
+            {t.buy.transferOrders}
+          </Link>
+        </div>
       </>
     );
   }

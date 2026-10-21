@@ -166,14 +166,20 @@
     "toDashboard": "Ir al panel",
     "transferNote": "Por ahora se paga por transferencia bancaria: elija un importe y verá los datos bancarios y la referencia del pedido. Sus créditos se añaden cuando llega la transferencia, normalmente en un día hábil.",
     "transferSubmit": "Ver los datos bancarios",
-    "transferTitle": "Pago por transferencia bancaria",
-    "transferLead": "Envíe el importe indicado a esta cuenta y escriba la referencia en el concepto de la transferencia. Sus créditos se añaden cuando llega el dinero.",
+    "transferTitle": "Complete su pago",
+    "transferLead": "Pague el importe de una de las formas siguientes e indique la referencia del pedido. Los {credits} créditos se añaden a su cuenta cuando llega el dinero.",
     "transferAmount": "Importe a enviar",
     "transferBank": "Banco",
     "transferHolder": "Titular de la cuenta",
     "transferReference": "Referencia (concepto)",
     "transferSteps": "Escriba la referencia exactamente en el concepto para que podamos identificar su transferencia. Los créditos se añaden normalmente en un día hábil; el pedido aparece entonces como pagado en Facturas.",
-    "transferOrders": "Mis pedidos"
+    "transferOrders": "Mis pedidos",
+    "byBank": "Transferencia bancaria",
+    "byPayoneer": "Payoneer (tarjeta, banco o PayPal)",
+    "payoneerSteps": "Abra la página de Payoneer, introduzca exactamente este importe en dólares estadounidenses y pegue la referencia en la descripción. Puede pagar con tarjeta, transferencia bancaria o PayPal sin cuenta de Payoneer; los pagos con tarjeta suelen llegar en una hora.",
+    "payoneerOpen": "Pagar con Payoneer",
+    "payoneerNote": "Por ahora se paga a través de Payoneer (tarjeta, transferencia bancaria o PayPal): elija un importe y verá el enlace de pago y la referencia del pedido. Sus créditos se añaden cuando llega el pago.",
+    "transferPayoneerNote": "Por ahora se paga por transferencia bancaria o a través de Payoneer (tarjeta, transferencia bancaria o PayPal): elija un importe y verá los datos de pago y la referencia del pedido. Sus créditos se añaden cuando llega el pago."
   },
   "billing": {
     "title": "Facturas",
@@ -388,7 +394,8 @@
     "transferReceivedConfirm": "¿Ha llegado completa la transferencia de este pedido? Sus créditos se añaden a la cuenta ahora.",
     "cancelOrder": "Cancelar",
     "cancelOrderConfirm": "¿Cerrar este pedido pendiente sin añadir créditos?",
-    "transferDone": "Marcado como pagado; se añadieron los créditos."
+    "transferDone": "Marcado como pagado; se añadieron los créditos.",
+    "payoneerReceived": "Pago de Payoneer recibido"
   },
   "common": {
     "back": "Volver",

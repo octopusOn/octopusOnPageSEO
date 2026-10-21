@@ -1,6 +1,7 @@
 "use server";
 
-import { getSettings, issueInvoice, markOrderFailed, markOrderPaid, orderById, reverseOrder } from "@octopusseo/cloud-core";
+import { getSettings, issueInvoice, markOrderFailed, markOrderPaid, orderById, reverseOrder, schema } from "@octopusseo/cloud-core";
+import { eq } from "drizzle-orm";
 import { revalidatePath } from "next/cache";
 import { after } from "next/server";
 
@@ -39,14 +40,17 @@ export async function reverse(_: ActionResult, form: FormData): Promise<ActionRe
   return { ok: t.profile.saved };
 }
 
-/** A bank transfer arrived: the order is paid and its credits are added, once. */
+/** A payment by hand arrived (`via` the bank or Payoneer): the order is paid and its credits are added, once. */
 export async function transferReceived(_: ActionResult, form: FormData): Promise<ActionResult> {
   const admin = await requireAdmin();
   const { t } = await getDictionary();
   const order = await orderById(db(), String(form.get("id")));
   if (!order || order.provider !== "transfer" || order.status !== "created") return { error: t.common.error };
-  const outcome = await markOrderPaid(db(), order.id, { paidKurus: order.amountKurus, providerRef: `transfer:${admin.id}` });
-  if (outcome === "credited") after(() => invoiceAfterPayment(db(), order.id, "transfer"));
+  // The order records how the money came, for its invoice and the reports.
+  const via = form.get("via") === "payoneer" ? "payoneer" : "transfer";
+  if (via !== order.provider) await db().update(schema.orders).set({ provider: via }).where(eq(schema.orders.id, order.id));
+  const outcome = await markOrderPaid(db(), order.id, { paidKurus: order.amountKurus, providerRef: `${via}:${admin.id}` });
+  if (outcome === "credited") after(() => invoiceAfterPayment(db(), order.id, via));
   revalidatePath("/[lang]/admin/orders", "page");
   return outcome === "credited" || outcome === "already_paid" ? { ok: t.admin.transferDone } : { error: outcome };
 }

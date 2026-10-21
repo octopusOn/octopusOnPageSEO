@@ -8,7 +8,7 @@ import { fill, getDictionary } from "@/i18n";
 import { legalSlug, legalTexts } from "@/legal/cms";
 import { db } from "@/lib/db";
 import { formatCredits, formatRate, formatTry, parseDecimal } from "@/lib/format";
-import { paymentProvider } from "@/lib/payments";
+import { manualNote, paymentProvider } from "@/lib/payments";
 import { rateOrNull } from "@/lib/rate";
 import { requireUser } from "@/lib/session";
 
@@ -95,7 +95,7 @@ export default async function Confirm({ searchParams }: { searchParams: Promise<
       {!problem && profile?.phone ? (
         <section className="oc-card">
           <ActionForm action={pay} submit={provider.kind === "transfer" ? t.buy.transferSubmit : `${t.buy.pay} · ${formatTry(priced.amountKurus, locale)}`}>
-            {provider.kind === "transfer" ? <p className="small">{t.buy.transferNote}</p> : null}
+            {provider.kind === "transfer" ? <p className="small">{manualNote(provider.config, t.buy)}</p> : null}
             <input type="hidden" name="amount" value={amountKurus} />
             <p className="small">
               {["pre-contract-information", "distance-sales", "credit-terms"].map((key, index) => (

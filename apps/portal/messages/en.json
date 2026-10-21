@@ -166,14 +166,20 @@
     "toDashboard": "Go to the dashboard",
     "transferNote": "For now you pay by bank transfer: choose an amount, then you get the bank details and the order's reference. Your credits are added when the transfer arrives, usually within one business day.",
     "transferSubmit": "Show the bank details",
-    "transferTitle": "Pay by bank transfer",
-    "transferLead": "Send the amount below to this account and write the reference in the transfer's description. Your credits are added when the money arrives.",
+    "transferTitle": "Complete your payment",
+    "transferLead": "Pay the amount in one of the ways below and add the order's reference. The {credits} credits are added to your account when the money arrives.",
     "transferAmount": "Amount to send",
     "transferBank": "Bank",
     "transferHolder": "Account holder",
     "transferReference": "Reference (description)",
     "transferSteps": "Write the reference exactly in the description so we can match your transfer. Credits are usually added within one business day; the order then shows as paid under Invoices.",
-    "transferOrders": "My orders"
+    "transferOrders": "My orders",
+    "byBank": "Bank transfer",
+    "byPayoneer": "Payoneer (card, bank or PayPal)",
+    "payoneerSteps": "Open the Payoneer page, enter exactly this amount in US dollars and paste the reference into the description. You can pay by card, bank transfer or PayPal without a Payoneer account; card payments usually arrive within an hour.",
+    "payoneerOpen": "Pay with Payoneer",
+    "payoneerNote": "For now you pay through Payoneer (card, bank transfer or PayPal): choose an amount, then you get the payment link and the order's reference. Your credits are added when the payment arrives.",
+    "transferPayoneerNote": "For now you pay by bank transfer or through Payoneer (card, bank transfer or PayPal): choose an amount, then you get the payment details and the order's reference. Your credits are added when the payment arrives."
   },
   "billing": {
     "title": "Invoices",
@@ -388,7 +394,8 @@
     "transferReceivedConfirm": "Did this order's transfer arrive in full? Its credits are added to the account now.",
     "cancelOrder": "Cancel",
     "cancelOrderConfirm": "Close this waiting order without adding credits?",
-    "transferDone": "Marked paid; the credits were added."
+    "transferDone": "Marked paid; the credits were added.",
+    "payoneerReceived": "Payoneer payment received"
   },
   "common": {
     "back": "Back",

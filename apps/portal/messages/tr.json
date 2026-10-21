@@ -166,14 +166,20 @@
     "toDashboard": "Panele git",
     "transferNote": "Şimdilik ödeme havale/EFT ile yapılıyor: bir tutar seçin, ardından banka bilgilerini ve siparişin referans kodunu görürsünüz. Krediler para hesaba geçince, genellikle bir iş günü içinde eklenir.",
     "transferSubmit": "Banka bilgilerini göster",
-    "transferTitle": "Havale/EFT ile ödeme",
-    "transferLead": "Aşağıdaki tutarı bu hesaba gönderin ve açıklamaya referans kodunu yazın. Para hesaba geçince kredileriniz eklenir.",
+    "transferTitle": "Ödemeyi tamamlayın",
+    "transferLead": "Tutarı aşağıdaki yollardan biriyle ödeyin ve siparişin referans kodunu ekleyin. {credits} kredi, para hesaba geçince hesabınıza eklenir.",
     "transferAmount": "Gönderilecek tutar",
     "transferBank": "Banka",
     "transferHolder": "Hesap sahibi",
     "transferReference": "Referans (açıklama)",
     "transferSteps": "Ödemenizi eşleştirebilmemiz için referans kodunu açıklamaya aynen yazın. Krediler genellikle bir iş günü içinde eklenir; sipariş de Faturalar sayfasında ödendi olarak görünür.",
-    "transferOrders": "Siparişlerim"
+    "transferOrders": "Siparişlerim",
+    "byBank": "Havale/EFT",
+    "byPayoneer": "Payoneer (kart, banka ya da PayPal)",
+    "payoneerSteps": "Payoneer sayfasını açın, tam olarak bu tutarı ABD doları olarak girin ve referans kodunu açıklamaya yapıştırın. Payoneer hesabınız olmadan kart, banka havalesi ya da PayPal ile ödeyebilirsiniz; kart ödemeleri genellikle bir saat içinde ulaşır.",
+    "payoneerOpen": "Payoneer ile öde",
+    "payoneerNote": "Şimdilik ödeme Payoneer üzerinden yapılıyor (kart, banka havalesi ya da PayPal): bir tutar seçin, ardından ödeme bağlantısını ve siparişin referans kodunu görürsünüz. Krediler ödeme ulaşınca eklenir.",
+    "transferPayoneerNote": "Şimdilik ödeme havale/EFT ya da Payoneer (kart, banka havalesi ya da PayPal) ile yapılıyor: bir tutar seçin, ardından ödeme bilgilerini ve siparişin referans kodunu görürsünüz. Krediler ödeme ulaşınca eklenir."
   },
   "billing": {
     "title": "Faturalar",
@@ -388,7 +394,8 @@
     "transferReceivedConfirm": "Bu siparişin havalesi tam olarak hesaba geçti mi? Kredileri şimdi hesaba eklenecek.",
     "cancelOrder": "İptal et",
     "cancelOrderConfirm": "Bekleyen bu sipariş kredi eklenmeden kapatılsın mı?",
-    "transferDone": "Ödendi olarak işaretlendi; krediler eklendi."
+    "transferDone": "Ödendi olarak işaretlendi; krediler eklendi.",
+    "payoneerReceived": "Payoneer ödemesi geldi"
   },
   "common": {
     "back": "Geri",

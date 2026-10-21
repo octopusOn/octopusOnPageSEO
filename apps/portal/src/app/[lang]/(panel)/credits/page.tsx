@@ -6,7 +6,7 @@ import { fill, getDictionary } from "@/i18n";
 import { legalSlug, legalTexts } from "@/legal/cms";
 import { db } from "@/lib/db";
 import { formatCredits, formatTry, formatUsd, plainNumber } from "@/lib/format";
-import { paymentProvider } from "@/lib/payments";
+import { manualNote, paymentProvider } from "@/lib/payments";
 import { rateOrNull } from "@/lib/rate";
 import { requireUser } from "@/lib/session";
 
@@ -15,14 +15,14 @@ export default async function Buy() {
   const [settings, rate, paidBefore, legal] = await Promise.all([getSettings(db()), rateOrNull(), hasPaidOrder(db(), user.id), legalTexts(locale)]);
   const provider = paymentProvider();
   const open = provider !== null;
-  const transferUsd = provider?.kind === "transfer" && provider.config.currency === "USD";
+  const transferUsd = provider?.kind === "transfer" && (provider.config.currency === "USD" || provider.config.payoneer !== null);
   const packages = settings.packagesKurus.filter((kurus) => paidBefore || kurus <= settings.firstPurchaseCapKurus);
   return (
     <>
       <PageHead title={t.buy.title} lead={t.buy.lead} />
       {!open ? <div className="oc-banner info">{t.buy.soon}</div> : null}
       {open && !rate ? <div className="oc-banner warning">{t.buy.rateUnavailable}</div> : null}
-      {provider?.kind === "transfer" ? <div className="oc-banner info">{t.buy.transferNote}</div> : null}
+      {provider?.kind === "transfer" ? <div className="oc-banner info">{manualNote(provider.config, t.buy)}</div> : null}
       <div className="oc-cards packages">
         {packages.map((kurus) => (
           <section key={kurus} className="oc-card package">

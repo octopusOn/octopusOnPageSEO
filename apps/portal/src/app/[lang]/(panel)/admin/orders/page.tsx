@@ -15,6 +15,8 @@ export default async function Orders({ searchParams }: { searchParams: Promise<{
   const [rows, settings] = await Promise.all([listOrders(db(), { status: shown || undefined, limit: 300 }), getSettings(db())]);
   const month = new Date().toISOString().slice(0, 7);
   const invoicing = parasut() !== null;
+  const provider = paymentProvider();
+  const manual = provider?.kind === "transfer" ? provider.config : null;
   return (
     <>
       <PageHead
@@ -89,9 +91,18 @@ export default async function Orders({ searchParams }: { searchParams: Promise<{
                     </div>
                   ) : order.status === "created" && order.provider === "transfer" ? (
                     <div className="row-actions">
-                      <ActionForm action={transferReceived} submit={t.admin.transferReceived} confirm={t.admin.transferReceivedConfirm} inline>
-                        <input type="hidden" name="id" value={order.id} />
-                      </ActionForm>
+                      {manual?.bank || !manual?.payoneer ? (
+                        <ActionForm action={transferReceived} submit={t.admin.transferReceived} confirm={t.admin.transferReceivedConfirm} inline>
+                          <input type="hidden" name="id" value={order.id} />
+                          <input type="hidden" name="via" value="transfer" />
+                        </ActionForm>
+                      ) : null}
+                      {manual?.payoneer ? (
+                        <ActionForm action={transferReceived} submit={t.admin.payoneerReceived} confirm={t.admin.transferReceivedConfirm} inline>
+                          <input type="hidden" name="id" value={order.id} />
+                          <input type="hidden" name="via" value="payoneer" />
+                        </ActionForm>
+                      ) : null}
                       <ActionForm action={cancelOrder} submit={t.admin.cancelOrder} tone="ghost" confirm={t.admin.cancelOrderConfirm} inline>
                         <input type="hidden" name="id" value={order.id} />
                       </ActionForm>
