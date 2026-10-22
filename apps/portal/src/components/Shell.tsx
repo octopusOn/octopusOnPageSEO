@@ -31,6 +31,7 @@ export async function Shell({ user, children }: { user: SessionUser; children: R
     { href: url("admin/orders"), label: t.nav.orders, icon: "orders", tone: "amber" },
     { href: url("admin/settings"), label: t.nav.settings, icon: "settings", tone: "pink" },
     { href: url("admin/reports"), label: t.nav.reports, icon: "reports", tone: "teal" },
+    { href: url("admin/support"), label: t.nav.support, icon: "support", tone: "orange" },
     { href: url("admin/audit"), label: t.nav.audit, icon: "audit", tone: "slate" },
   ];
   return (

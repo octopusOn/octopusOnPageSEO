@@ -14,6 +14,7 @@ import {
   microsToUsd,
   monthSpend,
   normalizePath,
+  noteProviderProblem,
   parseJson,
   recordUsage,
   routeAllowed,
@@ -55,7 +56,10 @@ export interface ProxyDeps {
  */
 export function accountProblem(body: unknown): string | undefined {
   if (!body || typeof body !== "object") return undefined;
-  const fields = body as Record<string, unknown>;
+  const envelope = body as Record<string, unknown>;
+  // DataForSEO answers "20000 Ok." on the envelope and gives the reason on the task.
+  const task = Array.isArray(envelope.tasks) && envelope.tasks[0] && typeof envelope.tasks[0] === "object" ? (envelope.tasks[0] as Record<string, unknown>) : null;
+  const fields = envelope.status_code === 20000 && task ? task : envelope;
   const text = [fields.status_code, fields.status_message ?? fields.message ?? fields.error]
     .filter((value) => typeof value === "string" || typeof value === "number")
     .join(" ")
@@ -251,7 +255,11 @@ export async function forward(
       ms: now() - started,
     });
     const charge = { [CHARGE_HEADER]: usd(outcome.chargeMicros), [AVAILABLE_HEADER]: usd(wallet.availableMicros) };
-    if (ours) return problem(503, "upstream_unavailable", "This source is not available with OctopusOn SEO credits right now.", charge);
+    if (ours) {
+      // Our account's problem (a spent balance, a closed API): the admin panel shows it.
+      await noteProviderProblem(deps.db, connector.id, { route, status: upstream.status, message: accountProblem(answer) }).catch(() => false);
+      return problem(503, "upstream_unavailable", "This source is not available with OctopusOn SEO credits right now.", charge);
+    }
     if (redirected) return problem(502, "upstream_redirect", "The source answered with a redirect.", charge);
 
     const headers = new Headers({ "cache-control": "no-store", ...charge });

@@ -28,7 +28,8 @@
     "audit": "auditoria",
     "legal": "legal",
     "pdf": "pdf",
-    "csv": "csv"
+    "csv": "csv",
+    "support": "soporte"
   },
   "meta": {
     "title": "Cuenta de OctopusOn SEO",
@@ -52,7 +53,8 @@
     "language": "Idioma",
     "invoices": "Facturas",
     "orders": "Pedidos",
-    "legal": "Legal"
+    "legal": "Legal",
+    "support": "Soporte"
   },
   "auth": {
     "signInTitle": "Inicie sesión en OctopusOn SEO",
@@ -402,7 +404,15 @@
     "payoneerReceived": "Pago de Payoneer recibido",
     "secretEnv": "de los ajustes del servidor",
     "secretEnvHint": "O en /etc/octopuson/cloud.env como",
-    "basicSecretHint": "usuario:contraseña, por ejemplo usted@ejemplo.com:contraseña-API"
+    "basicSecretHint": "usuario:contraseña, por ejemplo usted@ejemplo.com:contraseña-API",
+    "supportLead": "Mensajes de soporte enviados desde los programas y los momentos en que un proveedor rechazó nuestra cuenta.",
+    "supportEmpty": "Aún no hay mensajes.",
+    "supportFrom": "De",
+    "supportMessage": "Mensaje",
+    "supportContext": "Programa · página · error",
+    "providerProblem": "Último problema de proveedor: {connector}, {time}: {reason}. Revise su saldo y el acceso a la API.",
+    "openConnector": "Abrir el conector",
+    "providerRefused": "Nuestra cuenta fue rechazada (HTTP {status}): {reason}"
   },
   "common": {
     "back": "Volver",

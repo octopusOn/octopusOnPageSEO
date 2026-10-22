@@ -28,7 +28,8 @@
     "audit": "audit",
     "legal": "legal",
     "pdf": "pdf",
-    "csv": "csv"
+    "csv": "csv",
+    "support": "support"
   },
   "meta": {
     "title": "OctopusOn SEO account",
@@ -52,7 +53,8 @@
     "language": "Language",
     "invoices": "Invoices",
     "orders": "Orders",
-    "legal": "Legal"
+    "legal": "Legal",
+    "support": "Support"
   },
   "auth": {
     "signInTitle": "Sign in to OctopusOn SEO",
@@ -402,7 +404,15 @@
     "payoneerReceived": "Payoneer payment received",
     "secretEnv": "from the server settings",
     "secretEnvHint": "Or in /etc/octopuson/cloud.env as",
-    "basicSecretHint": "login:password, for example you@example.com:API-password"
+    "basicSecretHint": "login:password, for example you@example.com:API-password",
+    "supportLead": "Support messages sent from the programs, and the times a provider refused our account.",
+    "supportEmpty": "No messages yet.",
+    "supportFrom": "From",
+    "supportMessage": "Message",
+    "supportContext": "Program · page · error",
+    "providerProblem": "Latest provider problem: {connector}, {time}: {reason}. Check its balance and API access.",
+    "openConnector": "Open the connector",
+    "providerRefused": "Our account was refused (HTTP {status}): {reason}"
   },
   "common": {
     "back": "Back",

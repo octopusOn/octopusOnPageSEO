@@ -28,7 +28,8 @@
     "audit": "denetim",
     "legal": "yasal",
     "pdf": "pdf",
-    "csv": "csv"
+    "csv": "csv",
+    "support": "destek"
   },
   "meta": {
     "title": "OctopusOn SEO hesabı",
@@ -52,7 +53,8 @@
     "language": "Dil",
     "invoices": "Faturalar",
     "orders": "Siparişler",
-    "legal": "Yasal"
+    "legal": "Yasal",
+    "support": "Destek"
   },
   "auth": {
     "signInTitle": "OctopusOn SEO hesabınıza girin",
@@ -402,7 +404,15 @@
     "payoneerReceived": "Payoneer ödemesi geldi",
     "secretEnv": "sunucu ayarlarından",
     "secretEnvHint": "Ya da /etc/octopuson/cloud.env içinde şu adla:",
-    "basicSecretHint": "giriş:parola, örneğin siz@ornek.com:API-parolası"
+    "basicSecretHint": "giriş:parola, örneğin siz@ornek.com:API-parolası",
+    "supportLead": "Programlardan gönderilen destek mesajları ve sağlayıcıların hesabımızı reddettiği anlar.",
+    "supportEmpty": "Henüz mesaj yok.",
+    "supportFrom": "Kimden",
+    "supportMessage": "Mesaj",
+    "supportContext": "Program · sayfa · hata",
+    "providerProblem": "Son sağlayıcı sorunu: {connector}, {time}: {reason}. Bakiyeyi ve API erişimini kontrol edin.",
+    "openConnector": "Bağlayıcıyı aç",
+    "providerRefused": "Hesabımız reddedildi (HTTP {status}): {reason}"
   },
   "common": {
     "back": "Geri",

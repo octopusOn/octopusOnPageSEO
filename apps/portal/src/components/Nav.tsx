@@ -6,6 +6,7 @@ import {
   FileClock,
   Gauge,
   LayoutDashboard,
+  LifeBuoy,
   LineChart,
   MonitorSmartphone,
   Receipt,
@@ -32,6 +33,7 @@ const ICONS = {
   settings: SlidersHorizontal,
   reports: LineChart,
   audit: FileClock,
+  support: LifeBuoy,
 };
 
 /** `exact` items (the dashboards) are active only on their own page, the others on their subpages too. */

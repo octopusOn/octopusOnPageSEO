@@ -1,26 +1,29 @@
 import {
   approveDevice,
-  createConnectCode,
-  parseConnectRequest,
   type ConnectorInput,
+  createConnectCode,
   createToken,
   credit,
   type Db,
   getConnector,
+  parseConnectRequest,
+  PROVIDER_PROBLEM_ACTION,
   saveConnector,
+  schema,
   SEED_CONNECTORS,
   setConnectorSecret,
   setTokenCap,
+  SUPPORT_ACTION,
+  supportEntries,
   updateSettings,
   wallet,
-  schema,
 } from "@octopusseo/cloud-core";
 import { addUser, eq, testDb } from "@octopusseo/cloud-core/testing";
 import { afterAll, beforeAll, beforeEach, describe, expect, it } from "vitest";
 
 import { createApp } from "./app.ts";
 import { Concurrency, RateLimiter } from "./limits.ts";
-import { AVAILABLE_HEADER, CHARGE_HEADER } from "./proxy.ts";
+import { accountProblem, AVAILABLE_HEADER, CHARGE_HEADER } from "./proxy.ts";
 import { Registry } from "./registry.ts";
 
 const KEY = Buffer.alloc(32, 9);
@@ -309,6 +312,20 @@ describe("refusals", () => {
   });
 });
 
+describe("support messages", () => {
+  const send = (body: unknown, bearer: string | null = token) =>
+    call("/v1/support", { method: "POST", body: JSON.stringify(body), headers: { "content-type": "application/json" } }, bearer);
+
+  it("keeps a signed-in person's message with the error it is about", async () => {
+    expect((await send({ message: "hi" }, null)).status).toBe(401);
+    expect((await send({ message: "  " })).status).toBe(400);
+    const response = await send({ message: "Backlink raporu açılmıyor", context: { program: "GEO-SEO Platform", page: "backlinks", error: "unavailable" } });
+    expect(response.status).toBe(201);
+    const [latest] = await supportEntries(db, 1);
+    expect(latest).toMatchObject({ action: SUPPORT_ACTION, userId, data: { message: "Backlink raporu açılmıyor", page: "backlinks" } });
+  });
+});
+
 describe("upstream outcomes", () => {
   const path = "/v1/p/dataforseo/v3/serp/google/organic/live/advanced";
 
@@ -330,6 +347,13 @@ describe("upstream outcomes", () => {
     }
     // The provider's reason reaches our log, not the user.
     expect(logs.some((event) => event.event === "upstream_account" && event.upstream_message === "40204 Access denied. Activate your subscription.")).toBe(true);
+    // And the admin panel's support page, once for the quiet period.
+    const problems = (await supportEntries(db)).filter((entry) => entry.action === PROVIDER_PROBLEM_ACTION && entry.targetId === "dataforseo");
+    expect(problems).toHaveLength(1);
+    expect(problems[0]?.data).toMatchObject({ status: 401, message: "40204 Access denied. Activate your subscription." });
+
+    // DataForSEO says "Ok." on the envelope and gives the reason on the task.
+    expect(accountProblem({ status_code: 20000, status_message: "Ok.", tasks: [{ status_code: 40200, status_message: "Payment Required." }] })).toBe("40200 Payment Required.");
   });
 
   it("passes rate limits through with Retry-After", async () => {

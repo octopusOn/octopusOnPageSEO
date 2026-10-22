@@ -19,6 +19,7 @@ import {
 } from "./plugins.ts";
 import { SEED_CONNECTORS, seedConnectors } from "./seeds.ts";
 import { DEFAULT_SETTINGS, getSettings, updateSettings } from "./settings.ts";
+import { noteProviderProblem, PROVIDER_PROBLEM_ACTION, recordSupportMessage, SUPPORT_ACTION, type SupportContext, supportEntries } from "./support.ts";
 import { addUser, testDb } from "./testing.ts";
 import { adjustWallet, auditEntries, overview, revokeAllTokens, searchUsers, setBanned, userDetail } from "./admin.ts";
 import { createToken, listTokens, monthSpend, revokeToken, setTokenCap, verifyToken } from "./tokens.ts";
@@ -247,5 +248,29 @@ describe("admin", () => {
     const actions = (await auditEntries(db)).map((entry) => entry.action);
     expect(actions).toEqual(expect.arrayContaining(["wallet.adjust", "user.ban", "user.unban", "tokens.revoke_all"]));
     expect((await overview(db, new Date(0))).accounts).toBeGreaterThan(1);
+  });
+});
+
+describe("support", () => {
+  it("keeps people's messages, at most a few an hour", async () => {
+    const person = await addUser(db, "help@example.com");
+    expect(await recordSupportMessage(db, person, { message: "   " })).toBe("empty");
+    const context = { program: "GEO-SEO Platform", page: "backlinks", error: "DataForSEO: unavailable", secret: "dropped" } as SupportContext;
+    expect(await recordSupportMessage(db, person, { message: " Rapor açılmıyor ", context }, 2)).toBe("saved");
+    expect(await recordSupportMessage(db, person, { context: { error: "x" } }, 2)).toBe("saved");
+    expect(await recordSupportMessage(db, person, { message: "again" }, 2)).toBe("too_many");
+    const [latest] = await supportEntries(db, 5);
+    expect(latest).toMatchObject({ action: SUPPORT_ACTION, email: "help@example.com" });
+    const first = (await supportEntries(db, 5)).find((entry) => (entry.data as { message?: string }).message === "Rapor açılmıyor");
+    expect(first?.data).toEqual({ message: "Rapor açılmıyor", program: "GEO-SEO Platform", page: "backlinks", error: "DataForSEO: unavailable" });
+  });
+
+  it("notes a provider's refusal once per quiet period", async () => {
+    const details = { route: "/v3/backlinks/*/live", status: 402, message: "40200 Payment Required." };
+    expect(await noteProviderProblem(db, "dataforseo", details)).toBe(true);
+    expect(await noteProviderProblem(db, "dataforseo", details)).toBe(false);
+    expect(await noteProviderProblem(db, "serper", { route: "/search", status: 401 })).toBe(true);
+    const problems = (await supportEntries(db)).filter((entry) => entry.action === PROVIDER_PROBLEM_ACTION);
+    expect(problems.map((entry) => entry.targetId)).toEqual(["serper", "dataforseo"]);
   });
 });

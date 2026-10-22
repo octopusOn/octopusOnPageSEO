@@ -6,9 +6,11 @@ import {
   catalogEntry,
   type Db,
   pollDevice,
+  recordSupportMessage,
   redeemConnectCode,
   revokeToken,
   startDevice,
+  type SupportContext,
   type TokenOwner,
   verifyToken,
   wallet,
@@ -134,6 +136,7 @@ export function createApp(deps: AppDeps): Hono<Env> {
     await next();
   };
   app.use("/v1/me", signedIn);
+  app.use("/v1/support", signedIn);
   app.use("/v1/logout", signedIn);
   app.use("/v1/p/*", signedIn);
 
@@ -156,6 +159,18 @@ export function createApp(deps: AppDeps): Hono<Env> {
       200,
       { "cache-control": "no-store" },
     );
+  });
+
+  // A message to OctopusOn support from a program (a button beside an error), with the program,
+  // page and error it was sent about; the admin panel's support page lists them.
+  app.post("/v1/support", async (c) => {
+    const { userId } = c.get("owner");
+    const body = (await c.req.json().catch(() => null)) as { message?: unknown; context?: SupportContext } | null;
+    const context = body?.context && typeof body.context === "object" ? body.context : null;
+    const outcome = await recordSupportMessage(db, userId, { message: body?.message, context });
+    if (outcome === "empty") return problem(400, "invalid_request", "Write a message or send the error it is about.");
+    if (outcome === "too_many") return problem(429, "too_many_messages", "Too many messages this hour; try again later.");
+    return c.json({ ok: true }, 201);
   });
 
   app.post("/v1/logout", async (c) => {

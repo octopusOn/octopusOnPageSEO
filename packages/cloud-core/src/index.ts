@@ -23,5 +23,6 @@ export * from "./probe.ts";
 export * from "./routes.ts";
 export * from "./seeds.ts";
 export * from "./settings.ts";
+export * from "./support.ts";
 export * from "./tokens.ts";
 export * from "./usage.ts";

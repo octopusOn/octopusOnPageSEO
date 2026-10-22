@@ -32,6 +32,7 @@ export const ROUTES = [
   "admin/settings",
   "admin/reports",
   "admin/audit",
+  "admin/support",
   "legal/[slug]",
 ] as const;
 
