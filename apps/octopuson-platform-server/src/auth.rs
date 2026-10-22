@@ -241,13 +241,16 @@ fn sign_in(
     let workspace = state.accounts.get(&user_id)?.platform.workspace().clone();
     if let Some(previous) = workspace.account_token()
         && previous != token
+        && !crate::sync::borrowed(&workspace, &previous)
     {
-        // A token of an earlier sign-in is not needed any more.
+        // A token of an earlier sign-in is not needed any more; one a desktop lent for
+        // syncing stays that desktop's.
         let _ = client.sign_out(&previous);
     }
     workspace
         .set_account_token(Some(&token))
         .map_err(|error| error.to_string())?;
+    crate::sync::forget_borrowed(&workspace);
     Ok((user_id, account.email))
 }
 

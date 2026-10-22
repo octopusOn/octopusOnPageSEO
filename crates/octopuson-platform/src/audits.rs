@@ -260,7 +260,7 @@ impl PlatformStore {
     /// Database errors.
     pub fn audits(&self, project_id: i64, limit: u32) -> Result<Vec<AuditRow>, PlatformStoreError> {
         let mut statement = self.connection.prepare(&format!(
-            "SELECT {COLUMNS} FROM audits WHERE project_id = ? ORDER BY id DESC LIMIT ?"
+            "SELECT {COLUMNS} FROM audits WHERE project_id = ? ORDER BY started_at DESC, id DESC LIMIT ?"
         ))?;
         let rows = statement.query_map(params![project_id, limit], audit)?;
         Ok(rows.collect::<Result<_, _>>()?)

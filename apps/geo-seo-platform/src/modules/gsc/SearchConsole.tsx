@@ -7,6 +7,7 @@ import type { GoogleStatus, GscPage, GscQuery, GscReport, GscSchedule, GscSetup,
 import { useI18n } from "../../i18n";
 import { axisStyle, EChart, useChartTokens, type ChartOption } from "../../lib/EChart";
 import { useShell } from "../../lib/context";
+import { useScheduleNote } from "../../lib/sync";
 import { explain } from "../../lib/errors";
 import { formatCompact, formatNumber, formatPercent, relativeTime } from "../../lib/format";
 import { download, toCsv } from "../../lib/report";
@@ -188,6 +189,7 @@ function GoogleCard({ status, signingIn }: { status: GoogleStatus; signingIn: Jo
 /** Which properties the project reads, how often, and the sync itself. */
 function PropertyBar({ project, setup, running }: { project: ProjectRow; setup: GscSetup; running: Job | undefined }) {
   const { t, locale } = useI18n();
+  const scheduleNote = useScheduleNote();
   const { notify, fail } = useShell();
   const queryClient = useQueryClient();
   const { settings } = setup;
@@ -271,7 +273,7 @@ function PropertyBar({ project, setup, running }: { project: ProjectRow; setup: 
             options={DAYS.map((days) => ({ value: String(days), label: t("gsc.daysOption", { n: days }) }))}
           />
         </Field>
-        <Field label={t("gsc.schedule")}>
+        <Field label={t("gsc.schedule")} hint={scheduleNote}>
           <Segmented<GscSchedule>
             label={t("gsc.schedule")}
             value={settings.schedule}

@@ -59,7 +59,17 @@ impl Platform {
             jobs: &self.jobs,
             open: &self.open,
         };
-        self.router.call(&context, command, arguments)
+        let answer = self.router.call(&context, command, arguments);
+        if !modules::reads_only(command) {
+            self.workspace.touch();
+        }
+        answer
+    }
+
+    /// Tells open pages that data changed by a sync, as a finished job of kind `sync` (pages
+    /// read everything again; it is not listed among the jobs).
+    pub fn announce_sync(&self) {
+        self.jobs.announce("sync");
     }
 
     /// Starts the scheduled work that is due (rank checks, audits); returns the jobs started. Hosts call

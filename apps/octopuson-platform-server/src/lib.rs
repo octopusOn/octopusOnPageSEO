@@ -5,6 +5,7 @@
 //! `POST /api/call/{command}`, job changes as an event stream ([`api`]), and the web
 //! interface — the same one the desktop program shows — as static files. Every account's
 //! scheduled work (rank checks, audits, AI runs, Search Console syncs) runs from [`schedule`].
+//! Desktops signed in to the account keep their data the same as the web's through [`sync`].
 
 pub mod accounts;
 pub mod api;
@@ -16,12 +17,14 @@ pub mod schedule;
 pub mod sealed;
 pub mod shares;
 pub mod store;
+pub mod sync;
 
 use std::collections::HashMap;
 use std::sync::{Arc, Mutex};
 use std::time::{SystemTime, UNIX_EPOCH};
 
 use axum::Router;
+use axum::extract::DefaultBodyLimit;
 use axum::http::{HeaderName, HeaderValue, header};
 use axum::routing::{get, post};
 use octopuson_core::http::HttpTransport;
@@ -45,6 +48,8 @@ pub struct AppState {
     pub(crate) pending: Mutex<HashMap<String, Pending>>,
     /// Reaches the gateway for sign-ins.
     pub(crate) gateway: Arc<dyn HttpTransport>,
+    /// Desktops' tokens met recently and their request counts.
+    pub(crate) sync: sync::SyncGate,
 }
 
 impl std::fmt::Debug for AppState {
@@ -89,6 +94,7 @@ impl AppState {
             accounts,
             pending: Mutex::new(HashMap::new()),
             gateway,
+            sync: sync::SyncGate::default(),
         })
     }
 }
@@ -128,7 +134,19 @@ pub fn app(state: Arc<AppState>) -> Router {
         .route("/mcp", post(mcp::post).get(mcp::other).delete(mcp::other))
         .route("/api/session", get(api::session))
         .route("/api/call/{command}", post(api::call))
-        .route("/api/events", get(api::events));
+        .route("/api/events", get(api::events))
+        .route(
+            "/api/sync",
+            post(sync::post).layer(DefaultBodyLimit::max(sync::MAX_REQUEST)),
+        )
+        .route(
+            "/api/sync/crawls/{audit}",
+            post(sync::put_crawl)
+                .get(sync::get_crawl)
+                .layer(DefaultBodyLimit::max(
+                    octopuson_platform_app::sync::crawls::MAX_CRAWL + 1024,
+                )),
+        );
     if state.config.dev_login {
         router = router.route("/auth/dev", get(auth::dev_login));
     }

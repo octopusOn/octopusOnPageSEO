@@ -5,7 +5,8 @@
 //! ([`cache`]), every paid request with what it cost ([`spend`]), keyword lists ([`lists`]),
 //! rank tracking ([`rank`]), site audits ([`audits`]) and AI visibility ([`ai`]). On the
 //! desktop the workspace is the program's data folder; on the web every account has its own
-//! folder. A lock file keeps a second program from writing at the same time.
+//! folder, which desktops signed in to the account keep in step with ([`sync`]). A lock file
+//! keeps a second program from writing at the same time.
 
 pub mod ai;
 pub mod audits;
@@ -18,6 +19,7 @@ pub mod rank;
 pub mod reports;
 mod schema;
 pub mod spend;
+pub mod sync;
 
 use std::fs;
 use std::path::{Path, PathBuf};
@@ -46,6 +48,7 @@ pub use reports::{
     REPORT_WIDGETS, ReportRow, ReportSpec,
 };
 pub use spend::{SpendRecord, UsageRow};
+pub use sync::{AuditCrawl, SyncAck, SyncApplied, SyncBatch, SyncChange, SyncSide};
 
 use crate::lock::StoreLock;
 

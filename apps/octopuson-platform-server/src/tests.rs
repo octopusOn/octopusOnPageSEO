@@ -927,3 +927,203 @@ async fn an_account_has_at_most_ten_access_tokens() {
     assert_eq!(listed.as_array().unwrap().len(), 1);
     assert!(crate::mcp::command(&state, "u_1", "list_projects", &json!({})).is_none());
 }
+
+fn sync_request(token: Option<&str>, body: Vec<u8>) -> Request<Body> {
+    let mut request = Request::post("/api/sync").header(
+        header::CONTENT_TYPE,
+        octopuson_platform_app::sync::CONTENT_TYPE,
+    );
+    if let Some(token) = token {
+        request = request.header(header::AUTHORIZATION, format!("Bearer {token}"));
+    }
+    request.body(Body::from(body)).unwrap()
+}
+
+fn greeting(changes: Vec<octopuson_platform::SyncChange>) -> Vec<u8> {
+    octopuson_platform_app::sync::encode(&octopuson_platform_app::sync::SyncRequest {
+        protocol: octopuson_platform_app::sync::PROTOCOL,
+        replica: "desktop-0123456789".to_owned(),
+        epoch: None,
+        cursor: 0,
+        changes,
+        last: true,
+        pull: true,
+        replace: false,
+    })
+    .unwrap()
+}
+
+async fn sync_answer(response: Response<Body>) -> octopuson_platform_app::sync::SyncResponse {
+    assert_eq!(response.status(), StatusCode::OK);
+    let bytes = response.into_body().collect().await.unwrap().to_bytes();
+    octopuson_platform_app::sync::decode(&bytes).unwrap()
+}
+
+#[tokio::test]
+async fn desktops_sync_with_the_account_token_only() {
+    let dir = tempfile::tempdir().unwrap();
+    // The gateway refuses the development token (no development sign-in here), then names the
+    // account of the desktop's token once; it is remembered after.
+    let gateway = Arc::new(
+        FakeTransport::new()
+            .reply(401, r#"{"error":"unauthorized"}"#)
+            .reply(200, ME),
+    );
+    let state = state(dir.path(), &gateway, false);
+
+    let response = send(&state, sync_request(None, greeting(Vec::new()))).await;
+    assert_eq!(response.status(), StatusCode::UNAUTHORIZED);
+    let mut wrong = sync_request(Some("oct_desktop"), greeting(Vec::new()));
+    wrong
+        .headers_mut()
+        .insert(header::CONTENT_TYPE, "application/json".parse().unwrap());
+    assert_eq!(
+        send(&state, wrong).await.status(),
+        StatusCode::UNSUPPORTED_MEDIA_TYPE
+    );
+    // The development token works only with the development sign-in.
+    let response = send(&state, sync_request(Some("oct_dev"), greeting(Vec::new()))).await;
+    assert_eq!(response.status(), StatusCode::UNAUTHORIZED);
+
+    // A desktop's project arrives in the account's workspace.
+    let desktop = tempfile::tempdir().unwrap();
+    let store = octopuson_platform::PlatformStore::open(desktop.path()).unwrap();
+    store
+        .create_project(
+            &octopuson_platform::ProjectSpec {
+                domain: "ornek.com".to_owned(),
+                country: "tr".to_owned(),
+                language: "tr".to_owned(),
+                ..octopuson_platform::ProjectSpec::default()
+            },
+            "2026-10-22T10:00:00Z",
+        )
+        .unwrap();
+    store.sync_scan(1).unwrap();
+    let changes = store.sync_local_changes(0, 0, 1 << 20).unwrap().changes;
+    let answer =
+        sync_answer(send(&state, sync_request(Some("oct_desktop"), greeting(changes))).await).await;
+    assert_eq!(answer.account, "u_123");
+    assert_eq!(answer.accepted.len(), 1);
+    assert_eq!(answer.projects, 1);
+    let account = state.accounts.get("u_123").unwrap();
+    let workspace = account.platform.workspace();
+    assert_eq!(workspace.store().unwrap().project_count().unwrap(), 1);
+    // The desktop's token runs the account's scheduled work until the web is signed in.
+    assert_eq!(workspace.account_token().as_deref(), Some("oct_desktop"));
+    assert!(crate::sync::borrowed(workspace, "oct_desktop"));
+    let again = sync_answer(
+        send(
+            &state,
+            sync_request(Some("oct_desktop"), greeting(Vec::new())),
+        )
+        .await,
+    )
+    .await;
+    assert_eq!(again.changes.len(), 0);
+    assert_eq!(gateway.requests().len(), 2);
+}
+
+#[tokio::test]
+async fn crawls_travel_with_the_development_account() {
+    let dir = tempfile::tempdir().unwrap();
+    let state = state(dir.path(), &Arc::new(FakeTransport::new()), true);
+    let hello =
+        sync_answer(send(&state, sync_request(Some("oct_dev"), greeting(Vec::new()))).await).await;
+    assert_eq!(hello.account, crate::auth::DEV_USER);
+
+    let account = state.accounts.get(crate::auth::DEV_USER).unwrap();
+    let workspace = account.platform.workspace();
+    let audit_uid = {
+        let store = workspace.store().unwrap();
+        let project = store
+            .create_project(
+                &octopuson_platform::ProjectSpec {
+                    domain: "ornek.com".to_owned(),
+                    country: "tr".to_owned(),
+                    language: "tr".to_owned(),
+                    ..octopuson_platform::ProjectSpec::default()
+                },
+                "2026-10-22T10:00:00Z",
+            )
+            .unwrap();
+        let audit = store
+            .begin_audit(
+                project.id,
+                false,
+                "https://ornek.com/",
+                "2026-10-22T10:00:00Z",
+            )
+            .unwrap();
+        store.set_audit_crawl(audit, "20261022-ornek").unwrap();
+        store
+            .finish_audit(
+                audit,
+                &octopuson_platform::AuditEnd {
+                    status: "done",
+                    pages: 1,
+                    health: Some(90.0),
+                    geo: None,
+                    issues: 0,
+                    metered_pages: 0,
+                    charged_micros: 0,
+                    error: None,
+                },
+                "2026-10-22T10:05:00Z",
+            )
+            .unwrap();
+        store.sync_audit_crawls().unwrap()[0].uid.clone()
+    };
+    let uri = format!("/api/sync/crawls/{audit_uid}");
+    let authorized = |request: axum::http::request::Builder| {
+        request.header(header::AUTHORIZATION, "Bearer oct_dev")
+    };
+    let response = send(
+        &state,
+        authorized(Request::get(&uri)).body(Body::empty()).unwrap(),
+    )
+    .await;
+    assert_eq!(response.status(), StatusCode::NOT_FOUND);
+
+    let source = tempfile::tempdir().unwrap();
+    std::fs::write(source.path().join("crawl.json"), "{}").unwrap();
+    std::fs::write(source.path().join("crawl.duckdb"), vec![7_u8; 5000]).unwrap();
+    let packed = octopuson_platform_app::sync::crawls::pack(source.path()).unwrap();
+    let response = send(
+        &state,
+        authorized(Request::post(&uri))
+            .body(Body::from(packed))
+            .unwrap(),
+    )
+    .await;
+    assert_eq!(response.status(), StatusCode::OK);
+    let folder = workspace.data_dir().join("crawls").join("20261022-ornek");
+    assert_eq!(
+        std::fs::read(folder.join("crawl.duckdb")).unwrap().len(),
+        5000
+    );
+
+    let response = send(
+        &state,
+        authorized(Request::get(&uri)).body(Body::empty()).unwrap(),
+    )
+    .await;
+    assert_eq!(response.status(), StatusCode::OK);
+    let bytes = response.into_body().collect().await.unwrap().to_bytes();
+    let copy = tempfile::tempdir().unwrap();
+    let target = copy.path().join("crawl");
+    octopuson_platform_app::sync::crawls::unpack(&bytes, &target).unwrap();
+    assert_eq!(
+        std::fs::read(target.join("crawl.duckdb")).unwrap().len(),
+        5000
+    );
+
+    let response = send(
+        &state,
+        authorized(Request::post("/api/sync/crawls/nope"))
+            .body(Body::from(vec![1_u8]))
+            .unwrap(),
+    )
+    .await;
+    assert_eq!(response.status(), StatusCode::NOT_FOUND);
+}

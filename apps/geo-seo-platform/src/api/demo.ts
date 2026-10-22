@@ -1458,6 +1458,12 @@ export async function demo(command: string, args: Record<string, unknown>): Prom
       return settings;
     case "report_problem":
       return null;
+    case "sync_status":
+      return { host: "desktop", enabled: true, signed_in: false, active: false, syncing: false, unsent: 0, parked: 0, url: "https://app.octopuson.com" };
+    case "set_sync":
+    case "sync_now":
+    case "sync_choose":
+      throw new CallError({ code: "unsupported", message: "Sample data: open the program to sync with your account." });
     case "list_access_tokens":
       return [];
     case "create_access_token":

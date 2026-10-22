@@ -682,7 +682,7 @@ fn audit_report(context: &Context<'_>, ask: ReportAsk) -> Result<Option<AuditRep
     let previous = audits
         .iter()
         .find(|row| {
-            row.id < audit.id
+            (row.started_at.as_str(), row.id) < (audit.started_at.as_str(), audit.id)
                 && row.crawl_id.is_some()
                 && row.status != "running"
                 && row.status != "failed"

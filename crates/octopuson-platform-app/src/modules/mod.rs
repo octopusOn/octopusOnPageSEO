@@ -19,6 +19,7 @@ pub mod projects;
 pub mod rank;
 pub mod reports;
 pub mod sources;
+pub mod sync;
 
 use std::sync::Arc;
 
@@ -43,7 +44,44 @@ pub fn router() -> Router {
     ai::register(&mut router);
     gsc::register(&mut router);
     reports::register(&mut router);
+    sync::register(&mut router);
     router
+}
+
+/// Whether a command only reads: it cannot change what a sync carries, so it does not make the
+/// desktop sync sooner. Unsure ones count as changes.
+pub fn reads_only(command: &str) -> bool {
+    const READS: &[&str] = &[
+        "account_page",
+        "account_status",
+        "ai_answer",
+        "app_info",
+        "audit_issue",
+        "cancel_job",
+        "clear_jobs",
+        "google_properties",
+        "google_status",
+        "gsc_query",
+        "keyword_autocomplete",
+        "keyword_lists",
+        "open_url",
+        "rank_keyword",
+        "report_deliveries",
+        "report_html",
+        "report_pdf",
+        "report_problem",
+        "report_xlsx",
+        "suggest_ai_prompts",
+        "sync_status",
+        "usage",
+    ];
+    READS.contains(&command)
+        || ["get_", "list_"]
+            .iter()
+            .any(|prefix| command.starts_with(prefix))
+        || ["_estimate", "_report", "_setup", "_runs"]
+            .iter()
+            .any(|suffix| command.ends_with(suffix))
 }
 
 /// Whether a command may move when scheduled work is due next (the web server notes it again).

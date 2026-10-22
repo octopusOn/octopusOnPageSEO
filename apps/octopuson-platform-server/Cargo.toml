@@ -39,6 +39,7 @@ url.workspace = true
 
 [dev-dependencies]
 http-body-util = "0.1"
+octopuson-platform.workspace = true
 tempfile.workspace = true
 tower = { version = "0.5", features = ["util"] }
 

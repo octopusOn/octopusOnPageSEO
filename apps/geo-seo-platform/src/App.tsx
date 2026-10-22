@@ -25,6 +25,7 @@ import { Reports } from "./modules/reports/Reports";
 import { moduleOf } from "./modules/registry";
 import { Sidebar } from "./modules/shell/Sidebar";
 import { Settings } from "./modules/settings/Settings";
+import { SyncChoiceDialog } from "./modules/settings/SyncCard";
 import { Sources } from "./modules/sources/Sources";
 
 export function App({ mode }: { mode: Mode }) {
@@ -68,6 +69,11 @@ export function App({ mode }: { mode: Mode }) {
     let stop: (() => void) | undefined;
     let disposed = false;
     void watch((job) => {
+      // A sync brought data from the other side: everything is read again.
+      if (job.kind === "sync") {
+        void queryClient.invalidateQueries();
+        return;
+      }
       queryClient.setQueryData<Job[]>(["jobs"], (old) => mergeJob(old ?? [], job));
       if (job.status === "running") return;
       if (job.kind === "account-login") {
@@ -229,6 +235,7 @@ export function App({ mode }: { mode: Mode }) {
             onFailed={(message) => notify(message, true)}
           />
         )}
+        {mode === "desktop" && <SyncChoiceDialog />}
       </div>
     </ShellContext.Provider>
   );

@@ -12,7 +12,7 @@ GEO-SEO Platform, OctopusOn SEO'nun hepsi bir arada SEO ve GEO (yapay zekâ yan�
 - beyaz etiketli raporlar
 
 İki türlü kullanılır:
-- **Masaüstü programı:** verileriniz bilgisayarınızda kalır.
+- **Masaüstü programı:** verileriniz bilgisayarınızdadır. OctopusOn SEO hesabınızı bağlarsanız projeleriniz web sürümüyle kendiliğinden eşitlenir (bkz. 13. bölüm).
 - **Web sürümü (app.octopuson.com):** OctopusOn SEO hesabınızla girersiniz; verileriniz hesabınıza özel alanda saklanır.
 
 Teknik ayrıntılar [platform.md](platform.md) dosyasındadır.
@@ -36,7 +36,7 @@ Teknik ayrıntılar [platform.md](platform.md) dosyasındadır.
   2. İstekler doğrudan DataForSEO'ya gider ve ücreti DataForSEO hesabınızdan düşer.
 - **OctopusOn kredisi:**
   1. Masaüstünde **Tek tıkla bağlan**'a basın. Tarayıcıda my.octopuson.com'a girmişseniz bağlantı hemen kurulur. Web sürümü zaten hesabınızla açılır.
-  2. Kredi, my.octopuson.com'dan TL ile yüklenir.
+  2. Kredi my.octopuson.com'dan yüklenir.
 - **Otomatik (varsayılan):** anahtarınız varsa onu, yoksa krediyi kullanır.
 
 **Yapay zekâ asistanlarının anahtarları:** Kaynaklar sayfasında OpenAI (ChatGPT), Anthropic (Claude), Google Gemini ve Perplexity kartları da vardır. Bunlar yalnızca **AI Görünürlüğü** içindir ve kredisi yoktur:
@@ -335,8 +335,31 @@ Claude Code'da bu klasörleri `~/.claude/skills/` içine kopyalayın. Claude uyg
 - `octopuson-platform call rank_report '{"project_id":1}'`: herhangi bir işlemi çalıştırır; JSON alır, JSON döndürür.
 - `octopuson-platform commands`: tüm işlemleri listeler.
 
-## 13. Ayarlar
+## 13. Masaüstü ve web eşitlemesi
 
+Masaüstü programında OctopusOn SEO hesabınızı bağladığınızda projeleriniz app.octopuson.com ile kendiliğinden eşitlenir. Bir tarafta yaptığınız değişiklik birkaç saniye içinde, en geç yarım dakikada öbür tarafta görünür.
+
+- **Eşitlenenler:**
+  - projeler, rakipler ve marka adları;
+  - izlenen yerler ve anahtar kelimeler, AI soruları ve ayarları;
+  - anahtar kelime listeleri, rapor markası ve raporlar;
+  - biten sıralama kontrolleri, AI yanıtları, site denetimleri ve Search Console verileri;
+  - ödenmiş alan adı, backlink, anahtar kelime ve LLM Mentions raporları. Bir tarafta ödediğiniz rapor öbür tarafta yeniden ödenmez.
+- **Eşitlenmeyenler:** kendi API anahtarlarınız, ödeme şekli ve bütçe ayarları, harcama tablosu ve Google oturumu. Bunlar her cihazda ayrıdır.
+- **Zamanlanmış işler:** eşitleme açıkken günlük/haftalık sıralama, AI görünürlüğü, denetim ve Search Console işleri web sunucusunda çalışır; bilgisayarınız kapalıyken de. Krediyle ya da webde girdiğiniz anahtarlarla ödenir. Elle başlattığınız işler başlattığınız yerde çalışır. Eşitlemeyi kapatırsanız zamanlanmış işler yine masaüstünde çalışır.
+- **İlk eşitleme:** hem bilgisayarınızda hem webde proje varsa program sorar:
+  - **Birleştir** (önerilen): iki taraftaki projelerin hepsi her yerde olur.
+  - **Webdekini bu bilgisayardakiyle değiştir.**
+  - **Bu bilgisayardakini webdekiyle değiştir.**
+  - **Şimdilik eşitleme.**
+
+  Başka bir hesap bağladığınızda ya da webdeki veriler yedekten döndüğünde de aynı soru gelir.
+- **Denetim ayrıntıları:** denetimi yapan bilgisayar tarama dosyasını (en fazla 30 MB) webe gönderir. Her projenin son denetiminin ayrıntıları öbür tarafa da gelir.
+- **Ayarlar → Hesapla eşitleme:** son eşitleme zamanı, gönderilmeyi bekleyen değişiklikler, **Şimdi eşitle** ve **Eşitlemeyi kapat**.
+
+## 14. Ayarlar
+
+- **Hesapla eşitleme (masaüstü):** eşitlemenin durumu, **Şimdi eşitle** ve açma/kapama (bkz. 13. bölüm). Web sürümünde bu kart yalnızca nasıl çalıştığını anlatır.
 - **Dil:** Türkçe, English, Deutsch veya Español.
 - **Vekil sunucu (proxy):** yalnızca masaüstünde; istekleri bir vekil sunucudan geçirmek için.
 - **AI asistanları:** MCP ayarları ve web'de erişim anahtarları (bkz. 12. bölüm).
@@ -349,5 +372,5 @@ Claude Code'da bu klasörleri `~/.claude/skills/` içine kopyalayın. Claude uyg
 - **AI asistanları:** asistanın okuduğu veriler, asistanın kendi sağlayıcısına (örn. Anthropic, OpenAI) gider. Bunun için o sağlayıcının gizlilik koşulları geçerlidir. Sunucu erişim anahtarının kendisini değil, yalnızca özetini (hash) saklar.
 - **Paylaşılan raporlar:** bağlantıyı bilen herkes raporu görür; bağlantıyı kaldırınca kapanır. Sunucu bağlantının kendisini değil, yalnızca özetini (hash) saklar.
 - **Google (Search Console, Analytics):** veriler doğrudan Google'dan okunur, octopuson'dan geçmez. Google'ın verdiği yenileme anahtarı diğer anahtarlarınızla birlikte şifreli saklanır.
-- **Masaüstünde:** projeleriniz ve saklanan veriler bilgisayarınızdadır.
+- **Masaüstünde:** projeleriniz ve saklanan veriler bilgisayarınızdadır. Eşitleme açıkken aynı veriler hesabınızın web alanında da tutulur; kendi API anahtarlarınız bilgisayarınızdan çıkmaz.
 - **Web'de:** veriler hesabınıza özel klasördedir. Anahtarlarınız ve hesap jetonunuz şifrelenerek saklanır.

@@ -6,6 +6,7 @@ import { api } from "../../api/client";
 import type { AuditReport, AuditSchedule, AuditSetup, GeoReadiness, GeoSignal, IssueKind, IssueReport, Job, ProjectRow } from "../../api/types";
 import { useI18n } from "../../i18n";
 import { useShell } from "../../lib/context";
+import { useScheduleNote } from "../../lib/sync";
 import { explain } from "../../lib/errors";
 import { formatCredits, formatNumber, formatPercent, relativeTime } from "../../lib/format";
 import { refreshSpending } from "../../lib/PaidFrame";
@@ -18,6 +19,7 @@ function one(value: number, locale: string): string {
 /** Schedule, page limit, what crawling costs, and the audit itself. */
 function SetupBar({ project, setup, running }: { project: ProjectRow; setup: AuditSetup; running: Job | undefined }) {
   const { t, locale } = useI18n();
+  const scheduleNote = useScheduleNote();
   const { notify, fail } = useShell();
   const queryClient = useQueryClient();
   const save = useMutation({
@@ -44,7 +46,7 @@ function SetupBar({ project, setup, running }: { project: ProjectRow; setup: Aud
   return (
     <section className="oc-panel rank-setup">
       <div className="rank-controls">
-        <Field label={t("audit.schedule")}>
+        <Field label={t("audit.schedule")} hint={scheduleNote}>
           <Segmented<AuditSchedule>
             label={t("audit.schedule")}
             value={settings.schedule}

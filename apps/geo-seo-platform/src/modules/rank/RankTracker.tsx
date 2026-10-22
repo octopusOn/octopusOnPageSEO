@@ -23,6 +23,7 @@ import type { CompetitorShare, Estimate, Job, KeywordRank, ProjectRow, RankRepor
 import { useI18n } from "../../i18n";
 import { axisStyle, EChart, useChartTokens, type ChartOption } from "../../lib/EChart";
 import { useShell } from "../../lib/context";
+import { useScheduleNote } from "../../lib/sync";
 import { explain } from "../../lib/errors";
 import { formatCredits, formatNumber, formatPercent, formatUsd, relativeTime } from "../../lib/format";
 import { blockedText, CostLabel, refreshSpending } from "../../lib/PaidFrame";
@@ -62,6 +63,7 @@ function SetupBar({
   onAdd: () => void;
 }) {
   const { t, locale } = useI18n();
+  const scheduleNote = useScheduleNote();
   const { notify, go, fail } = useShell();
   const queryClient = useQueryClient();
   const estimate = useQuery({ queryKey: ["rank", "estimate", project.id], queryFn: () => api.rankEstimate(project.id), enabled: setup.keywords > 0 });
@@ -111,7 +113,7 @@ function SetupBar({
         </Button>
       </div>
       <div className="rank-controls">
-        <Field label={t("rank.schedule")}>
+        <Field label={t("rank.schedule")} hint={scheduleNote}>
           <Segmented<Schedule>
             label={t("rank.schedule")}
             value={settings.schedule}

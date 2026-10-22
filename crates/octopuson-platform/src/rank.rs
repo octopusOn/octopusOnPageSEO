@@ -403,7 +403,7 @@ impl PlatformStore {
     /// Database errors.
     pub fn rank_trackers(&self, project_id: i64) -> Result<Vec<TrackerRow>, PlatformStoreError> {
         let mut statement = self.connection.prepare(&format!(
-            "SELECT {TRACKER_COLUMNS} FROM rank_trackers WHERE project_id = ? ORDER BY id"
+            "SELECT {TRACKER_COLUMNS} FROM rank_trackers WHERE project_id = ? ORDER BY created_at, id"
         ))?;
         let rows = statement.query_map(params![project_id], tracker)?;
         Ok(rows.collect::<Result<_, _>>()?)
@@ -498,7 +498,7 @@ impl PlatformStore {
     ) -> Result<Vec<TrackedKeyword>, PlatformStoreError> {
         let mut statement = self.connection.prepare(
             "SELECT id, project_id, keyword, tags, volume, added_at FROM tracked_keywords
-             WHERE project_id = ? ORDER BY id",
+             WHERE project_id = ? ORDER BY added_at, id",
         )?;
         let rows = statement.query_map(params![project_id], |row| {
             Ok((
@@ -705,7 +705,7 @@ impl PlatformStore {
         limit: u32,
     ) -> Result<Vec<RankRunRow>, PlatformStoreError> {
         let mut statement = self.connection.prepare(&format!(
-            "SELECT {RUN_COLUMNS} FROM rank_runs WHERE project_id = ? ORDER BY id DESC LIMIT ?"
+            "SELECT {RUN_COLUMNS} FROM rank_runs WHERE project_id = ? ORDER BY started_at DESC, id DESC LIMIT ?"
         ))?;
         let rows = statement.query_map(params![project_id, limit], run)?;
         Ok(rows.collect::<Result<_, _>>()?)

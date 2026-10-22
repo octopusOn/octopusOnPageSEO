@@ -1,8 +1,9 @@
-import { ShieldCheck } from "lucide-react";
+import { CloudCog, ShieldCheck } from "lucide-react";
 import { BrandMark } from "@octopusseo/ui";
 import type { Job, ProjectRow } from "../../api/types";
 import { useI18n } from "../../i18n";
 import type { PageId } from "../../lib/route";
+import { useSync } from "../../lib/sync";
 import { GROUPS, MODULES } from "../registry";
 
 export function Sidebar({
@@ -22,6 +23,7 @@ export function Sidebar({
 }) {
   const { t } = useI18n();
   const running = jobs.filter((job) => job.status === "running");
+  const synced = useSync()?.active === true;
   return (
     <aside className="oc-rail platform-rail">
       <div className="oc-titlebar" data-tauri-drag-region />
@@ -84,8 +86,8 @@ export function Sidebar({
         )}
       </nav>
       <div className="rail-note">
-        <ShieldCheck size={13} aria-hidden="true" />
-        <p>{web ? t("common.webNote") : t("common.localNote")}</p>
+        {synced ? <CloudCog size={13} aria-hidden="true" /> : <ShieldCheck size={13} aria-hidden="true" />}
+        <p>{web ? t("common.webNote") : synced ? t("common.syncNote") : t("common.localNote")}</p>
       </div>
       {version && <div className="rail-version">v{version}</div>}
     </aside>

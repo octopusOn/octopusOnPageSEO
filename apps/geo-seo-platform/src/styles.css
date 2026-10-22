@@ -2250,3 +2250,69 @@ a {
     position: static;
   }
 }
+
+/* ---------------------------------------------------------------- Sync */
+
+.sync-card .oc-card-title svg,
+.oc-card-title > svg {
+  vertical-align: -3px;
+}
+
+.oc-badge.sync-state.good {
+  color: var(--good);
+  border-color: color-mix(in srgb, var(--good) 40%, transparent);
+}
+
+.oc-badge.sync-state.warn {
+  color: var(--warning);
+  border-color: color-mix(in srgb, var(--warning) 40%, transparent);
+}
+
+.sync-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
+.sync-answers {
+  display: grid;
+  gap: 10px;
+  margin-top: 14px;
+}
+
+.sync-answer {
+  display: grid;
+  gap: 4px;
+  padding: 12px 14px;
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  background: var(--surface-1);
+  color: inherit;
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+
+.sync-answer:hover:not(:disabled),
+.sync-answer:focus-visible {
+  border-color: color-mix(in srgb, var(--accent) 55%, transparent);
+}
+
+.sync-answer.recommended {
+  border-color: color-mix(in srgb, var(--good) 45%, transparent);
+}
+
+.sync-answer strong {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.sync-answer span:not(.oc-badge) {
+  color: var(--ink-muted);
+}
+
+.sync-card .card-head {
+  justify-content: space-between;
+  align-items: center;
+}

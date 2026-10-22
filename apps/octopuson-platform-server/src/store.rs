@@ -243,6 +243,18 @@ impl ServerStore {
         Ok(())
     }
 
+    /// Forgets a share-link token (its report stopped being shared elsewhere).
+    ///
+    /// # Errors
+    /// Database errors.
+    pub fn remove_report_share(&self, token: &str) -> Result<(), StoreError> {
+        self.connection().execute(
+            "DELETE FROM report_shares WHERE token_hash = ?",
+            params![session_hash(token)],
+        )?;
+        Ok(())
+    }
+
     /// The account whose report a share-link token opens. The account's workspace still
     /// decides whether the token is valid (it may have been taken away).
     ///

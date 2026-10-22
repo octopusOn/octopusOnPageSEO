@@ -25,6 +25,8 @@ The first release is built in milestones G1–G12:
 - **G11, AI assistants and the command line:** an MCP server for Claude, ChatGPT, Cursor and other assistants (the desktop's `octopuson-platform mcp`, the web's `/mcp` with access tokens), five agent skills, and the `octopuson-platform` command.
 - **G12, release preparation:** the release workflow and its Linux web server archive, the server's deploy files, script and backups, the gateway's per-route holds and metered prices in the admin, the website's program page and the program's GitHub project files.
 
+Version 0.1.1 adds sync: a desktop signed in to the account keeps its projects the same as the account's web workspace ([Sync](#sync), [ADR 0078](adr/0078-platform-sync.md)).
+
 The other modules show "soon" in the sidebar until their milestone lands.
 
 ## Layout
@@ -104,6 +106,7 @@ The desktop window and the web call the same commands with the same JSON. A fail
 | Reports | `reports_setup`, `save_report_branding`, `save_report`, `delete_report`, `report_html`, `report_pdf`, `report_xlsx`, `share_report` (web), `unshare_report`, `report_deliveries`, `send_report` (web) |
 | AI visibility | `ai_setup`, `save_ai_settings`, `add_ai_prompts`, `remove_ai_prompts`, `suggest_ai_prompts`, `ai_estimate`, `start_ai_run`, `ai_runs`, `ai_report`, `ai_answer`, `ai_mentions_estimate`, `get_ai_mentions`, `fetch_ai_mentions` |
 | Keyword lists | `keyword_lists`, `create_keyword_list`, `rename_keyword_list`, `delete_keyword_list`, `list_keywords`, `add_to_keyword_list`, `remove_from_keyword_list`, `cluster_keyword_list` |
+| Sync (desktop) | `sync_status`, `set_sync`, `sync_now`, `sync_choose` |
 
 A new module adds its commands in its own file, `crates/octopuson-platform-app/src/modules/<module>.rs`, and its page in `apps/geo-seo-platform/src/modules/<module>/`; its translations go in `src/i18n/<language>/<module>.json`.
 
@@ -367,6 +370,50 @@ Every paid question goes through `Workspace::fetch`:
 
 Pages first show what is kept (`get_…`) and the estimate (`…_estimate`, in credits on credits). They pay only when the user asks for fresh data (`fetch_…`, `force` to refresh a fresh answer).
 
+## Sync
+
+A desktop signed in to an OctopusOn SEO account keeps its data the same as the account's web workspace; [ADR 0078](adr/0078-platform-sync.md) has the design.
+
+- **What travels.**
+  - projects with their settings, competitors and brands;
+  - tracked places and keywords;
+  - AI questions and settings;
+  - keyword lists;
+  - the report branding, reports and their deliveries;
+  - finished rank runs with their checks, AI runs with their answers, audits, Search Console syncs with the project's numbers;
+  - kept answers for domains, backlinks, keywords and AI mentions (up to 2 MB each).
+
+  Own API keys, the device's settings (payment modes, budgets, proxy), spending records and Google sign-ins stay on each side.
+- **How.**
+  - The desktop (`octopuson_platform_app::sync::round`) sends `POST /api/sync` with the account token. The body is JSON compressed with zstd (`application/vnd.octopuson.sync+zstd`).
+  - The server checks the token at the gateway (remembered for 5 minutes), allows 240 requests a minute per account, and answers with `hub_answer` from the account's workspace.
+  - A round greets the hub, sends the desktop's changes, then takes the others'.
+  - It runs every 30 seconds, about 3 seconds after a change, and after a job ends; it waits up to 5 minutes while the web cannot be reached.
+  - `PLATFORM_SYNC_URL` points a desktop at another server (http only for this computer), for example a local `octopuson-platform-server` with `PLATFORM_DEV_LOGIN=1`, whose development account takes the token `oct_dev`.
+- **Records.** In `platform.duckdb` (migration 8):
+  - every travelling record has a `uid`;
+  - `sync_rows` keeps each record's last fingerprint and change number;
+  - `sync_state` keeps the copy's id, the hub's epoch, the cursors and the clock offset;
+  - `sync_pending` keeps changes waiting for the record they belong to.
+- **Who wins.**
+  - The later change, with the desktop's clock corrected by the hub's.
+  - A deletion over an edit of a record made apart.
+  - Times the program writes itself (last run, last sync, last e-mail) keep the later value.
+  - A copy cannot make report links, only stop them.
+- **Choices.** The first sync of a computer with projects, with an account whose web has projects too, waits for the person. So do another account and a reset hub. Settings → Sync and a dialog offer:
+  - merge;
+  - put this computer's data on the web;
+  - take the web's data here;
+  - pause.
+- **Scheduled work.**
+  - While a desktop syncs (switched on, signed in, synced once, no choice waiting), `Workspace::schedules_here` is false on the desktop and the web server runs the account's schedules.
+  - Until the account signs in on the web, the server keeps the desktop's token (marked as borrowed in `sync-token.sha256`) for that. A later web sign-in replaces it without revoking it.
+  - Paid schedules use credits or keys entered on the web.
+- **Crawls.**
+  - After a round, the computer that ran an audit sends its crawl to `POST /api/sync/crawls/{audit uid}` (packed, at most 30 MB). The web keeps at most 5 GB of crawls per account.
+  - A desktop takes the latest audit's crawl of each project with `GET` on the same address.
+- **nginx.** `/api/sync` takes bodies up to 32 MB and is not buffered (`deploy/platform/octopuson-platform.conf`).
+
 ## Web version
 
 - **Sign-in.** The account site's one-click flow (`/baglan`) with PKCE, returning to `/auth/callback`.
@@ -438,6 +485,6 @@ The backup is useless without `PLATFORM_MASTER_KEY`, which seals every account's
 - **Desktop.** "OctopusOn GEO-SEO Platform" in the platform's application data folder, or `OCTOPUSON_PLATFORM_DATA_DIR`.
   - Keys go to the system credential store.
   - The account token is the one every OctopusOn SEO program shares.
-- **Web.** `PLATFORM_DATA_DIR/users/<account id>/` holds `platform.duckdb`, `settings.json`, `secrets.sealed`, `account.sealed` and the audits' `crawls/`.
+- **Web.** `PLATFORM_DATA_DIR/users/<account id>/` holds `platform.duckdb`, `settings.json`, `secrets.sealed`, `account.sealed` (with `sync-token.sha256` when the token was borrowed from a syncing desktop) and the audits' `crawls/`.
 - **Google.** `google.json` beside the database keeps the desktop's own client id and the scopes granted; the client secret and the refresh token are with the keys.
 - **Desktop and web alike.** Each audit's crawl is a folder in `crawls/` beside `platform.duckdb`.

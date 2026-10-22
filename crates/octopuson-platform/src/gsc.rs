@@ -497,7 +497,7 @@ impl PlatformStore {
         limit: u32,
     ) -> Result<Vec<GscSyncRow>, PlatformStoreError> {
         let mut statement = self.connection.prepare(&format!(
-            "SELECT {SYNC_COLUMNS} FROM gsc_syncs WHERE project_id = ? ORDER BY id DESC LIMIT ?"
+            "SELECT {SYNC_COLUMNS} FROM gsc_syncs WHERE project_id = ? ORDER BY started_at DESC, id DESC LIMIT ?"
         ))?;
         let rows = statement.query_map(params![project_id, limit], sync)?;
         Ok(rows.collect::<Result<_, _>>()?)

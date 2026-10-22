@@ -173,6 +173,29 @@ impl JobManager {
             .map(|entry| entry.job.clone())
     }
 
+    /// Tells the sink that something of `kind` happened, as a finished job that is not kept
+    /// (a sync brought new data).
+    pub fn announce(&self, kind: &str) {
+        let now = millis();
+        let id = self.inner.next.fetch_add(1, Ordering::Relaxed);
+        self.inner.sink.job(&Job {
+            id: format!("{kind}-{id}"),
+            kind: kind.to_owned(),
+            label: String::new(),
+            project_id: None,
+            status: JobStatus::Done,
+            step: String::new(),
+            done: 0,
+            total: 0,
+            cost_usd: 0.0,
+            error: None,
+            result: None,
+            started_at: now,
+            finished_at: Some(now),
+            revision: 1,
+        });
+    }
+
     /// Jobs still running.
     pub fn running(&self) -> usize {
         self.jobs()

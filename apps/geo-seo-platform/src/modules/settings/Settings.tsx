@@ -8,6 +8,7 @@ import type { AppInfo, Settings as SettingsData } from "../../api/types";
 import { LANGUAGES, useI18n, type Lang } from "../../i18n";
 import { useShell } from "../../lib/context";
 import { Assistants } from "./Assistants";
+import { SyncCard } from "./SyncCard";
 
 function Proxy({ settings }: { settings: SettingsData }) {
   const { t } = useI18n();
@@ -47,6 +48,7 @@ export function Settings({ info }: { info: AppInfo | undefined }) {
   const web = info?.host === "web" || mode === "web";
   return (
     <div className="page-stack settings-page">
+      {mode !== "demo" && <SyncCard web={web} />}
       <section className="oc-card">
         <h2 className="oc-card-title">{t("settings.language")}</h2>
         <Segmented<Lang>

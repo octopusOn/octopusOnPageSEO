@@ -25,6 +25,7 @@ import type {
 import { useI18n } from "../../i18n";
 import { axisStyle, EChart, useChartTokens, type ChartOption } from "../../lib/EChart";
 import { useShell } from "../../lib/context";
+import { useScheduleNote } from "../../lib/sync";
 import { explain } from "../../lib/errors";
 import { formatCompact, formatCredits, formatNumber, formatPercent, formatUsd, relativeTime } from "../../lib/format";
 import { PaidFrame } from "../../lib/PaidFrame";
@@ -72,6 +73,7 @@ function EngineChip({ info, busy, onToggle }: { info: EngineInfo; busy: boolean;
 /** Assistants, schedule, brands, what a run costs and the run itself. */
 function SetupBar({ project, setup, running, onAdd, onBrands }: { project: ProjectRow; setup: AiSetup; running: Job | undefined; onAdd: () => void; onBrands: () => void }) {
   const { t, locale } = useI18n();
+  const scheduleNote = useScheduleNote();
   const { notify, go, fail } = useShell();
   const queryClient = useQueryClient();
   const { settings } = setup;
@@ -111,7 +113,7 @@ function SetupBar({ project, setup, running, onAdd, onBrands }: { project: Proje
         ))}
       </div>
       <div className="rank-controls">
-        <Field label={t("ai.schedule")}>
+        <Field label={t("ai.schedule")} hint={scheduleNote}>
           <Segmented<AiSchedule>
             label={t("ai.schedule")}
             value={settings.schedule}

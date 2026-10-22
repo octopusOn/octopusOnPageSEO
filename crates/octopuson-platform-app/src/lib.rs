@@ -23,6 +23,7 @@ mod report;
 pub mod router;
 pub mod settings;
 pub mod sources;
+pub mod sync;
 
 use std::path::{Path, PathBuf};
 use std::sync::{Arc, Mutex};
@@ -165,6 +166,7 @@ pub struct Workspace {
     mailer: Option<Arc<dyn mail::Mailer>>,
     public_url: Option<String>,
     printer: Option<Arc<Printer>>,
+    sync: sync::SyncRuntime,
 }
 
 /// Prints an HTML page to PDF (tests stand in for the browser).
@@ -218,6 +220,7 @@ impl Workspace {
             mailer: None,
             public_url: None,
             printer: None,
+            sync: sync::SyncRuntime::default(),
         }
     }
 

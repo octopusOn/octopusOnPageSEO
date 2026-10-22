@@ -1808,7 +1808,13 @@ fn ai_visibility_asks_assistants_reads_brands_and_follows_the_schedule() {
     );
     let runs = call(&platform, "ai_runs", json!({ "project_id": id }));
     assert_eq!(runs[0]["scheduled"], true);
-    assert_eq!(runs[1]["status"], "interrupted");
+    // Runs are listed by when they started; the one begun by hand above was interrupted.
+    assert!(
+        runs.as_array()
+            .unwrap()
+            .iter()
+            .any(|run| run["status"] == "interrupted")
+    );
     assert_eq!(transport.requests().len(), 7);
     assert!(crate::modules::ai::changes_schedule("add_ai_prompts"));
     assert!(!crate::modules::ai::changes_schedule("ai_report"));

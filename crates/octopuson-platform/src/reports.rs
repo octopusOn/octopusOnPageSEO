@@ -193,7 +193,7 @@ fn clean_branding(branding: &Branding) -> Result<Branding, PlatformStoreError> {
 
 /// Whether an e-mail address looks deliverable: one `@`, a dotted domain, nothing that could
 /// split it into several addresses or headers.
-fn valid_email(address: &str) -> bool {
+pub(crate) fn valid_email(address: &str) -> bool {
     let Some((local, domain)) = address.split_once('@') else {
         return false;
     };
@@ -367,7 +367,7 @@ impl PlatformStore {
     /// Database errors, or stored lists that are not JSON.
     pub fn reports(&self, project_id: i64) -> Result<Vec<ReportRow>, PlatformStoreError> {
         let mut statement = self.connection.prepare(&format!(
-            "SELECT {REPORT_COLUMNS} FROM reports WHERE project_id = ? ORDER BY id DESC"
+            "SELECT {REPORT_COLUMNS} FROM reports WHERE project_id = ? ORDER BY created_at DESC, id DESC"
         ))?;
         let rows = statement.query_map(params![project_id], raw_report)?;
         rows.map(|row| finish(row?)).collect()
@@ -562,7 +562,7 @@ impl PlatformStore {
     ) -> Result<Vec<DeliveryRow>, PlatformStoreError> {
         let mut statement = self.connection.prepare(
             "SELECT id, report_id, project_id, scheduled, status, recipients, error, sent_at
-             FROM report_deliveries WHERE report_id = ? ORDER BY id DESC LIMIT ?",
+             FROM report_deliveries WHERE report_id = ? ORDER BY sent_at DESC, id DESC LIMIT ?",
         )?;
         let rows = statement.query_map(params![report_id, limit], |row| {
             Ok(DeliveryRow {

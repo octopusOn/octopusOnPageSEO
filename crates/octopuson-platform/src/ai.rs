@@ -353,7 +353,7 @@ impl PlatformStore {
     /// Database errors.
     pub fn ai_prompts(&self, project_id: i64) -> Result<Vec<AiPrompt>, PlatformStoreError> {
         let mut statement = self.connection.prepare(
-            "SELECT id, project_id, prompt, tags, added_at FROM ai_prompts WHERE project_id = ? ORDER BY id",
+            "SELECT id, project_id, prompt, tags, added_at FROM ai_prompts WHERE project_id = ? ORDER BY added_at, id",
         )?;
         let rows = statement.query_map(params![project_id], |row| {
             Ok((
@@ -517,7 +517,7 @@ impl PlatformStore {
         limit: u32,
     ) -> Result<Vec<AiRunRow>, PlatformStoreError> {
         let mut statement = self.connection.prepare(&format!(
-            "SELECT {RUN_COLUMNS} FROM ai_runs WHERE project_id = ? ORDER BY id DESC LIMIT ?"
+            "SELECT {RUN_COLUMNS} FROM ai_runs WHERE project_id = ? ORDER BY started_at DESC, id DESC LIMIT ?"
         ))?;
         let rows = statement.query_map(params![project_id, limit], run)?;
         Ok(rows.collect::<Result<_, _>>()?)

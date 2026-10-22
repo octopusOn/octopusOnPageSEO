@@ -291,6 +291,48 @@ const MIGRATIONS: &[&str] = &[
         sent_at VARCHAR NOT NULL
     );
     ",
+    // 8: syncing with the account's web workspace (`sync`): every record that travels gets a
+    // `uid` that is the same on every copy (random, or drawn from what makes it unique), the
+    // state each record was last seen in, the sync's own values, and changes waiting for a
+    // record they refer to.
+    "
+    ALTER TABLE projects ADD COLUMN uid VARCHAR;
+    ALTER TABLE keyword_lists ADD COLUMN uid VARCHAR;
+    ALTER TABLE list_keywords ADD COLUMN uid VARCHAR;
+    ALTER TABLE rank_trackers ADD COLUMN uid VARCHAR;
+    ALTER TABLE tracked_keywords ADD COLUMN uid VARCHAR;
+    ALTER TABLE rank_runs ADD COLUMN uid VARCHAR;
+    ALTER TABLE audits ADD COLUMN uid VARCHAR;
+    ALTER TABLE ai_prompts ADD COLUMN uid VARCHAR;
+    ALTER TABLE ai_runs ADD COLUMN uid VARCHAR;
+    ALTER TABLE gsc_syncs ADD COLUMN uid VARCHAR;
+    ALTER TABLE reports ADD COLUMN uid VARCHAR;
+    ALTER TABLE report_deliveries ADD COLUMN uid VARCHAR;
+    CREATE TABLE sync_rows (
+        kind VARCHAR NOT NULL,
+        key VARCHAR NOT NULL,
+        parent VARCHAR,
+        hash VARCHAR,
+        seq BIGINT NOT NULL,
+        changed_at BIGINT NOT NULL,
+        origin VARCHAR NOT NULL,
+        remote_seq BIGINT NOT NULL DEFAULT 0,
+        deleted BOOLEAN NOT NULL DEFAULT false,
+        PRIMARY KEY (kind, key)
+    );
+    CREATE TABLE sync_state (
+        name VARCHAR PRIMARY KEY,
+        value VARCHAR NOT NULL
+    );
+    CREATE TABLE sync_pending (
+        kind VARCHAR NOT NULL,
+        key VARCHAR NOT NULL,
+        origin VARCHAR NOT NULL,
+        change VARCHAR NOT NULL,
+        waiting VARCHAR NOT NULL,
+        PRIMARY KEY (kind, key)
+    );
+    ",
 ];
 
 /// Applies the migrations the database does not have yet.

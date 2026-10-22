@@ -29,6 +29,33 @@ export interface AppInfo {
   mcp_command?: string;
 }
 
+/** Why a sync waits for the person: both sides hold projects, another account, or the web's
+ * sync records started over. */
+export interface SyncChoice {
+  reason: "first" | "account" | "reset";
+  here: number;
+  web: number;
+}
+
+/** Where syncing this desktop with the account's web workspace stands. */
+export interface SyncStatus {
+  host: Host;
+  enabled: boolean;
+  signed_in: boolean;
+  /** Syncing: scheduled work runs on the web. */
+  active: boolean;
+  syncing: boolean;
+  choice?: SyncChoice;
+  /** Unix milliseconds. */
+  last_at?: number;
+  last_error?: string;
+  unsent: number;
+  parked: number;
+  url: string;
+}
+
+export type SyncAnswer = "merge" | "upload" | "download" | "pause";
+
 /** A personal access token of the web version's MCP server (never the token itself). */
 export interface AccessToken {
   id: string;
