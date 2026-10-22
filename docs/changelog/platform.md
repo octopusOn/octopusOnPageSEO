@@ -2,6 +2,18 @@
 
 All notable changes, newest first. The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and the program uses [Semantic Versioning](https://semver.org/).
 
+## [0.1.1] - 2026-10-22
+
+### Added
+
+- Your projects sync with app.octopuson.com through your account: projects, settings, keywords, AI questions, keyword lists, reports and branding, finished rank checks, AI answers, audits and Search Console numbers. Your own API keys stay on each computer.
+- While syncing, scheduled rank checks, AI visibility runs, audits and Search Console syncs run on the web server; switch sync off in Settings to run them on this computer.
+- The first sync of a computer with projects, with an account that has projects on the web too, asks whether to merge, keep this computer's data or take the web's.
+- The details of each project's latest audit come along to the other side.
+- Settings shows the sync, the changes waiting and "Sync now".
+- On credits, answers kept by OctopusOn cost 70% less: the estimate shows the discounted price, and "Use discounted answers from the cache" in Sources turns it off.
+- Refreshing an answer that is still fresh on your computer always asks the provider anew.
+
 ## [0.1.0] - 2026-10-22
 
 ### Added
