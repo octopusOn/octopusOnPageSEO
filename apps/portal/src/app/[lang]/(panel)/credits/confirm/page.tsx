@@ -1,4 +1,4 @@
-import { amountProblem, billingProfile, getSettings, hasPaidOrder, quote } from "@octopusseo/cloud-core";
+import { amountProblem, billingProfile, getSettings, hasPaidOrder, quote, quoteUsd, usdAmountProblem } from "@octopusseo/cloud-core";
 import Link from "next/link";
 import { redirect } from "next/navigation";
 
@@ -7,18 +7,23 @@ import { PageHead } from "@/components/Shell";
 import { fill, getDictionary } from "@/i18n";
 import { legalSlug, legalTexts } from "@/legal/cms";
 import { db } from "@/lib/db";
-import { formatCredits, formatRate, formatTry, parseDecimal } from "@/lib/format";
-import { manualNote, paymentProvider } from "@/lib/payments";
+import { formatCredits, formatRate, formatTry, formatUsd, parseDecimal } from "@/lib/format";
+import { manualNote, paymentProvider, saleCurrency } from "@/lib/payments";
 import { rateOrNull } from "@/lib/rate";
 import { requireUser } from "@/lib/session";
 
 import { pay } from "../actions";
 
-/** `amount` is a package in kuruş; `value` is an amount typed in lira. */
-export default async function Confirm({ searchParams }: { searchParams: Promise<{ amount?: string; value?: string }> }) {
+/**
+ * `amount` is a package in kuruş and `value` an amount typed in lira; when credits are sold in
+ * dollars, `usd` is a package in cents and `usdValue` an amount typed in dollars.
+ */
+export default async function Confirm({ searchParams }: { searchParams: Promise<{ amount?: string; value?: string; usd?: string; usdValue?: string }> }) {
   const [user, { t, locale, url }, query] = await Promise.all([requireUser(), getDictionary(), searchParams]);
-  const typed = query.value ? parseDecimal(query.value, locale) : null;
-  const amountKurus = typed !== null ? Math.round(typed * 100) : Number(query.amount);
+  const dollars = saleCurrency(paymentProvider()) === "USD";
+  const typedText = dollars ? query.usdValue : query.value;
+  const typed = typedText ? parseDecimal(typedText, locale) : null;
+  const amount = typed !== null ? Math.round(typed * 100) : Number(dollars ? query.usd : query.amount);
   const [settings, rate, profile, paidBefore, legal] = await Promise.all([
     getSettings(db()),
     rateOrNull(),
@@ -27,22 +32,25 @@ export default async function Confirm({ searchParams }: { searchParams: Promise<
     legalTexts(locale),
   ]);
   const provider = paymentProvider();
-  if (!provider || !rate || !Number.isInteger(amountKurus) || amountKurus <= 0) redirect(url("credits"));
+  if (!provider || !rate || !Number.isInteger(amount) || amount <= 0) redirect(url("credits"));
   const legalLink = (key: string) => {
     const text = legal.find((item) => item.key === key);
     return { href: url("legal/[slug]", { slug: legalSlug(legal, key) }), label: text?.label ?? key };
   };
-  const problem = amountProblem(amountKurus, settings, !paidBefore);
-  const priced = quote(amountKurus, settings, rate.rate);
+  const problem = dollars ? usdAmountProblem(amount, settings, !paidBefore) : amountProblem(amount, settings, !paidBefore);
+  const priced = dollars ? quoteUsd(amount, settings, rate.rate) : quote(amount, settings, rate.rate);
   const unit = settings.creditUnitMicros;
+  // The summary in the currency of the sale: dollars split by the VAT rate, or the lira quote.
+  const netCents = Math.round(amount / (1 + settings.vatRate));
+  const money = (lira: number, cents: number) => (dollars ? formatUsd(cents * 10_000, locale) : formatTry(lira, locale));
   return (
     <>
       <PageHead title={t.buy.confirmTitle} />
       {problem ? (
         <div className="oc-banner error">
           {problem === "below_minimum"
-            ? fill(t.buy.belowMinimum, { min: formatTry(settings.minPurchaseKurus, locale) })
-            : fill(t.buy.overFirst, { max: formatTry(settings.firstPurchaseCapKurus, locale) })}
+            ? fill(t.buy.belowMinimum, { min: money(settings.minPurchaseKurus, settings.minPurchaseUsdCents) })
+            : fill(t.buy.overFirst, { max: money(settings.firstPurchaseCapKurus, settings.firstPurchaseCapUsdCents) })}
         </div>
       ) : null}
       <div className="oc-cards two">
@@ -50,12 +58,12 @@ export default async function Confirm({ searchParams }: { searchParams: Promise<
           <h2 className="oc-card-title">{t.buy.summary}</h2>
           <dl className="facts large">
             <dt>{t.buy.net}</dt>
-            <dd>{formatTry(priced.netKurus, locale)}</dd>
+            <dd>{money(priced.netKurus, netCents)}</dd>
             <dt>{fill(t.buy.vat, { rate: Math.round(settings.vatRate * 100) })}</dt>
-            <dd>{formatTry(priced.vatKurus, locale)}</dd>
+            <dd>{money(priced.vatKurus, amount - netCents)}</dd>
             <dt>{t.buy.total}</dt>
             <dd>
-              <strong>{formatTry(priced.amountKurus, locale)}</strong>
+              <strong>{money(priced.amountKurus, amount)}</strong>
             </dd>
             <dt>{t.buy.youGet}</dt>
             <dd>
@@ -63,8 +71,12 @@ export default async function Confirm({ searchParams }: { searchParams: Promise<
                 {formatCredits(priced.creditsMicros, unit, locale)} {t.buy.credits}
               </strong>
             </dd>
-            <dt>{t.buy.rate}</dt>
-            <dd className="small">{fill(t.buy.rateLine, { rate: formatRate(priced.rate, locale), date: rate.date, buffer: settings.fxBufferPercent })}</dd>
+            {dollars ? null : (
+              <>
+                <dt>{t.buy.rate}</dt>
+                <dd className="small">{fill(t.buy.rateLine, { rate: formatRate(priced.rate, locale), date: rate.date, buffer: settings.fxBufferPercent })}</dd>
+              </>
+            )}
           </dl>
         </section>
         <section className="oc-card">
@@ -96,7 +108,7 @@ export default async function Confirm({ searchParams }: { searchParams: Promise<
         <section className="oc-card">
           <ActionForm action={pay} submit={provider.kind === "transfer" ? t.buy.transferSubmit : `${t.buy.pay} · ${formatTry(priced.amountKurus, locale)}`}>
             {provider.kind === "transfer" ? <p className="small">{manualNote(provider.config, t.buy)}</p> : null}
-            <input type="hidden" name="amount" value={amountKurus} />
+            <input type="hidden" name="amount" value={amount} />
             <p className="small">
               {["pre-contract-information", "distance-sales", "credit-terms"].map((key, index) => (
                 <span key={key}>

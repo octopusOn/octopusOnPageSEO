@@ -20,6 +20,10 @@ export default async function Settings() {
     packagesKurus: settings.packagesKurus.map((kurus) => n(kurus / 100)).join("; "),
     minPurchaseKurus: n(settings.minPurchaseKurus / 100),
     firstPurchaseCapKurus: n(settings.firstPurchaseCapKurus / 100),
+    // Prices when credits are sold in dollars (a dollar account or Payoneer).
+    packagesUsdCents: settings.packagesUsdCents.map((cents) => n(cents / 100)).join("; "),
+    minPurchaseUsdCents: n(settings.minPurchaseUsdCents / 100),
+    firstPurchaseCapUsdCents: n(settings.firstPurchaseCapUsdCents / 100),
     signupBonusMicros: n(settings.signupBonusMicros / unit),
     lowBalanceMicros: n(settings.lowBalanceMicros / unit),
     holdTtlMinutes: n(settings.holdTtlMinutes),
@@ -33,7 +37,7 @@ export default async function Settings() {
           {Object.entries(values).map(([name, value]) => (
             <label key={name} className="oc-field">
               <span className="type-label">{t.admin.settingsFields[name] ?? name}</span>
-              <input className="oc-input" name={name} defaultValue={value} required inputMode={name === "packagesKurus" ? "text" : "decimal"} />
+              <input className="oc-input" name={name} defaultValue={value} required inputMode={name.startsWith("packages") ? "text" : "decimal"} />
             </label>
           ))}
         </ActionForm>

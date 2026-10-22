@@ -21,6 +21,11 @@ export const settingsSchema = z.object({
   minPurchaseKurus: z.number().int().positive().default(10_000),
   /** The largest first purchase of a new account. */
   firstPurchaseCapKurus: z.number().int().positive().default(250_000),
+  /** Credit packages in US cents (VAT included), when credits are sold in dollars. */
+  packagesUsdCents: z.array(z.number().int().positive()).default([1000, 2500, 5000, 10_000]),
+  minPurchaseUsdCents: z.number().int().positive().default(500),
+  /** The largest first purchase of a new account, in US cents. */
+  firstPurchaseCapUsdCents: z.number().int().positive().default(25_000),
   /** Credits given at sign-up (0 = none). */
   signupBonusMicros: z.number().int().min(0).default(0),
   /** An e-mail goes out when the balance falls below this. */

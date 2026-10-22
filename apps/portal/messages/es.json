@@ -179,7 +179,8 @@
     "payoneerSteps": "Abra la página de Payoneer, introduzca exactamente este importe en dólares estadounidenses y pegue la referencia en la descripción. Puede pagar con tarjeta, transferencia bancaria o PayPal sin cuenta de Payoneer; los pagos con tarjeta suelen llegar en una hora.",
     "payoneerOpen": "Pagar con Payoneer",
     "payoneerNote": "Por ahora se paga a través de Payoneer (tarjeta, transferencia bancaria o PayPal): elija un importe y verá el enlace de pago y la referencia del pedido. Sus créditos se añaden cuando llega el pago.",
-    "transferPayoneerNote": "Por ahora se paga por transferencia bancaria o a través de Payoneer (tarjeta, transferencia bancaria o PayPal): elija un importe y verá los datos de pago y la referencia del pedido. Sus créditos se añaden cuando llega el pago."
+    "transferPayoneerNote": "Por ahora se paga por transferencia bancaria o a través de Payoneer (tarjeta, transferencia bancaria o PayPal): elija un importe y verá los datos de pago y la referencia del pedido. Sus créditos se añaden cuando llega el pago.",
+    "usdNote": "Los precios están en dólares estadounidenses, IVA incluido; 1 crédito = 0,001 USD, sin margen de cambio."
   },
   "billing": {
     "title": "Facturas",
@@ -366,6 +367,9 @@
       "packagesKurus": "Paquetes (TRY, separados por punto y coma)",
       "minPurchaseKurus": "Compra mínima (TRY)",
       "firstPurchaseCapKurus": "Tope de la primera compra (TRY)",
+      "packagesUsdCents": "Paquetes (USD, separados por punto y coma)",
+      "minPurchaseUsdCents": "Compra mínima (USD)",
+      "firstPurchaseCapUsdCents": "Límite de la primera compra (USD)",
       "signupBonusMicros": "Regalo al registrarse (créditos)",
       "lowBalanceMicros": "Aviso de saldo bajo (créditos)",
       "holdTtlMinutes": "Duración de una reserva (min)",

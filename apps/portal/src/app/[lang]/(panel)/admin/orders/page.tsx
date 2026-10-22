@@ -5,7 +5,7 @@ import { ActionForm } from "@/components/ActionForm";
 import { PageHead } from "@/components/Shell";
 import { fill, getDictionary } from "@/i18n";
 import { db } from "@/lib/db";
-import { formatCredits, formatTime, formatTry } from "@/lib/format";
+import { formatCredits, formatOrderAmount, formatTime } from "@/lib/format";
 import { parasut, paymentProvider } from "@/lib/payments";
 
 import { cancelOrder, retryInvoice, reverse, transferReceived } from "./actions";
@@ -60,7 +60,7 @@ export default async function Orders({ searchParams }: { searchParams: Promise<{
                   <div className="mono muted small">{order.conversationId}</div>
                 </td>
                 <td>{order.provider}</td>
-                <td className="num">{formatTry(order.amountKurus, locale)}</td>
+                <td className="num">{formatOrderAmount(order, locale)}</td>
                 <td className="num">{formatCredits(order.creditsMicros, settings.creditUnitMicros, locale)}</td>
                 <td>
                   {t.billing.orderStatus[order.status] ?? order.status}

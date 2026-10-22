@@ -4,7 +4,7 @@ import { BillingForm } from "@/components/BillingForm";
 import { PageHead } from "@/components/Shell";
 import { getDictionary } from "@/i18n";
 import { db } from "@/lib/db";
-import { formatCredits, formatTime, formatTry } from "@/lib/format";
+import { formatCredits, formatOrderAmount, formatTime } from "@/lib/format";
 import { requireUser } from "@/lib/session";
 
 import { saveProfile } from "./actions";
@@ -41,7 +41,7 @@ export default async function Invoices() {
                   {rows.map(({ order, invoice }) => (
                     <tr key={order.id}>
                       <td className="mono">{formatTime(order.paidAt ?? order.createdAt)}</td>
-                      <td className="num">{formatTry(order.amountKurus, locale)}</td>
+                      <td className="num">{formatOrderAmount(order, locale)}</td>
                       <td className="num">{formatCredits(order.creditsMicros, settings.creditUnitMicros, locale)}</td>
                       <td>
                         <span className={`oc-badge ${ORDER_TONE[order.status] ?? ""}`}>{t.billing.orderStatus[order.status] ?? order.status}</span>

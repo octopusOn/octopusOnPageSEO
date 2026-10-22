@@ -179,7 +179,8 @@
     "payoneerSteps": "Payoneer sayfasını açın, tam olarak bu tutarı ABD doları olarak girin ve referans kodunu açıklamaya yapıştırın. Payoneer hesabınız olmadan kart, banka havalesi ya da PayPal ile ödeyebilirsiniz; kart ödemeleri genellikle bir saat içinde ulaşır.",
     "payoneerOpen": "Payoneer ile öde",
     "payoneerNote": "Şimdilik ödeme Payoneer üzerinden yapılıyor (kart, banka havalesi ya da PayPal): bir tutar seçin, ardından ödeme bağlantısını ve siparişin referans kodunu görürsünüz. Krediler ödeme ulaşınca eklenir.",
-    "transferPayoneerNote": "Şimdilik ödeme havale/EFT ya da Payoneer (kart, banka havalesi ya da PayPal) ile yapılıyor: bir tutar seçin, ardından ödeme bilgilerini ve siparişin referans kodunu görürsünüz. Krediler ödeme ulaşınca eklenir."
+    "transferPayoneerNote": "Şimdilik ödeme havale/EFT ya da Payoneer (kart, banka havalesi ya da PayPal) ile yapılıyor: bir tutar seçin, ardından ödeme bilgilerini ve siparişin referans kodunu görürsünüz. Krediler ödeme ulaşınca eklenir.",
+    "usdNote": "Fiyatlar ABD doları cinsindendir, KDV dahildir; 1 kredi = 0,001 USD, kur farkı eklenmez."
   },
   "billing": {
     "title": "Faturalar",
@@ -366,6 +367,9 @@
       "packagesKurus": "Paketler (TL, noktalı virgülle ayrılmış)",
       "minPurchaseKurus": "En düşük alım (TL)",
       "firstPurchaseCapKurus": "İlk alım sınırı (TL)",
+      "packagesUsdCents": "Paketler (USD, noktalı virgülle ayrılmış)",
+      "minPurchaseUsdCents": "En az alım (USD)",
+      "firstPurchaseCapUsdCents": "İlk alım sınırı (USD)",
       "signupBonusMicros": "Kayıt hediyesi (kredi)",
       "lowBalanceMicros": "Düşük bakiye uyarısı (kredi)",
       "holdTtlMinutes": "Ayırma süresi (dk)",

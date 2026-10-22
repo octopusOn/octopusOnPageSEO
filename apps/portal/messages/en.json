@@ -179,7 +179,8 @@
     "payoneerSteps": "Open the Payoneer page, enter exactly this amount in US dollars and paste the reference into the description. You can pay by card, bank transfer or PayPal without a Payoneer account; card payments usually arrive within an hour.",
     "payoneerOpen": "Pay with Payoneer",
     "payoneerNote": "For now you pay through Payoneer (card, bank transfer or PayPal): choose an amount, then you get the payment link and the order's reference. Your credits are added when the payment arrives.",
-    "transferPayoneerNote": "For now you pay by bank transfer or through Payoneer (card, bank transfer or PayPal): choose an amount, then you get the payment details and the order's reference. Your credits are added when the payment arrives."
+    "transferPayoneerNote": "For now you pay by bank transfer or through Payoneer (card, bank transfer or PayPal): choose an amount, then you get the payment details and the order's reference. Your credits are added when the payment arrives.",
+    "usdNote": "Prices are in US dollars, VAT included; 1 credit = 0.001 USD, with no exchange margin."
   },
   "billing": {
     "title": "Invoices",
@@ -366,6 +367,9 @@
       "packagesKurus": "Packages (TRY, separated by semicolons)",
       "minPurchaseKurus": "Minimum purchase (TRY)",
       "firstPurchaseCapKurus": "First purchase cap (TRY)",
+      "packagesUsdCents": "Packages (USD, separated by semicolons)",
+      "minPurchaseUsdCents": "Minimum purchase (USD)",
+      "firstPurchaseCapUsdCents": "First purchase cap (USD)",
       "signupBonusMicros": "Sign-up gift (credits)",
       "lowBalanceMicros": "Low balance warning (credits)",
       "holdTtlMinutes": "Hold lifetime (min)",

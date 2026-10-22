@@ -1,6 +1,6 @@
 // Numbers, money and dates in the reader's language.
 
-import { microsToCredits } from "@octopusseo/cloud-core";
+import { microsToCredits, orderUsdCents } from "@octopusseo/cloud-core";
 
 /** A language code ("tr") or tag ("tr-TR"); Intl picks the language's conventions from it. */
 type Locale = string;
@@ -78,4 +78,10 @@ export function parseCredits(text: string, unitMicros: number, locale: Locale): 
 /** A number for a form field, written the way {@link parseDecimal} reads it back. */
 export function plainNumber(value: number, locale: Locale): string {
   return new Intl.NumberFormat(tag(locale), { useGrouping: false, maximumFractionDigits: 6 }).format(value);
+}
+
+/** An order's amount as it was sold: dollars for a dollar order (`packageId` `usd:<cents>`), else lira. */
+export function formatOrderAmount(order: { amountKurus: number; packageId: string | null }, locale: Locale): string {
+  const cents = orderUsdCents(order);
+  return cents === null ? formatTry(order.amountKurus, locale) : formatUsd(cents * 10_000, locale);
 }

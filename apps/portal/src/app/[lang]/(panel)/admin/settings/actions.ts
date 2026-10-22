@@ -39,6 +39,13 @@ export async function saveSettings(_: ActionResult, form: FormData): Promise<Act
         .map((part) => lira(part)),
       minPurchaseKurus: lira(form.get("minPurchaseKurus")),
       firstPurchaseCapKurus: lira(form.get("firstPurchaseCapKurus")),
+      packagesUsdCents: String(form.get("packagesUsdCents") ?? "")
+        .split(";")
+        .map((part) => part.trim())
+        .filter(Boolean)
+        .map((part) => lira(part)),
+      minPurchaseUsdCents: lira(form.get("minPurchaseUsdCents")),
+      firstPurchaseCapUsdCents: lira(form.get("firstPurchaseCapUsdCents")),
       signupBonusMicros: credits("signupBonusMicros"),
       lowBalanceMicros: credits("lowBalanceMicros"),
       holdTtlMinutes: Math.round(decimal(form.get("holdTtlMinutes"))),

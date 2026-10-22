@@ -179,7 +179,8 @@
     "payoneerSteps": "Öffnen Sie die Payoneer-Seite, geben Sie genau diesen Betrag in US-Dollar ein und fügen Sie die Referenz in die Beschreibung ein. Sie können ohne Payoneer-Konto per Karte, Banküberweisung oder PayPal zahlen; Kartenzahlungen kommen meist innerhalb einer Stunde an.",
     "payoneerOpen": "Mit Payoneer bezahlen",
     "payoneerNote": "Vorerst zahlen Sie über Payoneer (Karte, Banküberweisung oder PayPal): Wählen Sie einen Betrag, danach erhalten Sie den Zahlungslink und die Referenz der Bestellung. Ihre Credits werden gutgeschrieben, sobald die Zahlung eingeht.",
-    "transferPayoneerNote": "Vorerst zahlen Sie per Banküberweisung oder über Payoneer (Karte, Banküberweisung oder PayPal): Wählen Sie einen Betrag, danach erhalten Sie die Zahlungsangaben und die Referenz der Bestellung. Ihre Credits werden gutgeschrieben, sobald die Zahlung eingeht."
+    "transferPayoneerNote": "Vorerst zahlen Sie per Banküberweisung oder über Payoneer (Karte, Banküberweisung oder PayPal): Wählen Sie einen Betrag, danach erhalten Sie die Zahlungsangaben und die Referenz der Bestellung. Ihre Credits werden gutgeschrieben, sobald die Zahlung eingeht.",
+    "usdNote": "Die Preise sind in US-Dollar inklusive MwSt.; 1 Credit = 0,001 USD, ohne Wechselkursaufschlag."
   },
   "billing": {
     "title": "Rechnungen",
@@ -366,6 +367,9 @@
       "packagesKurus": "Pakete (TRY, durch Semikolon getrennt)",
       "minPurchaseKurus": "Mindestkauf (TRY)",
       "firstPurchaseCapKurus": "Höchstbetrag des ersten Kaufs (TRY)",
+      "packagesUsdCents": "Pakete (USD, durch Semikolon getrennt)",
+      "minPurchaseUsdCents": "Mindestkauf (USD)",
+      "firstPurchaseCapUsdCents": "Obergrenze des ersten Kaufs (USD)",
       "signupBonusMicros": "Geschenk bei der Registrierung (Credits)",
       "lowBalanceMicros": "Warnung bei niedrigem Guthaben (Credits)",
       "holdTtlMinutes": "Lebensdauer einer Reservierung (min)",

@@ -10,6 +10,7 @@ import {
   IYZICO_SANDBOX,
   type IyzicoConfig,
   issueInvoice,
+  orderUsdCents,
   Parasut,
   type PaytrConfig,
   schema,
@@ -71,9 +72,23 @@ export function paymentProvider(env: NodeJS.ProcessEnv = process.env): PaymentPr
   return null;
 }
 
-/** What a transfer of an order sends: lira as priced, or dollars at the order's rate, rounded up to the cent. */
-export function transferAmount(order: { amountKurus: number; fxRate: string }, currency: TransferConfig["currency"]): { currency: TransferConfig["currency"]; cents: number } {
-  return currency === "USD" ? { currency, cents: Math.ceil(order.amountKurus / Number(order.fxRate)) } : { currency, cents: order.amountKurus };
+/**
+ * The currency credits are sold in: dollars when buyers pay by hand into a dollar account or
+ * through Payoneer, else lira (iyzico and PayTR take lira).
+ */
+export function saleCurrency(provider: PaymentProvider | null): "TRY" | "USD" {
+  if (provider?.kind !== "transfer") return "TRY";
+  return provider.config.currency === "USD" || !provider.config.bank ? "USD" : "TRY";
+}
+
+/** What paying an order sends: a dollar order's own dollars, else lira as priced, or dollars at the order's rate rounded up to the cent. */
+export function transferAmount(
+  order: { amountKurus: number; fxRate: string; packageId: string | null },
+  currency: TransferConfig["currency"],
+): { currency: TransferConfig["currency"]; cents: number } {
+  const dollars = orderUsdCents(order);
+  if (currency === "USD") return { currency, cents: dollars ?? Math.ceil(order.amountKurus / Number(order.fxRate)) };
+  return { currency, cents: order.amountKurus };
 }
 
 /** What the credits pages say about paying by hand, by the ways that are set up. */

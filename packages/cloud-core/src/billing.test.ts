@@ -3,7 +3,19 @@ import { createHmac } from "node:crypto";
 import { eq } from "drizzle-orm";
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
 
-import { amountProblem, createOrder, markOrderPaid, quote, reverseOrder, saveBillingProfile, userOrders } from "./billing.ts";
+import {
+  amountProblem,
+  createOrder,
+  markOrderPaid,
+  orderUsdCents,
+  quote,
+  quoteUsd,
+  reverseOrder,
+  saveBillingProfile,
+  usdAmountProblem,
+  usdPackageId,
+  userOrders,
+} from "./billing.ts";
 import type { Db } from "./db/client.ts";
 import { invoices, orders, user } from "./db/schema.ts";
 import { currentRate, parseTcmb } from "./fx.ts";
@@ -37,6 +49,19 @@ describe("pricing in lira", () => {
     const result = quote(25_000, DEFAULT_SETTINGS, 40);
     expect(result).toEqual({ amountKurus: 25_000, vatKurus: 4167, netKurus: 20_833, rate: 41.2, creditsMicros: 5_056_553 });
     expect(() => quote(0, DEFAULT_SETTINGS, 40)).toThrow(RangeError);
+  });
+
+  it("prices dollars without an exchange margin and keeps their lira for the books", () => {
+    // $25 with 20% VAT: $20.83 net, 20,833 credits at 0.001 USD.
+    const result = quoteUsd(2500, DEFAULT_SETTINGS, 49.6015);
+    expect(result).toEqual({ amountKurus: 124_004, vatKurus: 20_667, netKurus: 103_337, rate: 49.6015, creditsMicros: 20_833_333 });
+    expect(orderUsdCents({ packageId: usdPackageId(2500) })).toBe(2500);
+    expect(orderUsdCents({ packageId: "50000" })).toBeNull();
+    expect(orderUsdCents({ packageId: null })).toBeNull();
+    expect(usdAmountProblem(400, DEFAULT_SETTINGS, false)).toBe("below_minimum");
+    expect(usdAmountProblem(30_000, DEFAULT_SETTINGS, true)).toBe("over_first_purchase");
+    expect(usdAmountProblem(30_000, DEFAULT_SETTINGS, false)).toBeNull();
+    expect(() => quoteUsd(12.5, DEFAULT_SETTINGS, 40)).toThrow(RangeError);
   });
 
   it("enforces the minimum and the first purchase cap", () => {

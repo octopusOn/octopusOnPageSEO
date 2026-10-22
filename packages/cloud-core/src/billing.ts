@@ -35,12 +35,48 @@ export function quote(amountKurus: number, settings: CloudSettings, bankRate: nu
   };
 }
 
+/**
+ * The credits a dollar amount buys (VAT included): VAT out, then dollars to credits with no
+ * exchange margin. The lira fields are its equivalent at the bank's rate, for invoices and the
+ * books; `rate` is that bank rate.
+ */
+export function quoteUsd(amountCents: number, settings: CloudSettings, bankRate: number): Quote {
+  if (!Number.isInteger(amountCents) || amountCents <= 0) throw new RangeError("an amount in whole cents");
+  const amountKurus = Math.round(amountCents * bankRate);
+  const netKurus = Math.round(amountKurus / (1 + settings.vatRate));
+  return {
+    amountKurus,
+    vatKurus: amountKurus - netKurus,
+    netKurus,
+    rate: Math.round(bankRate * 10_000) / 10_000,
+    creditsMicros: Math.floor((amountCents / (1 + settings.vatRate)) * 10_000),
+  };
+}
+
+/** The `packageId` of a dollar order: its amount in cents, `usd:2500`. */
+export function usdPackageId(amountCents: number): string {
+  return `usd:${amountCents}`;
+}
+
+/** The cents of a dollar order, or null for one priced in lira. */
+export function orderUsdCents(order: { packageId: string | null }): number | null {
+  const match = /^usd:(\d+)$/.exec(order.packageId ?? "");
+  return match ? Number(match[1]) : null;
+}
+
 export type AmountProblem = "below_minimum" | "over_first_purchase";
 
 /** Why an amount cannot be bought, if it cannot. */
 export function amountProblem(amountKurus: number, settings: CloudSettings, firstPurchase: boolean): AmountProblem | null {
   if (amountKurus < settings.minPurchaseKurus) return "below_minimum";
   if (firstPurchase && amountKurus > settings.firstPurchaseCapKurus) return "over_first_purchase";
+  return null;
+}
+
+/** Why a dollar amount cannot be bought, if it cannot. */
+export function usdAmountProblem(amountCents: number, settings: CloudSettings, firstPurchase: boolean): AmountProblem | null {
+  if (amountCents < settings.minPurchaseUsdCents) return "below_minimum";
+  if (firstPurchase && amountCents > settings.firstPurchaseCapUsdCents) return "over_first_purchase";
   return null;
 }
 

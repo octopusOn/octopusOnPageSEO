@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 
-import { manualNote, paymentProvider, saleChannel, transferAmount } from "./payments";
+import { manualNote, paymentProvider, saleChannel, saleCurrency, transferAmount } from "./payments";
 
 const env = (values: Record<string, string>) => values as unknown as NodeJS.ProcessEnv;
 
@@ -31,10 +31,20 @@ describe("bank transfer", () => {
   });
 
   it("sends lira as priced, or dollars at the order's rate rounded up to the cent", () => {
-    const order = { amountKurus: 120_000, fxRate: "41.25" };
+    const order = { amountKurus: 120_000, fxRate: "41.25", packageId: null };
     expect(transferAmount(order, "TRY")).toEqual({ currency: "TRY", cents: 120_000 });
     // 1,200 TRY / 41.25 = 29.0909… USD
     expect(transferAmount(order, "USD")).toEqual({ currency: "USD", cents: 2910 });
+    // A dollar order sends its own dollars, whatever its lira equivalent.
+    expect(transferAmount({ amountKurus: 124_004, fxRate: "49.6015", packageId: "usd:2500" }, "USD")).toEqual({ currency: "USD", cents: 2500 });
+  });
+
+  it("sells in dollars into a dollar account or through Payoneer, else in lira", () => {
+    const sale = (values: Record<string, string>) => saleCurrency(paymentProvider(env({ PAYMENT_PROVIDER: "transfer", ...values })));
+    expect(sale({ TRANSFER_HOLDER: "Ada", TRANSFER_IBAN: "TR01", TRANSFER_CURRENCY: "USD" })).toBe("USD");
+    expect(sale({ TRANSFER_HOLDER: "Ada", TRANSFER_IBAN: "TR01" })).toBe("TRY");
+    expect(sale({ PAYONEER_LINK: "https://link.payoneer.com/x" })).toBe("USD");
+    expect(saleCurrency(null)).toBe("TRY");
   });
 
   it("tells the invoice how the order was paid", () => {

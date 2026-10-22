@@ -6,7 +6,7 @@ import { ActionForm } from "@/components/ActionForm";
 import { PageHead } from "@/components/Shell";
 import { getDictionary } from "@/i18n";
 import { db } from "@/lib/db";
-import { formatCredits, formatTime, formatTry } from "@/lib/format";
+import { formatCredits, formatOrderAmount, formatTime } from "@/lib/format";
 
 import { adjust, revokeDevices, suspend } from "../actions";
 
@@ -133,7 +133,7 @@ export default async function UserPage({ params }: { params: Promise<{ id: strin
                     <td className="mono">{formatTime(order.createdAt)}</td>
                     <td>{order.provider}</td>
                     <td>{order.status}</td>
-                    <td className="num">{formatTry(order.amountKurus, locale)}</td>
+                    <td className="num">{formatOrderAmount(order, locale)}</td>
                     <td className="num">{formatCredits(order.creditsMicros, unit, locale)}</td>
                   </tr>
                 ))}

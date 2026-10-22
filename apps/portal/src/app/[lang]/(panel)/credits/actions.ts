@@ -8,9 +8,12 @@ import {
   hasPaidOrder,
   markOrderFailed,
   quote,
+  quoteUsd,
   setOrderReference,
   startCheckout,
   startPaytr,
+  usdAmountProblem,
+  usdPackageId,
 } from "@octopusseo/cloud-core";
 import { headers } from "next/headers";
 import { redirect } from "next/navigation";
@@ -18,8 +21,8 @@ import { redirect } from "next/navigation";
 import { fill, getDictionary } from "@/i18n";
 import type { ActionResult } from "@/lib/actions";
 import { db } from "@/lib/db";
-import { formatTry } from "@/lib/format";
-import { clientIp, paymentLanguage, paymentProvider, siteUrl } from "@/lib/payments";
+import { formatTry, formatUsd } from "@/lib/format";
+import { clientIp, paymentLanguage, paymentProvider, saleCurrency, siteUrl } from "@/lib/payments";
 import { rateOrNull } from "@/lib/rate";
 import { requireUser } from "@/lib/session";
 
@@ -39,21 +42,27 @@ export async function pay(_: ActionResult, form: FormData): Promise<ActionResult
   const profile = await billingProfile(db(), user.id);
   if (!profile?.phone) return { error: t.buy.profileRequired };
 
-  const amountKurus = Number(form.get("amount"));
+  // Cents when credits are sold in dollars, else kuruş; the page that sent it priced it the same way.
+  const dollars = saleCurrency(provider) === "USD";
+  const amount = Number(form.get("amount"));
   const settings = await getSettings(db());
-  if (!Number.isInteger(amountKurus)) return { error: t.common.error };
-  const problem = amountProblem(amountKurus, settings, !(await hasPaidOrder(db(), user.id)));
-  if (problem === "below_minimum") return { error: fill(t.buy.belowMinimum, { min: formatTry(settings.minPurchaseKurus, locale) }) };
-  if (problem === "over_first_purchase") return { error: fill(t.buy.overFirst, { max: formatTry(settings.firstPurchaseCapKurus, locale) }) };
+  if (!Number.isInteger(amount) || amount <= 0) return { error: t.common.error };
+  const firstPurchase = !(await hasPaidOrder(db(), user.id));
+  const problem = dollars ? usdAmountProblem(amount, settings, firstPurchase) : amountProblem(amount, settings, firstPurchase);
+  const money = (lira: number, cents: number) => (dollars ? formatUsd(cents * 10_000, locale) : formatTry(lira, locale));
+  if (problem === "below_minimum") return { error: fill(t.buy.belowMinimum, { min: money(settings.minPurchaseKurus, settings.minPurchaseUsdCents) }) };
+  if (problem === "over_first_purchase") return { error: fill(t.buy.overFirst, { max: money(settings.firstPurchaseCapKurus, settings.firstPurchaseCapUsdCents) }) };
   const rate = await rateOrNull();
   if (!rate) return { error: t.buy.rateUnavailable };
+  const priced = dollars ? quoteUsd(amount, settings, rate.rate) : quote(amount, settings, rate.rate);
+  const amountKurus = priced.amountKurus;
 
   const ip = clientIp((await headers()).get("x-forwarded-for"));
   const order = await createOrder(db(), {
     userId: user.id,
     provider: provider.kind,
-    packageId: settings.packagesKurus.includes(amountKurus) ? String(amountKurus) : null,
-    quote: quote(amountKurus, settings, rate.rate),
+    packageId: dollars ? usdPackageId(amount) : settings.packagesKurus.includes(amount) ? String(amount) : null,
+    quote: priced,
     buyerIp: ip,
   });
   // A bank transfer has nothing to start: the result page shows where to send the money.

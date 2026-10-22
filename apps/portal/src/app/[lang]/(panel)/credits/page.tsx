@@ -1,4 +1,4 @@
-import { getSettings, hasPaidOrder, quote } from "@octopusseo/cloud-core";
+import { getSettings, hasPaidOrder, quote, quoteUsd } from "@octopusseo/cloud-core";
 import Link from "next/link";
 
 import { PageHead } from "@/components/Shell";
@@ -6,7 +6,7 @@ import { fill, getDictionary } from "@/i18n";
 import { legalSlug, legalTexts } from "@/legal/cms";
 import { db } from "@/lib/db";
 import { formatCredits, formatTry, formatUsd, plainNumber } from "@/lib/format";
-import { manualNote, paymentProvider } from "@/lib/payments";
+import { manualNote, paymentProvider, saleCurrency } from "@/lib/payments";
 import { rateOrNull } from "@/lib/rate";
 import { requireUser } from "@/lib/session";
 
@@ -15,8 +15,13 @@ export default async function Buy() {
   const [settings, rate, paidBefore, legal] = await Promise.all([getSettings(db()), rateOrNull(), hasPaidOrder(db(), user.id), legalTexts(locale)]);
   const provider = paymentProvider();
   const open = provider !== null;
-  const transferUsd = provider?.kind === "transfer" && (provider.config.currency === "USD" || provider.config.payoneer !== null);
-  const packages = settings.packagesKurus.filter((kurus) => paidBefore || kurus <= settings.firstPurchaseCapKurus);
+  // Dollars for a dollar account or Payoneer (amounts in cents), else lira (in kuruş).
+  const dollars = saleCurrency(provider) === "USD";
+  const cap = dollars ? settings.firstPurchaseCapUsdCents : settings.firstPurchaseCapKurus;
+  const minimum = dollars ? settings.minPurchaseUsdCents : settings.minPurchaseKurus;
+  const packages = (dollars ? settings.packagesUsdCents : settings.packagesKurus).filter((amount) => paidBefore || amount <= cap);
+  const money = (amount: number) => (dollars ? formatUsd(amount * 10_000, locale) : formatTry(amount, locale));
+  const credits = (amount: number, bankRate: number) => (dollars ? quoteUsd(amount, settings, bankRate) : quote(amount, settings, bankRate)).creditsMicros;
   return (
     <>
       <PageHead title={t.buy.title} lead={t.buy.lead} />
@@ -24,20 +29,17 @@ export default async function Buy() {
       {open && !rate ? <div className="oc-banner warning">{t.buy.rateUnavailable}</div> : null}
       {provider?.kind === "transfer" ? <div className="oc-banner info">{manualNote(provider.config, t.buy)}</div> : null}
       <div className="oc-cards packages">
-        {packages.map((kurus) => (
-          <section key={kurus} className="oc-card package">
-            <div className="package-price">{formatTry(kurus, locale)}</div>
-            <div className="muted small">
-              {t.buy.vatIncluded}
-              {transferUsd && rate ? ` · ≈ ${formatUsd(Math.ceil(kurus / quote(kurus, settings, rate.rate).rate) * 10_000, locale)}` : null}
-            </div>
+        {packages.map((amount) => (
+          <section key={amount} className="oc-card package">
+            <div className="package-price">{money(amount)}</div>
+            <div className="muted small">{t.buy.vatIncluded}</div>
             {rate ? (
               <div className="package-credits">
-                ≈ {formatCredits(quote(kurus, settings, rate.rate).creditsMicros, settings.creditUnitMicros, locale)} {t.buy.credits}
+                ≈ {formatCredits(credits(amount, rate.rate), settings.creditUnitMicros, locale)} {t.buy.credits}
               </div>
             ) : null}
             {open && rate ? (
-              <Link className="oc-btn primary" href={url("credits/confirm", {}, { amount: kurus })}>
+              <Link className="oc-btn primary" href={url("credits/confirm", {}, dollars ? { usd: amount } : { amount })}>
                 {t.buy.choose}
               </Link>
             ) : (
@@ -53,22 +55,16 @@ export default async function Buy() {
           <h2 className="oc-card-title">{t.buy.custom}</h2>
           <form className="form-inline" action={url("credits/confirm")} method="get">
             <label className="oc-field">
-              <span className="type-label">TL</span>
-              <input
-                className="oc-input"
-                name="value"
-                inputMode="decimal"
-                required
-                placeholder={plainNumber(settings.minPurchaseKurus / 100, locale)}
-              />
-              <span className="oc-field-hint">{fill(t.buy.customHint, { min: formatTry(settings.minPurchaseKurus, locale) })}</span>
+              <span className="type-label">{dollars ? "USD" : "TL"}</span>
+              <input className="oc-input" name={dollars ? "usdValue" : "value"} inputMode="decimal" required placeholder={plainNumber(minimum / 100, locale)} />
+              <span className="oc-field-hint">{fill(t.buy.customHint, { min: money(minimum) })}</span>
             </label>
             <button className="oc-btn">{t.buy.choose}</button>
           </form>
         </section>
       ) : null}
       <p className="muted small">
-        {fill(t.buy.rateNote, { buffer: settings.fxBufferPercent })} <Link href={url("legal/[slug]", { slug: legalSlug(legal, "credit-terms") })}>{t.buy.terms}</Link>
+        {dollars ? t.buy.usdNote : fill(t.buy.rateNote, { buffer: settings.fxBufferPercent })} <Link href={url("legal/[slug]", { slug: legalSlug(legal, "credit-terms") })}>{t.buy.terms}</Link>
       </p>
     </>
   );
