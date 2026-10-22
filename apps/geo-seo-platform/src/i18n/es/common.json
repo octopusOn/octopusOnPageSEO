@@ -76,5 +76,13 @@
   "jobSearchConsole": "Sincronización de Search Console de {name}",
   "jobGoogleLogin": "Conexión con Google",
   "leadReports": "Prepara informes con la marca de su agencia a partir de posiciones, Search Console, la auditoría del sitio y la visibilidad en IA; descárguelos en PDF, Excel o HTML y, en la web, compártalos por enlace o correo electrónico.",
-  "jobReportEmail": "Correo del informe {name}"
+  "jobReportEmail": "Correo del informe {name}",
+  "errorUnavailable": "No se puede acceder a la fuente de datos en este momento. Inténtelo de nuevo en breve; si sigue ocurriendo, avise al soporte.",
+  "reportProblem": "Avisar al soporte",
+  "reportTitle": "Avisar al soporte",
+  "reportLead": "Enviaremos este error al equipo de soporte de OctopusOn. Si lo desea, cuente brevemente qué estaba haciendo.",
+  "reportError": "Error mostrado",
+  "reportNote": "Su nota (opcional)",
+  "reportSend": "Enviar",
+  "reportSent": "Su aviso ha llegado al equipo de soporte de OctopusOn."
 }

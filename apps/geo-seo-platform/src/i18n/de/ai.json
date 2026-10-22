@@ -72,7 +72,7 @@
   "shareOfVoice": "Share of Voice",
   "shareOfVoiceHint": "Ihr Anteil an allen Markennennungen",
   "averagePosition": "Durchschnittlicher Platz",
-  "averagePositionHint": "Unter den Marken, die eine Antwort nennt",
+  "averagePositionHint": "Platz in der Liste der Antwort, sonst unter den genannten Marken",
   "tone": "Tonalität",
   "toneHint": "Tonalität der Sätze, die Ihre Marke nennen (lexikonbasiert)",
   "tone_positive": "Positiv",
@@ -131,5 +131,8 @@
   "colPlatform": "Plattform",
   "colSources": "Quellen",
   "colSeen": "Letzte Antwort",
-  "selectShown": "Die {n} angezeigten auswählen"
+  "selectShown": "Die {n} angezeigten auswählen",
+  "cell_rival": "Stattdessen ein Wettbewerber",
+  "cellRivalTitle": "Sie werden nicht genannt; {rival} steht auf Platz {n}.",
+  "cellPlaceTitle": "{state} · Platz {n}"
 }

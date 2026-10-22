@@ -129,5 +129,6 @@
   "days30": "30 gün",
   "days90": "90 gün",
   "days365": "1 yıl",
-  "alreadyTracked": "Bu kelimeler zaten takip ediliyor"
+  "alreadyTracked": "Bu kelimeler zaten takip ediliyor",
+  "shareCounts": "İlk 10: {top10} · İlk 3: {top3}"
 }

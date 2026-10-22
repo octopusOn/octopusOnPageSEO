@@ -680,7 +680,7 @@ fn ai_visibility_keeps_settings_questions_runs_and_answers() {
     let project = store.create_project(&spec(), NOW).unwrap();
     let defaults = store.ai_settings(project.id).unwrap();
     assert_eq!(defaults.schedule, "manual");
-    assert_eq!(defaults.engines.len(), AI_ENGINES.len());
+    assert_eq!(defaults.engines, ["chatgpt", "gemini", "google_ai_mode"]);
 
     let mut settings = AiSettings {
         schedule: "weekly".to_owned(),

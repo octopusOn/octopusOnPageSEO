@@ -582,7 +582,7 @@ fn ask_once(
             dfs::llm_endpoint(&route.engine).ok_or_else(|| {
                 AppError::Invalid(format!("unknown assistant `{}`", route.engine))
             })?,
-            dfs::llm_task(prompt, &route.model, Some(&country))?,
+            dfs::llm_task(&route.engine, prompt, &route.model, Some(&country))?,
         ),
         Path::AiMode => (dfs::AI_MODE, dfs::ai_mode_task(prompt, &market)?),
     };
@@ -1005,6 +1005,15 @@ struct Cell {
     sentiment: Option<f64>,
     error: Option<String>,
     checked_at: String,
+    /// The best-placed rival the answer names, when it names one.
+    rival: Option<CellRival>,
+}
+
+/// A rival named in an answer, with its place.
+#[derive(Debug, Serialize)]
+struct CellRival {
+    key: String,
+    position: u32,
 }
 
 #[derive(Debug, Serialize)]
@@ -1193,6 +1202,17 @@ fn ai_report(context: &Context<'_>, ask: ReportAsk) -> Result<AiReport, AppError
                             sentiment: row.sentiment,
                             error: row.error.clone(),
                             checked_at: row.checked_at.clone(),
+                            rival: row
+                                .brands
+                                .iter()
+                                .filter(|brand| !brand.own)
+                                .filter_map(|brand| {
+                                    brand.position.map(|position| CellRival {
+                                        key: brand.key.clone(),
+                                        position,
+                                    })
+                                })
+                                .min_by_key(|rival| rival.position),
                         },
                     )
                 })

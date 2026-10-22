@@ -18,12 +18,12 @@ function one(value: number, locale: string): string {
 /** Schedule, page limit, what crawling costs, and the audit itself. */
 function SetupBar({ project, setup, running }: { project: ProjectRow; setup: AuditSetup; running: Job | undefined }) {
   const { t, locale } = useI18n();
-  const { notify } = useShell();
+  const { notify, fail } = useShell();
   const queryClient = useQueryClient();
   const save = useMutation({
     mutationFn: (next: { schedule: AuditSchedule; maxPages: number }) => api.saveAuditSettings(project.id, next.schedule, next.maxPages),
     onSuccess: (next) => queryClient.setQueryData(["audit", "setup", project.id], next),
-    onError: (thrown) => notify(explain(thrown, t).message, true),
+    onError: (thrown) => fail(thrown),
   });
   const start = useMutation({
     mutationFn: () => api.startAudit(project.id),
@@ -32,7 +32,7 @@ function SetupBar({ project, setup, running }: { project: ProjectRow; setup: Aud
       void queryClient.invalidateQueries({ queryKey: ["jobs"] });
       void queryClient.invalidateQueries({ queryKey: ["audit"] });
     },
-    onError: (thrown) => notify(explain(thrown, t).message, true),
+    onError: (thrown) => fail(thrown),
   });
   const cancel = useMutation({ mutationFn: (id: string) => api.cancelJob(id) });
   const { settings, meter } = setup;
@@ -395,7 +395,7 @@ function ReportView({ project, report, onOpen }: { project: ProjectRow; report: 
 
 export function SiteAudit({ project }: { project: ProjectRow }) {
   const { t, lang, locale } = useI18n();
-  const { notify, jobs } = useShell();
+  const { jobs, fail } = useShell();
   const queryClient = useQueryClient();
   const setup = useQuery({ queryKey: ["audit", "setup", project.id], queryFn: () => api.auditSetup(project.id) });
   const [auditId, setAuditId] = useState<number | null>(null);
@@ -413,7 +413,7 @@ export function SiteAudit({ project }: { project: ProjectRow }) {
       void queryClient.invalidateQueries({ queryKey: ["audit"] });
       refreshSpending(queryClient);
     },
-    onError: (thrown) => notify(explain(thrown, t).message, true),
+    onError: (thrown) => fail(thrown),
   });
   if (setup.isLoading) return <Loading label={t("common.loading")} />;
   if (setup.error || !setup.data) {

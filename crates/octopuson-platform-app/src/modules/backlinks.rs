@@ -7,14 +7,13 @@
 
 use octopuson_dataforseo::Client;
 use octopuson_dataforseo::backlinks::{self as api, BacklinkQuery, LinkStatus};
-use octopuson_dataforseo::site::months_before;
 use octopuson_platform::CacheClass;
 use serde::Deserialize;
 use serde_json::Value;
 
 use crate::fetch::{Estimate, Fetched, Paid};
 use crate::router::{Context, Router};
-use crate::{AppError, Workspace, now};
+use crate::{AppError, Workspace};
 
 /// Module id, in spending records.
 const MODULE: &str = "backlinks";
@@ -118,17 +117,11 @@ fn question(workspace: &Workspace, ask: &Ask) -> Result<Question, AppError> {
             api::pages_task(&target, rows)?,
             api::estimate(rows),
         ),
-        Report::NewLost => {
-            let now = now();
-            let year = now.get(0..4).and_then(|y| y.parse().ok()).unwrap_or(2026);
-            let month = now.get(5..7).and_then(|m| m.parse().ok()).unwrap_or(1);
-            let from = months_before(year, month, NEW_LOST_MONTHS);
-            (
-                api::NEW_LOST,
-                api::new_lost_task(&target, &from)?,
-                api::estimate(NEW_LOST_MONTHS),
-            )
-        }
+        Report::NewLost => (
+            api::NEW_LOST,
+            api::new_lost_task(&target)?,
+            api::estimate(NEW_LOST_MONTHS),
+        ),
         Report::Bulk => {
             let targets = if ask.targets.is_empty() {
                 let mut targets = vec![project.domain.clone()];

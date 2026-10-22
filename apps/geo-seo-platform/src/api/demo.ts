@@ -584,8 +584,16 @@ function rankReport(projectId: number, trackerId: number | null, days: number): 
   const competitors = projects.find((row) => row.id === projectId)?.competitors ?? [];
   const factors = [1.32, 0.54, 0.4];
   const competitorShares: CompetitorShare[] = [
-    { domain: own, visibility: last?.visibility ?? 0, keywords: last?.ranked ?? 0, average_position: 8.4, own: true },
-    ...competitors.map((domain, index) => ({ domain, visibility: Math.round((last?.visibility ?? 0) * (factors[index] ?? 0.3) * 10) / 10, keywords: 9 - index * 3, average_position: 6.1 + index * 4, own: false })),
+    { domain: own, visibility: last?.visibility ?? 0, keywords: last?.ranked ?? 0, top3: last?.top3 ?? 0, top10: last?.top10 ?? 0, average_position: 8.4, own: true },
+    ...competitors.map((domain, index) => ({
+      domain,
+      visibility: Math.round((last?.visibility ?? 0) * (factors[index] ?? 0.3) * 10) / 10,
+      keywords: 9 - index * 3,
+      top3: 3 - index,
+      top10: 7 - index * 3,
+      average_position: 6.1 + index * 4,
+      own: false,
+    })),
   ];
   const positions = rows.map((row) => row.position).filter((value): value is number => value !== null);
   const count = (test: (row: KeywordRank) => boolean) => rows.filter(test).length;
@@ -816,7 +824,8 @@ const aiState: Record<number, DemoAi> = {
 };
 
 function aiOf(projectId: number): DemoAi {
-  return (aiState[projectId] ??= { settings: { schedule: "manual", engines: [...AI_ENGINES], models: {}, rivals: [], last_run_at: null }, prompts: [] });
+  // A new project asks the most used assistants; Claude and Perplexity are a click away.
+  return (aiState[projectId] ??= { settings: { schedule: "manual", engines: ["chatgpt", "gemini", "google_ai_mode"], models: {}, rivals: [], last_run_at: null }, prompts: [] });
 }
 
 function brandOf(domain: string, names: string[], own: boolean): Brand {
@@ -849,7 +858,7 @@ function sampleAnswer(prompt: AiPrompt, engine: AiEngine, back: number, brands: 
   const seed = `${prompt.id}-${engine}-${back}`;
   const checked_at = new Date(Date.parse(NOW) - back * 7 * 86_400_000).toISOString().replace(/\.\d+Z$/, "Z");
   if (back === 0 && engine === "gemini" && prompt.id === 6) {
-    return { mentioned: false, position: null, cited: false, sentiment: null, error: "HTTP 503: the model is overloaded", checked_at, brands: [] };
+    return { mentioned: false, position: null, cited: false, sentiment: null, error: "HTTP 503: the model is overloaded", checked_at, brands: [], rival: null };
   }
   const reach = AI_REACH[engine] - back * 0.04 + (prompt.prompt.includes("Örnek Mağaza") ? 0.3 : 0);
   const mentioned = chance(seed) < reach;
@@ -865,7 +874,17 @@ function sampleAnswer(prompt: AiPrompt, engine: AiEngine, back: number, brands: 
     sentiment: brand.own ? sentiment : 0.2,
   }));
   const own = answerBrands.find((brand) => brand.own);
-  return { mentioned, position: own?.position ?? null, cited, sentiment, error: null, checked_at, brands: answerBrands };
+  const rival = answerBrands.find((brand) => !brand.own && brand.position !== null);
+  return {
+    mentioned,
+    position: own?.position ?? null,
+    cited,
+    sentiment,
+    error: null,
+    checked_at,
+    brands: answerBrands,
+    rival: rival?.position ? { key: rival.key, position: rival.position } : null,
+  };
 }
 
 function visibilityOfAnswers(answers: SampleAnswer[]): Visibility {
@@ -1437,6 +1456,8 @@ export async function demo(command: string, args: Record<string, unknown>): Prom
     case "save_settings":
       settings = args.settings as Settings;
       return settings;
+    case "report_problem":
+      return null;
     case "list_access_tokens":
       return [];
     case "create_access_token":

@@ -39,7 +39,7 @@ function Change({ value, percent = false, invert = false }: { value: number | nu
 /** The user's own Google OAuth client (desktop): id and secret. */
 function ClientForm({ status, onDone, onCancel }: { status: GoogleStatus; onDone: () => void; onCancel?: () => void }) {
   const { t } = useI18n();
-  const { notify } = useShell();
+  const { notify, fail } = useShell();
   const queryClient = useQueryClient();
   const [clientId, setClientId] = useState(status.own_client_id ?? "");
   const [secret, setSecret] = useState("");
@@ -50,7 +50,7 @@ function ClientForm({ status, onDone, onCancel }: { status: GoogleStatus; onDone
       void queryClient.invalidateQueries({ queryKey: ["gsc"] });
       onDone();
     },
-    onError: (thrown) => notify(explain(thrown, t).message, true),
+    onError: (thrown) => fail(thrown),
   });
   const submit = (event: FormEvent) => {
     event.preventDefault();
@@ -87,7 +87,7 @@ function ClientForm({ status, onDone, onCancel }: { status: GoogleStatus; onDone
 /** The Google connection: the client (desktop), signing in and out. */
 function GoogleCard({ status, signingIn }: { status: GoogleStatus; signingIn: Job | undefined }) {
   const { t } = useI18n();
-  const { notify, mode } = useShell();
+  const { notify, mode, fail } = useShell();
   const queryClient = useQueryClient();
   const [analytics, setAnalytics] = useState(true);
   const [editing, setEditing] = useState(false);
@@ -101,7 +101,7 @@ function GoogleCard({ status, signingIn }: { status: GoogleStatus; signingIn: Jo
       notify(t("gsc.continueInBrowser"));
       void queryClient.invalidateQueries({ queryKey: ["jobs"] });
     },
-    onError: (thrown) => notify(explain(thrown, t).message, true),
+    onError: (thrown) => fail(thrown),
   });
   const cancel = useMutation({ mutationFn: (id: string) => api.cancelJob(id) });
   const disconnect = useMutation({
@@ -110,7 +110,7 @@ function GoogleCard({ status, signingIn }: { status: GoogleStatus; signingIn: Jo
       notify(t("gsc.disconnected"));
       void queryClient.invalidateQueries({ queryKey: ["gsc"] });
     },
-    onError: (thrown) => notify(explain(thrown, t).message, true),
+    onError: (thrown) => fail(thrown),
   });
   const desktop = mode !== "web";
   return (
@@ -188,7 +188,7 @@ function GoogleCard({ status, signingIn }: { status: GoogleStatus; signingIn: Jo
 /** Which properties the project reads, how often, and the sync itself. */
 function PropertyBar({ project, setup, running }: { project: ProjectRow; setup: GscSetup; running: Job | undefined }) {
   const { t, locale } = useI18n();
-  const { notify } = useShell();
+  const { notify, fail } = useShell();
   const queryClient = useQueryClient();
   const { settings } = setup;
   const properties = useQuery({ queryKey: ["gsc", "properties", project.id], queryFn: () => api.googleProperties(project.id), staleTime: 5 * 60_000 });
@@ -209,7 +209,7 @@ function PropertyBar({ project, setup, running }: { project: ProjectRow; setup: 
       });
     },
     onSuccess: (next) => queryClient.setQueryData(["gsc", "setup", project.id], next),
-    onError: (thrown) => notify(explain(thrown, t).message, true),
+    onError: (thrown) => fail(thrown),
   });
   const sync = useMutation({
     mutationFn: () => api.startGscSync(project.id),
@@ -217,7 +217,7 @@ function PropertyBar({ project, setup, running }: { project: ProjectRow; setup: 
       notify(t("gsc.started"));
       void queryClient.invalidateQueries({ queryKey: ["jobs"] });
     },
-    onError: (thrown) => notify(explain(thrown, t).message, true),
+    onError: (thrown) => fail(thrown),
   });
   const cancel = useMutation({ mutationFn: (id: string) => api.cancelJob(id) });
   const changed = property !== (settings.property ?? "") || ga4 !== (settings.ga4_property ?? "");
@@ -382,7 +382,7 @@ function QueryDialog({ project, query, onClose }: { project: ProjectRow; query: 
 
 function QueryTable({ project, rows, onOpen }: { project: ProjectRow; rows: GscQuery[]; onOpen: (query: string) => void }) {
   const { t, locale } = useI18n();
-  const { notify } = useShell();
+  const { notify, fail } = useShell();
   const queryClient = useQueryClient();
   const [filters, setFilters] = useState<QueryFilters>(ALL_QUERIES);
   const [selected, setSelected] = useState<Set<string>>(new Set());
@@ -396,7 +396,7 @@ function QueryTable({ project, rows, onOpen }: { project: ProjectRow; rows: GscQ
       void queryClient.invalidateQueries({ queryKey: ["rank"] });
       void queryClient.invalidateQueries({ queryKey: ["gsc", "report", project.id] });
     },
-    onError: (thrown) => notify(explain(thrown, t).message, true),
+    onError: (thrown) => fail(thrown),
   });
   const toggle = (query: string) =>
     setSelected((previous) => {

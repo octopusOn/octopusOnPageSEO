@@ -76,5 +76,13 @@
   "jobSearchConsole": "Search-Console-Abgleich von {name}",
   "jobGoogleLogin": "Google-Verbindung",
   "leadReports": "Erstellt Berichte mit dem Branding Ihrer Agentur aus Rankings, Search Console, Website-Audit und KI-Sichtbarkeit; als PDF, Excel oder HTML herunterladen, im Web per Link teilen oder per E-Mail senden.",
-  "jobReportEmail": "E-Mail des Berichts {name}"
+  "jobReportEmail": "E-Mail des Berichts {name}",
+  "errorUnavailable": "Die Datenquelle ist gerade nicht erreichbar. Versuchen Sie es gleich noch einmal; bleibt es so, melden Sie es dem Support.",
+  "reportProblem": "An den Support melden",
+  "reportTitle": "An den Support melden",
+  "reportLead": "Wir senden diesen Fehler an das OctopusOn-Supportteam. Beschreiben Sie gern kurz, was Sie getan haben.",
+  "reportError": "Angezeigter Fehler",
+  "reportNote": "Ihre Notiz (optional)",
+  "reportSend": "Senden",
+  "reportSent": "Ihre Meldung ist beim OctopusOn-Support angekommen."
 }

@@ -76,5 +76,13 @@
   "jobSearchConsole": "{name} Search Console eşitlemesi",
   "jobGoogleLogin": "Google bağlantısı",
   "leadReports": "Rank, Search Console, denetim ve AI görünürlüğü verilerinden ajansınızın markasıyla rapor hazırlar; PDF, Excel ve HTML olarak indirilir, webde bağlantıyla paylaşılır ve e-postayla gönderilir.",
-  "jobReportEmail": "{name} raporunun e-postası"
+  "jobReportEmail": "{name} raporunun e-postası",
+  "errorUnavailable": "Veri kaynağına şu an ulaşılamıyor. Biraz sonra tekrar deneyin; sorun sürerse destek ekibine bildirin.",
+  "reportProblem": "Destek ekibine bildir",
+  "reportTitle": "Destek ekibine bildir",
+  "reportLead": "Bu hatayı OctopusOn destek ekibine iletelim. İsterseniz ne yaptığınızı kısaca yazın.",
+  "reportError": "Gösterilen hata",
+  "reportNote": "Notunuz (isteğe bağlı)",
+  "reportSend": "Gönder",
+  "reportSent": "Bildiriminiz OctopusOn destek ekibine iletildi."
 }

@@ -13,7 +13,7 @@ import { ENGINE_NAMES, highlight, parsePrompts, toneOf } from "./ai";
 /** Questions typed or picked from the suggestions; the first ones also choose how often they are asked. */
 export function AddPromptsDialog({ project, setup, onClose }: { project: ProjectRow; setup: AiSetup; onClose: () => void }) {
   const { t } = useI18n();
-  const { notify } = useShell();
+  const { notify, fail } = useShell();
   const queryClient = useQueryClient();
   const first = setup.prompts.length === 0;
   const [text, setText] = useState("");
@@ -35,7 +35,7 @@ export function AddPromptsDialog({ project, setup, onClose }: { project: Project
       notify(added.added ? t("ai.added", { n: added.added }) : t("ai.alreadyAsked"));
       onClose();
     },
-    onError: (thrown) => notify(explain(thrown, t).message, true),
+    onError: (thrown) => fail(thrown),
   });
   const take = (suggestion: string) => setText((previous) => (previous.trim() ? `${previous.trimEnd()}\n${suggestion}` : suggestion));
   const offered = (suggestions.data ?? []).filter((suggestion) => !prompts.includes(suggestion));
@@ -102,7 +102,7 @@ const draftOf = (rival: Rival): RivalDraft => ({ domain: rival.domain, names: ri
 /** The rival brands watched in the answers and the model each assistant is asked with. */
 export function BrandsDialog({ project, setup, onClose }: { project: ProjectRow; setup: AiSetup; onClose: () => void }) {
   const { t } = useI18n();
-  const { notify, go } = useShell();
+  const { notify, go, fail } = useShell();
   const queryClient = useQueryClient();
   const { settings } = setup;
   const own = setup.brands.find((brand) => brand.own);
@@ -128,7 +128,7 @@ export function BrandsDialog({ project, setup, onClose }: { project: ProjectRow;
       notify(t("ai.brandsSaved"));
       onClose();
     },
-    onError: (thrown) => notify(explain(thrown, t).message, true),
+    onError: (thrown) => fail(thrown),
   });
   const change = (index: number, patch: Partial<RivalDraft>) => setRivals((previous) => previous.map((rival, at) => (at === index ? { ...rival, ...patch } : rival)));
   return (

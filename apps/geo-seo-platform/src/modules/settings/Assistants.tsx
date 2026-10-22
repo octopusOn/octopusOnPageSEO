@@ -6,7 +6,6 @@ import { api } from "../../api/client";
 import type { MadeAccessToken } from "../../api/types";
 import { useI18n } from "../../i18n";
 import { useShell } from "../../lib/context";
-import { explain } from "../../lib/errors";
 import { relativeTime } from "../../lib/format";
 import { claudeCodeCommand, desktopConfig, isoOf, mcpUrl, TOKEN_PLACEHOLDER, webConfig } from "./mcp";
 
@@ -40,7 +39,7 @@ function Snippet({ label, text }: { label: string; text: string }) {
 /** The web version's tokens: made one per assistant, shown once, revoked when no longer used. */
 function Tokens({ url }: { url: string }) {
   const { t, locale } = useI18n();
-  const { notify } = useShell();
+  const { notify, fail } = useShell();
   const queryClient = useQueryClient();
   const tokens = useQuery({ queryKey: ["access-tokens"], queryFn: api.accessTokens });
   const [name, setName] = useState("");
@@ -53,7 +52,7 @@ function Tokens({ url }: { url: string }) {
       setName("");
       done();
     },
-    onError: (thrown) => notify(explain(thrown, t).message, true),
+    onError: (thrown) => fail(thrown),
   });
   const revoke = useMutation({
     mutationFn: (id: string) => api.revokeAccessToken(id),
@@ -62,7 +61,7 @@ function Tokens({ url }: { url: string }) {
       notify(t("settings.revoked"));
       done();
     },
-    onError: (thrown) => notify(explain(thrown, t).message, true),
+    onError: (thrown) => fail(thrown),
   });
   const token = made?.token ?? TOKEN_PLACEHOLDER;
   const rows = tokens.data ?? [];

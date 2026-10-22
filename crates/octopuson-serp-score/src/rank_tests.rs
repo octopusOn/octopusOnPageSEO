@@ -116,6 +116,12 @@ fn shares_count_a_domain_once_per_page_and_pick_the_most_visible() {
     assert_eq!(domains, ["example.com", "rival.com", "other.com"]);
     assert!(shares[0].own);
     assert_eq!(shares[0].keywords, 2);
+    assert_eq!((shares[0].top3, shares[0].top10), (2, 2));
+    assert_eq!(
+        (shares[1].top3, shares[1].top10),
+        (1, 1),
+        "one place per page"
+    );
     assert_eq!(shares[0].average_position, Some(1.5));
     assert_eq!(shares[1].keywords, 1);
     assert_eq!(shares[1].visibility, share_of(2.8, 3.08));

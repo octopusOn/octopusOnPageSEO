@@ -39,14 +39,15 @@ export function parsePrompts(text: string): string[] {
   return prompts;
 }
 
-export type CellState = "missing" | "error" | "absent" | "mentioned" | "cited";
+export type CellState = "missing" | "error" | "absent" | "rival" | "mentioned" | "cited";
 
-/** How the brand fares in one answer: its site cited, only named, absent, or no answer. */
+/** How the brand fares in one answer: its site cited, only named, absent while a rival is named, absent, or no answer. */
 export function cellState(cell: AiCell | undefined): CellState {
   if (!cell) return "missing";
   if (cell.error) return "error";
   if (cell.cited) return "cited";
-  return cell.mentioned ? "mentioned" : "absent";
+  if (cell.mentioned) return "mentioned";
+  return cell.rival ? "rival" : "absent";
 }
 
 export type Tone = "positive" | "neutral" | "negative";

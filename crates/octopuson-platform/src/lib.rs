@@ -27,7 +27,7 @@ use duckdb::Connection;
 
 pub use ai::{
     AI_ENGINES, AiAnswerRow, AiPrompt, AiRunRow, AiSettings, AnswerBrand, AnswerSource,
-    MAX_PROMPTS, Rival,
+    DEFAULT_AI_ENGINES, MAX_PROMPTS, Rival,
 };
 pub use audits::{AuditEnd, AuditRow, AuditSettings};
 pub use cache::{CacheClass, CacheEntry, cache_key};

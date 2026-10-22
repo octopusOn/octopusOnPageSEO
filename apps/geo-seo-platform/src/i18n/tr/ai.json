@@ -72,7 +72,7 @@
   "shareOfVoice": "Ses payı",
   "shareOfVoiceHint": "Tüm marka anılmaları içindeki payınız",
   "averagePosition": "Ortalama sıra",
-  "averagePositionHint": "Yanıtta adı geçen markalar arasında",
+  "averagePositionHint": "Yanıttaki listede kaçıncı olduğu, liste yoksa adı geçen markalar arasındaki sırası",
   "tone": "Ton",
   "toneHint": "Markanızın geçtiği cümlelerin tonu (sözlük tabanlı)",
   "tone_positive": "Olumlu",
@@ -131,5 +131,8 @@
   "colPlatform": "Platform",
   "colSources": "Kaynaklar",
   "colSeen": "Son yanıt",
-  "selectShown": "Görünen {n} soruyu seç"
+  "selectShown": "Görünen {n} soruyu seç",
+  "cell_rival": "Yerine rakip",
+  "cellRivalTitle": "Siz yoksunuz; {rival} {n}. sırada.",
+  "cellPlaceTitle": "{state} · {n}. sırada"
 }

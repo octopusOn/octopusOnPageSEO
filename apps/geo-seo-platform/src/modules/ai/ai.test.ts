@@ -9,6 +9,7 @@ const cell = (extra: Partial<AiCell> = {}): AiCell => ({
   sentiment: null,
   error: null,
   checked_at: "2026-10-21T09:00:00Z",
+  rival: null,
   ...extra,
 });
 
@@ -23,12 +24,15 @@ describe("ai visibility", () => {
     ]);
   });
 
-  it("tells cited, mentioned, absent and failed answers apart", () => {
+  it("tells cited, mentioned, rival-only, absent and failed answers apart", () => {
     expect(cellState(undefined)).toBe("missing");
     expect(cellState(cell({ error: "HTTP 500" }))).toBe("error");
     expect(cellState(cell({ mentioned: true, cited: true }))).toBe("cited");
     expect(cellState(cell({ mentioned: true, position: 2 }))).toBe("mentioned");
     expect(cellState(cell())).toBe("absent");
+    // Not named while a rival is: shown apart (yellow), with the rival's place.
+    expect(cellState(cell({ rival: { key: "rakip-magaza.com", position: 1 } }))).toBe("rival");
+    expect(cellState(cell({ mentioned: true, position: 3, rival: { key: "rakip-magaza.com", position: 1 } }))).toBe("mentioned");
     expect([toneOf(0.4), toneOf(0), toneOf(-0.5), toneOf(null)]).toEqual(["positive", "neutral", "negative", null]);
     expect([platformName("chat_gpt"), platformName("google"), platformName("new_one")]).toEqual(["ChatGPT", "Google AI Overview", "new one"]);
   });

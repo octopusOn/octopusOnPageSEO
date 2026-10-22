@@ -26,17 +26,17 @@ function Preview({ project, report }: { project: ProjectRow; report: ReportRow }
 
 function ShareBox({ project, setup, report }: { project: ProjectRow; setup: ReportsSetup; report: ReportRow }) {
   const { t, locale } = useI18n();
-  const { notify } = useShell();
+  const { notify, fail } = useShell();
   const queryClient = useQueryClient();
   const done = () => void queryClient.invalidateQueries({ queryKey: ["reports", "setup", project.id] });
-  const share = useMutation({ mutationFn: () => api.shareReport(project.id, report.id), onSuccess: done, onError: (thrown) => notify(explain(thrown, t).message, true) });
+  const share = useMutation({ mutationFn: () => api.shareReport(project.id, report.id), onSuccess: done, onError: (thrown) => fail(thrown) });
   const stop = useMutation({
     mutationFn: () => api.unshareReport(project.id, report.id),
     onSuccess: () => {
       notify(t("reports.unshared"));
       done();
     },
-    onError: (thrown) => notify(explain(thrown, t).message, true),
+    onError: (thrown) => fail(thrown),
   });
   const link = report.share_token ? shareUrl(setup.public_url, report.share_token, window.location.origin) : null;
   return (
@@ -102,9 +102,9 @@ function Deliveries({ project, report }: { project: ProjectRow; report: ReportRo
 /** One report: what it shows, its files, its link and its e-mails. */
 function ReportCard({ project, setup, report, selected, onSelect, onEdit }: { project: ProjectRow; setup: ReportsSetup; report: ReportRow; selected: boolean; onSelect: () => void; onEdit: () => void }) {
   const { t, locale } = useI18n();
-  const { notify, jobs } = useShell();
+  const { notify, jobs, fail } = useShell();
   const queryClient = useQueryClient();
-  const failed = (thrown: unknown) => notify(explain(thrown, t).message, true);
+  const failed = (thrown: unknown) => fail(thrown);
   const pdf = useMutation({
     mutationFn: () => api.reportPdf(project.id, report.id),
     onSuccess: (file) => {

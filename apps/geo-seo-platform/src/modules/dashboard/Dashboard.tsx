@@ -41,7 +41,7 @@ function AccountStrip() {
 
 function ProjectCard({ project, onEdit }: { project: ProjectRow; onEdit: () => void }) {
   const { t, locale } = useI18n();
-  const { go, notify } = useShell();
+  const { go, notify, fail } = useShell();
   const queryClient = useQueryClient();
   const regions = new Intl.DisplayNames([locale], { type: "region" });
   const remove = useMutation({
@@ -50,7 +50,7 @@ function ProjectCard({ project, onEdit }: { project: ProjectRow; onEdit: () => v
       void queryClient.invalidateQueries({ queryKey: ["projects"] });
       notify(t("projects.deleted"));
     },
-    onError: (thrown) => notify(explain(thrown, t).message, true),
+    onError: (thrown) => fail(thrown),
   });
   return (
     <article className="oc-card project-card">

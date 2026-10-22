@@ -1,6 +1,6 @@
 import { useState, type FormEvent } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { CheckCircle2, CircleAlert, Coins, ExternalLink, KeyRound, LogOut, PlugZap, Wallet } from "lucide-react";
+import { Check, CheckCircle2, ChevronDown, CircleAlert, Coins, ExternalLink, KeyRound, LogOut, PlugZap, Wallet } from "lucide-react";
 import { Button, ErrorState, Field, Loading, Segmented } from "@octopusseo/ui";
 import { api } from "../../api/client";
 import { openExternal } from "../../api/transport";
@@ -11,15 +11,14 @@ import { explain } from "../../lib/errors";
 import { creditsOf, formatCredits, formatNumber, formatUsd } from "../../lib/format";
 
 function useOpen() {
-  const { t } = useI18n();
-  const { notify } = useShell();
+  const { fail } = useShell();
   return (opening: Promise<{ url: string; opened: boolean }>) =>
-    opening.then((opened) => openExternal(opened.url, opened.opened)).catch((thrown) => notify(explain(thrown, t).message, true));
+    opening.then((opened) => openExternal(opened.url, opened.opened)).catch((thrown) => fail(thrown));
 }
 
 function AccountCard({ jobs }: { jobs: Job[] }) {
   const { t, locale } = useI18n();
-  const { mode, notify } = useShell();
+  const { mode, notify, fail } = useShell();
   const queryClient = useQueryClient();
   const open = useOpen();
   const status = useQuery({ queryKey: ["account"], queryFn: api.account, refetchInterval: 30_000, refetchOnWindowFocus: true });
@@ -34,22 +33,31 @@ function AccountCard({ jobs }: { jobs: Job[] }) {
       notify(t("sources.connecting"));
       void queryClient.invalidateQueries({ queryKey: ["jobs"] });
     },
-    onError: (thrown) => notify(explain(thrown, t).message, true),
+    onError: (thrown) => fail(thrown),
   });
-  const disconnect = useMutation({ mutationFn: api.disconnect, onSuccess: refresh, onError: (thrown) => notify(explain(thrown, t).message, true) });
+  const disconnect = useMutation({ mutationFn: api.disconnect, onSuccess: refresh, onError: (thrown) => fail(thrown) });
   const account = status.data?.account ?? null;
   const web = status.data?.host === "web" || mode === "web";
   return (
-    <section className="oc-card account-card">
+    <section className="oc-card account-card choice recommended">
       <header className="card-head">
         <span className="oc-tile amber large">
           <Wallet size={20} />
         </span>
         <div>
+          <span className="oc-badge good">{t("sources.recommended")}</span>
           <h2 className="oc-card-title">{t("sources.accountTitle")}</h2>
           <p className="faint">{t("sources.accountLead")}</p>
         </div>
       </header>
+      <ul className="choice-points">
+        {(["accountPoint1", "accountPoint2", "accountPoint3"] as const).map((point) => (
+          <li key={point}>
+            <Check size={15} aria-hidden="true" />
+            {t(`sources.${point}`)}
+          </li>
+        ))}
+      </ul>
       {status.isLoading && <Loading label={t("common.loading")} />}
       {status.data && (
         <div className="account-body">
@@ -110,9 +118,9 @@ function keyState(state: string, t: (key: string) => string): string {
   }
 }
 
-function ProviderCard({ provider }: { provider: ProviderInfo }) {
+function ProviderCard({ provider, connected }: { provider: ProviderInfo; connected: boolean }) {
   const { t, locale } = useI18n();
-  const { notify } = useShell();
+  const { notify, fail } = useShell();
   const queryClient = useQueryClient();
   const open = useOpen();
   const [value, setValue] = useState("");
@@ -121,7 +129,7 @@ function ProviderCard({ provider }: { provider: ProviderInfo }) {
     void queryClient.invalidateQueries({ queryKey: ["providers"] });
     void queryClient.invalidateQueries({ queryKey: ["overview-estimate"] });
   };
-  const failed = (thrown: unknown) => notify(explain(thrown, t).message, true);
+  const failed = (thrown: unknown) => fail(thrown);
   const key = provider.keys[0];
   const saveKey = useMutation({
     mutationFn: () => api.setKey(provider.id, key?.name ?? "", value),
@@ -157,6 +165,8 @@ function ProviderCard({ provider }: { provider: ProviderInfo }) {
   const assistant = provider.modules.length === 1 && provider.modules[0] === "ai";
   const status =
     provider.via === "own" ? t("sources.viaOwn") : provider.via === "credit" ? t("sources.viaCredit") : assistant ? t("sources.viaNoneAssistant") : t("sources.viaNone");
+  // Credits already cover this source: the own key and the payment choice are an option, folded away.
+  const [ownOpen, setOwnOpen] = useState(!(connected && provider.via === "credit"));
   return (
     <article className="oc-card provider-card">
       <header className="card-head">
@@ -170,56 +180,65 @@ function ProviderCard({ provider }: { provider: ProviderInfo }) {
         <span className="provider-spent">{t("sources.spentMonth", { amount: formatUsd(provider.spent_usd, locale) })}</span>
       </header>
       <div className="provider-body">
-        {!assistant && (
-          <Field label={t("sources.mode")} hint={t("sources.modeHint")}>
-            <Segmented<SourceMode>
-              label={t("sources.mode")}
-              value={provider.mode}
-              onChange={(mode) => setMode.mutate(mode)}
-              disabled={setMode.isPending}
-              options={[
-                { value: "auto", label: t("sources.modeAuto") },
-                { value: "own", label: t("sources.modeOwn") },
-                { value: "credit", label: t("sources.modeCredit"), disabled: !provider.credit_connector && provider.mode !== "credit" },
-              ]}
-            />
-          </Field>
-        )}
-        <p className="faint small">
-          {provider.credits_per_usd !== null
-            ? t("sources.creditOffer", { credits: formatNumber(provider.credits_per_usd, locale) })
-            : assistant
-              ? t("sources.assistantKey")
-              : t("sources.noCreditOffer")}
-        </p>
-        {key && (
-          <form className="key-form" onSubmit={submitKey}>
-            <Field label={provider.id === "dataforseo" ? t("sources.keyDataforseo") : t("sources.key")} hint={keyState(key.state, t)}>
-              <input
-                className="oc-input"
-                type="password"
-                value={value}
-                onChange={(event) => setValue(event.target.value)}
-                autoComplete="off"
-                spellCheck={false}
-                placeholder={key.state === "saved" ? "••••••••" : provider.id === "dataforseo" ? "login:password" : undefined}
+        {!ownOpen ? (
+          <button type="button" className="link-button" onClick={() => setOwnOpen(true)}>
+            <ChevronDown size={14} aria-hidden="true" />
+            {t("sources.useOwnKey")}
+          </button>
+        ) : (
+          <>
+          {!assistant && (
+            <Field label={t("sources.mode")} hint={t("sources.modeHint")}>
+              <Segmented<SourceMode>
+                label={t("sources.mode")}
+                value={provider.mode}
+                onChange={(mode) => setMode.mutate(mode)}
+                disabled={setMode.isPending}
+                options={[
+                  { value: "auto", label: t("sources.modeAuto") },
+                  { value: "own", label: t("sources.modeOwn") },
+                  { value: "credit", label: t("sources.modeCredit"), disabled: !provider.credit_connector && provider.mode !== "credit" },
+                ]}
               />
             </Field>
-            <div className="key-actions">
-              <Button type="submit" primary small busy={saveKey.isPending} disabled={!value.trim()}>
-                {t("sources.saveKey")}
-              </Button>
-              {key.state === "saved" && (
-                <Button small busy={removeKey.isPending} onClick={() => removeKey.mutate()}>
-                  {t("sources.removeKey")}
+          )}
+          <p className="faint small">
+            {provider.credits_per_usd !== null
+              ? t("sources.creditOffer", { credits: formatNumber(provider.credits_per_usd, locale) })
+              : assistant
+                ? t("sources.assistantKey")
+                : t("sources.noCreditOffer")}
+          </p>
+          {key && (
+            <form className="key-form" onSubmit={submitKey}>
+              <Field label={provider.id === "dataforseo" ? t("sources.keyDataforseo") : t("sources.key")} hint={keyState(key.state, t)}>
+                <input
+                  className="oc-input"
+                  type="password"
+                  value={value}
+                  onChange={(event) => setValue(event.target.value)}
+                  autoComplete="off"
+                  spellCheck={false}
+                  placeholder={key.state === "saved" ? "••••••••" : provider.id === "dataforseo" ? "login:password" : undefined}
+                />
+              </Field>
+              <div className="key-actions">
+                <Button type="submit" primary small busy={saveKey.isPending} disabled={!value.trim()}>
+                  {t("sources.saveKey")}
                 </Button>
-              )}
-              <Button small className="ghost" onClick={() => open(api.openUrl(provider.signup_url))}>
-                <ExternalLink size={14} />
-                {t("sources.getKey")}
-              </Button>
-            </div>
-          </form>
+                {key.state === "saved" && (
+                  <Button small busy={removeKey.isPending} onClick={() => removeKey.mutate()}>
+                    {t("sources.removeKey")}
+                  </Button>
+                )}
+                <Button small className="ghost" onClick={() => open(api.openUrl(provider.signup_url))}>
+                  <ExternalLink size={14} />
+                  {t("sources.getKey")}
+                </Button>
+              </div>
+            </form>
+          )}
+          </>
         )}
         <form
           className="budget-form"
@@ -279,23 +298,75 @@ function Usage() {
   );
 }
 
+/** The second way: the user's own keys, optional; explains that one way is enough. */
+function OwnKeysCard({ connected, onShow }: { connected: boolean; onShow: () => void }) {
+  const { t } = useI18n();
+  return (
+    <section className="oc-card choice">
+      <header className="card-head">
+        <span className="oc-tile blue large">
+          <KeyRound size={20} />
+        </span>
+        <div>
+          <span className="oc-badge">{t("sources.optional")}</span>
+          <h2 className="oc-card-title">{t("sources.ownTitle")}</h2>
+          <p className="faint">{t("sources.ownLead")}</p>
+        </div>
+      </header>
+      <ul className="choice-points">
+        {(["ownPoint1", "ownPoint2", "ownPoint3"] as const).map((point) => (
+          <li key={point}>
+            <Check size={15} aria-hidden="true" />
+            {t(`sources.${point}`)}
+          </li>
+        ))}
+      </ul>
+      <div className="account-actions">
+        <Button onClick={onShow}>
+          <KeyRound size={15} />
+          {connected ? t("sources.ownShowConnected") : t("sources.ownShow")}
+        </Button>
+      </div>
+    </section>
+  );
+}
+
 export function Sources({ jobs }: { jobs: Job[] }) {
   const { t } = useI18n();
   const providers = useQuery({ queryKey: ["providers"], queryFn: api.providers });
+  const status = useQuery({ queryKey: ["account"], queryFn: api.account, refetchInterval: 30_000 });
+  const connected = Boolean(status.data?.account);
+  // With the account connected, the own keys are an extra: folded until asked for.
+  const [keysOpen, setKeysOpen] = useState<boolean | null>(null);
+  const showKeys = keysOpen ?? !connected;
+  const openKeys = () => {
+    setKeysOpen(true);
+    window.requestAnimationFrame(() => document.getElementById("own-keys")?.scrollIntoView({ behavior: "smooth", block: "start" }));
+  };
   return (
     <div className="page-stack">
-      <AccountCard jobs={jobs} />
-      <section className="section">
-        <div className="section-head">
+      <p className="choice-lead">{t("sources.choiceLead")}</p>
+      <div className="choice-grid">
+        <AccountCard jobs={jobs} />
+        <OwnKeysCard connected={connected} onShow={openKeys} />
+      </div>
+      <section className="section" id="own-keys">
+        <button type="button" className="section-head section-toggle" aria-expanded={showKeys} onClick={() => setKeysOpen(!showKeys)}>
           <h2>{t("sources.providersTitle")}</h2>
-        </div>
-        {providers.isLoading && <Loading label={t("common.loading")} />}
-        {providers.error && <ErrorState title={t("common.loadFailed")} message={explain(providers.error, t).message} retry={() => void providers.refetch()} retryLabel={t("common.retry")} />}
-        <div className="provider-grid">
-          {providers.data?.map((provider) => (
-            <ProviderCard key={`${provider.id}-${provider.budget_usd ?? ""}`} provider={provider} />
-          ))}
-        </div>
+          <span className="faint small">{connected ? t("sources.providersConnected") : t("sources.providersHint")}</span>
+          <ChevronDown size={18} className={showKeys ? "turned" : undefined} aria-hidden="true" />
+        </button>
+        {showKeys && (
+          <>
+            {providers.isLoading && <Loading label={t("common.loading")} />}
+            {providers.error && <ErrorState title={t("common.loadFailed")} message={explain(providers.error, t).message} retry={() => void providers.refetch()} retryLabel={t("common.retry")} />}
+            <div className="provider-grid">
+              {providers.data?.map((provider) => (
+                <ProviderCard key={`${provider.id}-${provider.budget_usd ?? ""}`} provider={provider} connected={connected} />
+              ))}
+            </div>
+          </>
+        )}
       </section>
       <Usage />
       <p className="faint small privacy-note">{t("sources.privacy")}</p>

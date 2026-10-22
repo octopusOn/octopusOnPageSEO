@@ -70,11 +70,19 @@ pub fn mentions_estimate(rows: u32) -> f64 {
     MENTIONS_TASK_USD + MENTIONS_ROW_USD * f64::from(rows)
 }
 
-/// The task of one answer with web search, favouring `country` (two letters).
+/// The task of one `engine`'s answer with web search, favouring `country` (two letters) where
+/// the assistant takes it. The endpoints differ: ChatGPT and Claude take `web_search` and the
+/// country, Gemini only `web_search`, and Perplexity (whose Sonar models always search) only
+/// the country; a field an endpoint does not know fails the task (40501).
 ///
 /// # Errors
 /// [`DfsError::Config`] for an empty question or one over 500 characters.
-pub fn llm_task(prompt: &str, model: &str, country: Option<&str>) -> Result<Value, DfsError> {
+pub fn llm_task(
+    engine: &str,
+    prompt: &str,
+    model: &str,
+    country: Option<&str>,
+) -> Result<Value, DfsError> {
     let prompt = prompt.trim();
     if prompt.is_empty() {
         return Err(DfsError::Config("the question is empty".to_owned()));
@@ -87,10 +95,12 @@ pub fn llm_task(prompt: &str, model: &str, country: Option<&str>) -> Result<Valu
     let mut task = json!({
         "user_prompt": prompt,
         "model_name": model,
-        "web_search": true,
         "max_output_tokens": 2_048,
     });
-    if let Some(country) = country {
+    if engine != "perplexity" {
+        task["web_search"] = json!(true);
+    }
+    if let Some(country) = country.filter(|_| engine != "gemini") {
         task["web_search_country_iso_code"] = json!(country.to_ascii_uppercase());
     }
     Ok(task)

@@ -171,8 +171,7 @@ fn backlink_lists_filter_by_state_and_follow() {
     .unwrap();
     assert_eq!(bulk["targets"], json!(["example.com", "rival.com"]));
     assert!(matches!(bulk_ranks_task(&[]), Err(DfsError::Config(_))));
-    assert_eq!(
-        new_lost_task("www.example.com", "2025-10-01").unwrap()["group_range"],
-        "month"
-    );
+    let new_lost = new_lost_task("www.example.com").unwrap();
+    assert_eq!(new_lost["group_range"], "month");
+    assert_eq!(new_lost.get("date_from"), None);
 }

@@ -340,18 +340,19 @@ pub fn pages_task(target: &str, limit: u32) -> Result<Value, DfsError> {
     Ok(task)
 }
 
-/// The task of links won and lost per month since `date_from` (`yyyy-mm-dd`).
+/// The task of links won and lost per month over DataForSEO's own default range. A
+/// `date_from` is left out: DataForSEO refused every one we sent (40501, Invalid Field), even
+/// within the year its documentation allows.
 ///
 /// # Errors
 /// [`DfsError::Config`] for an empty target.
-pub fn new_lost_task(target: &str, date_from: &str) -> Result<Value, DfsError> {
+pub fn new_lost_task(target: &str) -> Result<Value, DfsError> {
     let domain = crate::target_domain(target);
     if domain.is_empty() {
         return Err(DfsError::Config("the target is empty".to_owned()));
     }
     Ok(json!({
         "target": domain,
-        "date_from": date_from,
         "group_range": "month",
         "include_subdomains": true,
     }))

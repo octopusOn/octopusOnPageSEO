@@ -236,6 +236,10 @@ pub struct CompetitorShare {
     pub visibility: f64,
     /// Keywords it ranks for.
     pub keywords: u32,
+    /// Keywords it ranks for in the first three results.
+    pub top3: u32,
+    /// Keywords it ranks for in the first ten results.
+    pub top10: u32,
     /// Its average position where it ranks.
     pub average_position: Option<f64>,
     /// Whether it is the project's own site.
@@ -276,9 +280,20 @@ fn share_rows(
         .into_iter()
         .map(|domain| {
             let (clicks, keywords, positions) = shares.get(&domain).cloned().unwrap_or_default();
+            let within = |depth: u16| {
+                u32::try_from(
+                    positions
+                        .iter()
+                        .filter(|position| **position <= depth)
+                        .count(),
+                )
+                .unwrap_or(u32::MAX)
+            };
             CompetitorShare {
                 visibility: share_of(clicks, best_total),
                 keywords,
+                top3: within(3),
+                top10: within(10),
                 average_position: (!positions.is_empty()).then(|| {
                     let sum: f64 = positions.iter().map(|position| f64::from(*position)).sum();
                     (sum / positions.len() as f64 * 10.0).round() / 10.0

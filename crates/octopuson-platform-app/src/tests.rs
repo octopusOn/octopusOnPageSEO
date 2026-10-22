@@ -83,6 +83,7 @@ fn every_module_registers_its_commands() {
         "start_account_login",
         "account_logout",
         "account_page",
+        "report_problem",
         "list_jobs",
         "cancel_job",
         "clear_jobs",
@@ -1602,7 +1603,8 @@ fn ai_visibility_asks_assistants_reads_brands_and_follows_the_schedule() {
     assert!(suggested.contains(&json!("Örnek Mağaza güvenilir mi?")));
     assert!(suggested.contains(&json!("İç giyim için en iyi markalar hangileri?")));
     let estimate = call(&platform, "ai_estimate", json!({ "project_id": id }));
-    assert_eq!(estimate["unavailable"].as_array().unwrap().len(), 5);
+    // A new project asks ChatGPT, Gemini and Google AI Mode; none has a source yet.
+    assert_eq!(estimate["unavailable"].as_array().unwrap().len(), 3);
     assert_eq!(
         error(&platform, "start_ai_run", json!({ "project_id": id })),
         ErrorCode::NoSource
@@ -2558,4 +2560,22 @@ fn the_stdio_transport_answers_one_line_per_request_and_nothing_for_notification
         lines[1]["result"]["structuredContent"]["projects"],
         Value::Array(Vec::new())
     );
+}
+
+#[test]
+fn a_problem_report_needs_words_and_an_account() {
+    let dir = tempfile::tempdir().unwrap();
+    let platform = platform(dir.path(), &Arc::new(FakeTransport::new()));
+    let empty = platform
+        .call("report_problem", json!({ "message": "  " }))
+        .unwrap_err();
+    assert_eq!(empty.code, ErrorCode::Invalid);
+    let signed_out = platform
+        .call(
+            "report_problem",
+            json!({ "message": "Rapor açılmıyor", "page": "backlinks", "error": "unavailable" }),
+        )
+        .unwrap_err();
+    assert_eq!(signed_out.code, ErrorCode::Account);
+    assert!(signed_out.message.contains("destek@octopuson.com"));
 }

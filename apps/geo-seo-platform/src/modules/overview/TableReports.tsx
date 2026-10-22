@@ -7,7 +7,6 @@ import type { CompetitorRow, PageRow, ProjectRow, SubdomainRow, TrafficRow } fro
 import { useI18n } from "../../i18n";
 import { useShell } from "../../lib/context";
 import { axisStyle, EChart, useChartTokens, type ChartOption } from "../../lib/EChart";
-import { explain } from "../../lib/errors";
 import { formatCompact, formatNumber, formatUsd } from "../../lib/format";
 import { download, fold, toCsv } from "../../lib/report";
 import { shortUrl, tableLabels } from "../../lib/tables";
@@ -106,7 +105,7 @@ function CompareChart({ rows }: { rows: TrafficRow[] }) {
 
 export function CompetitorsReport({ project, domain, onAnalyze }: { project: ProjectRow; domain: string | undefined; onAnalyze: (domain: string) => void }) {
   const { t, locale } = useI18n();
-  const { notify } = useShell();
+  const { notify, fail } = useShell();
   const queryClient = useQueryClient();
   const [limit, setLimit] = useState(100);
   const add = useMutation({
@@ -125,7 +124,7 @@ export function CompetitorsReport({ project, domain, onAnalyze }: { project: Pro
       void queryClient.invalidateQueries({ queryKey: ["overview-estimate"] });
       notify(t("overview.added"));
     },
-    onError: (thrown) => notify(explain(thrown, t).message, true),
+    onError: (thrown) => fail(thrown),
   });
   const columns: Column<CompetitorRow>[] = [
     { key: "domain", label: t("overview.colDomain"), render: (row) => <strong className="cell-main">{row.domain}</strong>, sort: (row) => row.domain },

@@ -72,7 +72,7 @@ function EngineChip({ info, busy, onToggle }: { info: EngineInfo; busy: boolean;
 /** Assistants, schedule, brands, what a run costs and the run itself. */
 function SetupBar({ project, setup, running, onAdd, onBrands }: { project: ProjectRow; setup: AiSetup; running: Job | undefined; onAdd: () => void; onBrands: () => void }) {
   const { t, locale } = useI18n();
-  const { notify, go } = useShell();
+  const { notify, go, fail } = useShell();
   const queryClient = useQueryClient();
   const { settings } = setup;
   const estimate = useQuery({ queryKey: ["ai", "estimate", project.id, settings.engines.join(), settings.schedule, setup.prompts.length], queryFn: () => api.aiEstimate(project.id), enabled: setup.prompts.length > 0 });
@@ -83,7 +83,7 @@ function SetupBar({ project, setup, running, onAdd, onBrands }: { project: Proje
       queryClient.setQueryData(["ai", "setup", project.id], next);
       void queryClient.invalidateQueries({ queryKey: ["ai", "estimate", project.id] });
     },
-    onError: (thrown) => notify(explain(thrown, t).message, true),
+    onError: (thrown) => fail(thrown),
   });
   const start = useMutation({
     mutationFn: () => api.startAiRun(project.id),
@@ -91,7 +91,7 @@ function SetupBar({ project, setup, running, onAdd, onBrands }: { project: Proje
       notify(t("ai.started"));
       void queryClient.invalidateQueries({ queryKey: ["jobs"] });
     },
-    onError: (thrown) => notify(explain(thrown, t).message, true),
+    onError: (thrown) => fail(thrown),
   });
   const cancel = useMutation({ mutationFn: (id: string) => api.cancelJob(id) });
   const toggle = (engine: AiEngine) => {
@@ -271,19 +271,27 @@ function SourceBars({ sources, label }: { sources: SourceCount[]; label: string 
   );
 }
 
-const CELL_ICON: Record<CellState, typeof Check> = { cited: Link2, mentioned: Check, absent: CircleSlash, error: AlertTriangle, missing: Minus };
+const CELL_ICON: Record<CellState, typeof Check> = { cited: Link2, mentioned: Check, rival: Users, absent: CircleSlash, error: AlertTriangle, missing: Minus };
 
-/** A question on one assistant: cited, named (with its place), absent, failed or not asked. */
+/** A question on one assistant: cited, named (with its place), a rival named instead (with its place), absent, failed or not asked. */
 function CellButton({ row, engine, onOpen }: { row: AiPromptRow; engine: AiEngine; onOpen: () => void }) {
   const { t } = useI18n();
   const cell = row.results[engine];
   const state = cellState(cell);
   const Icon = CELL_ICON[state];
-  const label = state === "error" ? t("ai.answerFailed", { error: cell?.error ?? "" }) : t(`ai.cell_${state}`);
+  const label =
+    state === "error"
+      ? t("ai.answerFailed", { error: cell?.error ?? "" })
+      : state === "rival" && cell?.rival
+        ? t("ai.cellRivalTitle", { rival: cell.rival.key, n: cell.rival.position })
+        : cell?.position
+          ? t("ai.cellPlaceTitle", { state: t(`ai.cell_${state}`), n: cell.position })
+          : t(`ai.cell_${state}`);
+  const place = state === "rival" ? cell?.rival?.position : cell?.position;
   return (
     <button type="button" className={`ai-cell ${state}`} onClick={onOpen} disabled={state === "missing"} title={label}>
       <Icon size={14} aria-hidden="true" />
-      {cell?.position ? <span>{cell.position}</span> : null}
+      {place ? <span>{place}.</span> : null}
       <span className="sr-only">{label}</span>
     </button>
   );
@@ -303,7 +311,7 @@ function PromptMatrix({
   onAdd: () => void;
 }) {
   const { t, locale } = useI18n();
-  const { notify } = useShell();
+  const { notify, fail } = useShell();
   const queryClient = useQueryClient();
   const [query, setQuery] = useState("");
   const [tag, setTag] = useState("");
@@ -318,7 +326,7 @@ function PromptMatrix({
       setSelected(new Set());
       void queryClient.invalidateQueries({ queryKey: ["ai"] });
     },
-    onError: (thrown) => notify(explain(thrown, t).message, true),
+    onError: (thrown) => fail(thrown),
   });
   const toggle = (id: number) =>
     setSelected((previous) => {
@@ -328,7 +336,7 @@ function PromptMatrix({
       return next;
     });
   const allShown = shown.length > 0 && shown.every((row) => selected.has(row.prompt_id));
-  const score = (row: AiPromptRow, engine: AiEngine) => ({ cited: 3, mentioned: 2, absent: 1, error: 0, missing: 0 })[cellState(row.results[engine])];
+  const score = (row: AiPromptRow, engine: AiEngine) => ({ cited: 3, mentioned: 2, absent: 1, rival: 0.5, error: 0, missing: 0 })[cellState(row.results[engine])];
   const columns: Column<AiPromptRow>[] = [
     {
       key: "select",
@@ -369,7 +377,7 @@ function PromptMatrix({
           <span className="faint">{t("ai.promptsHint")}</span>
         </div>
         <div className="report-actions ai-legend" aria-hidden="true">
-          {(["cited", "mentioned", "absent", "error"] as const).map((state) => {
+          {(["cited", "mentioned", "rival", "absent", "error"] as const).map((state) => {
             const Icon = CELL_ICON[state];
             return (
               <span key={state} className={`ai-cell ${state} legend`}>

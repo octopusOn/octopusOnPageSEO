@@ -17,13 +17,23 @@ fn llm_tasks_ask_with_web_search_in_the_market() {
     );
     assert_eq!(llm_endpoint("bard"), None);
     assert_eq!(default_model("gemini"), "gemini-2.5-flash");
-    let task = llm_task(" En iyi spor ayakkabı? ", "gpt-5", Some("tr")).unwrap();
+    let task = llm_task("chatgpt", " En iyi spor ayakkabı? ", "gpt-5", Some("tr")).unwrap();
     assert_eq!(task["user_prompt"], "En iyi spor ayakkabı?");
     assert_eq!(task["model_name"], "gpt-5");
     assert_eq!(task["web_search"], true);
     assert_eq!(task["web_search_country_iso_code"], "TR");
-    assert!(llm_task("  ", "gpt-5", None).is_err());
-    assert!(llm_task(&"x".repeat(501), "gpt-5", None).is_err());
+    // Each endpoint gets only the fields it knows.
+    let gemini = llm_task("gemini", "soru", "gemini-2.5-flash", Some("tr")).unwrap();
+    assert_eq!(gemini["web_search"], true);
+    assert_eq!(gemini.get("web_search_country_iso_code"), None);
+    let perplexity = llm_task("perplexity", "soru", "sonar", Some("tr")).unwrap();
+    assert_eq!(perplexity.get("web_search"), None);
+    assert_eq!(perplexity["web_search_country_iso_code"], "TR");
+    let claude = llm_task("claude", "soru", "claude-opus-5", Some("tr")).unwrap();
+    assert_eq!(claude["web_search"], true);
+    assert_eq!(claude["web_search_country_iso_code"], "TR");
+    assert!(llm_task("chatgpt", "  ", "gpt-5", None).is_err());
+    assert!(llm_task("chatgpt", &"x".repeat(501), "gpt-5", None).is_err());
     assert!((llm_estimate("chatgpt") - 0.0306).abs() < 1e-9);
     assert!((mentions_estimate(100) - 0.2).abs() < 1e-9);
 }

@@ -88,6 +88,7 @@ export const api = {
   info: () => call<AppInfo>("app_info"),
   settings: () => call<Settings>("get_settings"),
   saveSettings: (settings: Settings) => call<Settings>("save_settings", { settings }),
+  reportProblem: (message: string, page: string, error: string) => call<null>("report_problem", { message, page, error }),
   accessTokens: () => call<AccessToken[]>("list_access_tokens"),
   createAccessToken: (name: string) => call<MadeAccessToken>("create_access_token", { name }),
   revokeAccessToken: (id: string) => call<null>("revoke_access_token", { id }),

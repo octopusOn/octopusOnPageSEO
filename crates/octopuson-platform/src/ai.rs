@@ -17,6 +17,9 @@ pub const AI_ENGINES: &[&str] = &[
     "google_ai_mode",
 ];
 
+/// Assistants a new project asks: the most used ones. Claude and Perplexity are a click away.
+pub const DEFAULT_AI_ENGINES: &[&str] = &["chatgpt", "gemini", "google_ai_mode"];
+
 /// Most questions of a project.
 pub const MAX_PROMPTS: usize = 200;
 
@@ -61,11 +64,14 @@ pub struct AiSettings {
 }
 
 impl Default for AiSettings {
-    /// Asked only by hand until the user picks a schedule; every assistant.
+    /// Asked only by hand until the user picks a schedule; the most used assistants.
     fn default() -> Self {
         Self {
             schedule: "manual".to_owned(),
-            engines: AI_ENGINES.iter().map(|&engine| engine.to_owned()).collect(),
+            engines: DEFAULT_AI_ENGINES
+                .iter()
+                .map(|&engine| engine.to_owned())
+                .collect(),
             models: BTreeMap::new(),
             rivals: Vec::new(),
             last_run_at: None,

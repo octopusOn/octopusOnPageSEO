@@ -445,3 +445,33 @@ fn the_account_card_reads_the_shared_connection() {
     );
     std::fs::remove_dir_all(&dir).unwrap();
 }
+
+#[test]
+fn support_messages_go_to_the_gateway_with_their_context() {
+    let transport = FakeTransport::new()
+        .reply(201, r#"{"ok":true}"#)
+        .reply(429, r#"{"error":"too_many_messages","message":"Too many messages this hour; try again later."}"#)
+        .reply(401, r#"{"error":"invalid_token"}"#);
+    let client = CloudClient::new(&transport, BASE, "geo-seo-platform");
+    let context = serde_json::json!({ "program": "GEO-SEO Platform", "page": "backlinks", "error": "unavailable" });
+    client
+        .support("oct_t", "Rapor açılmıyor", &context)
+        .unwrap();
+    let request = &transport.requests()[0];
+    assert!(request.url.ends_with("/v1/support"));
+    let body: serde_json::Value = serde_json::from_slice(request.body.as_deref().unwrap()).unwrap();
+    assert_eq!(
+        body,
+        serde_json::json!({ "message": "Rapor açılmıyor", "context": context })
+    );
+    assert_eq!(
+        client.support("oct_t", "again", &context),
+        Err(CloudError::Unavailable(
+            "Too many messages this hour; try again later.".to_owned()
+        ))
+    );
+    assert_eq!(
+        client.support("oct_t", "x", &context),
+        Err(CloudError::SignedOut)
+    );
+}

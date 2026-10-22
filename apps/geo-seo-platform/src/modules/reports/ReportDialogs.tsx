@@ -6,13 +6,12 @@ import { api } from "../../api/client";
 import type { Branding, ProjectRow, ReportLanguage, ReportRow, ReportSchedule, ReportSpec, ReportWidget, ReportsSetup } from "../../api/types";
 import { LANGUAGES as UI_LANGUAGES, useI18n } from "../../i18n";
 import { useShell } from "../../lib/context";
-import { explain } from "../../lib/errors";
 import { blankReport, DAYS, LANGUAGES, logoProblem, MAX_RECIPIENTS, moveWidget, orderedChoices, parseRecipients, validEmail } from "./report";
 
 /** A report's name, language, period, parts in order, and who gets it how often. */
 export function ReportDialog({ project, setup, report, onClose, onSaved }: { project: ProjectRow; setup: ReportsSetup; report: ReportRow | null; onClose: () => void; onSaved: (report: ReportRow) => void }) {
   const { t } = useI18n();
-  const { notify } = useShell();
+  const { notify, fail } = useShell();
   const queryClient = useQueryClient();
   const [spec, setSpec] = useState<ReportSpec>(() => (report ? { ...report } : { ...blankReport(project.language, setup.widgets), name: t("reports.defaultName") }));
   const [recipients, setRecipients] = useState((report?.recipients ?? []).join("\n"));
@@ -26,7 +25,7 @@ export function ReportDialog({ project, setup, report, onClose, onSaved }: { pro
       onSaved(saved);
       onClose();
     },
-    onError: (thrown) => notify(explain(thrown, t).message, true),
+    onError: (thrown) => fail(thrown),
   });
   const toggle = (widget: ReportWidget) =>
     setSpec((previous) => ({
@@ -142,7 +141,7 @@ export function ReportDialog({ project, setup, report, onClose, onSaved }: { pro
 /** The agency's look on every report: name, logo, colour, website, footer. */
 export function BrandingDialog({ branding, onClose }: { branding: Branding; onClose: () => void }) {
   const { t } = useI18n();
-  const { notify } = useShell();
+  const { notify, fail } = useShell();
   const queryClient = useQueryClient();
   const [draft, setDraft] = useState<Branding>(branding);
   const save = useMutation({
@@ -152,7 +151,7 @@ export function BrandingDialog({ branding, onClose }: { branding: Branding; onCl
       notify(t("reports.brandingSaved"));
       onClose();
     },
-    onError: (thrown) => notify(explain(thrown, t).message, true),
+    onError: (thrown) => fail(thrown),
   });
   const pick = (event: ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];

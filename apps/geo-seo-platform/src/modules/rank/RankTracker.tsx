@@ -62,7 +62,7 @@ function SetupBar({
   onAdd: () => void;
 }) {
   const { t, locale } = useI18n();
-  const { notify, go } = useShell();
+  const { notify, go, fail } = useShell();
   const queryClient = useQueryClient();
   const estimate = useQuery({ queryKey: ["rank", "estimate", project.id], queryFn: () => api.rankEstimate(project.id), enabled: setup.keywords > 0 });
   const save = useMutation({
@@ -71,7 +71,7 @@ function SetupBar({
       queryClient.setQueryData(["rank", "setup", project.id], next);
       void queryClient.invalidateQueries({ queryKey: ["rank", "estimate", project.id] });
     },
-    onError: (thrown) => notify(explain(thrown, t).message, true),
+    onError: (thrown) => fail(thrown),
   });
   const start = useMutation({
     mutationFn: () => api.startRankCheck(project.id),
@@ -79,7 +79,7 @@ function SetupBar({
       notify(t("rank.started"));
       void queryClient.invalidateQueries({ queryKey: ["jobs"] });
     },
-    onError: (thrown) => notify(explain(thrown, t).message, true),
+    onError: (thrown) => fail(thrown),
   });
   const cancel = useMutation({ mutationFn: (id: string) => api.cancelJob(id) });
   const { settings } = setup;
@@ -185,7 +185,7 @@ function SetupBar({
 /** Keywords without a volume weigh as one search; fetching their volumes fixes visibility. */
 function VolumesBanner({ project, missing }: { project: ProjectRow; missing: number }) {
   const { t, locale } = useI18n();
-  const { notify } = useShell();
+  const { notify, fail } = useShell();
   const queryClient = useQueryClient();
   const estimate = useQuery({ queryKey: ["rank", "volumes", project.id, missing], queryFn: () => api.rankVolumesEstimate(project.id) });
   const fetch = useMutation({
@@ -195,7 +195,7 @@ function VolumesBanner({ project, missing }: { project: ProjectRow; missing: num
       void queryClient.invalidateQueries({ queryKey: ["rank"] });
       refreshSpending(queryClient);
     },
-    onError: (thrown) => notify(explain(thrown, t).message, true),
+    onError: (thrown) => fail(thrown),
   });
   const blocked = blockedText(estimate.data, t);
   return (
@@ -241,7 +241,8 @@ function ShareBars({ shares }: { shares: CompetitorShare[] }) {
       {shares.map((share) => (
         <li key={share.domain} className={share.own ? "own" : undefined}>
           <span className="bar-label" title={share.domain}>
-            {share.domain}
+            <span className="bar-domain">{share.domain}</span>
+            <small className="faint">{t("rank.shareCounts", { top10: share.top10, top3: share.top3 })}</small>
           </span>
           <span className="bar-track" aria-hidden="true">
             <span className="bar-fill" style={{ width: `${(share.visibility / most) * 100}%` }} />
@@ -335,7 +336,7 @@ function Signals({ row }: { row: KeywordRank }) {
 
 function KeywordRanks({ project, rows, onOpen }: { project: ProjectRow; rows: KeywordRank[]; onOpen: (row: KeywordRank) => void }) {
   const { t, locale } = useI18n();
-  const { notify } = useShell();
+  const { notify, fail } = useShell();
   const queryClient = useQueryClient();
   const [filters, setFilters] = useState<RankFilters>(ALL_RANKS);
   const [selected, setSelected] = useState<Set<number>>(new Set());
@@ -352,12 +353,12 @@ function KeywordRanks({ project, rows, onOpen }: { project: ProjectRow; rows: Ke
       notify(t("rank.removed", { n: chosen.length }));
       refresh();
     },
-    onError: (thrown) => notify(explain(thrown, t).message, true),
+    onError: (thrown) => fail(thrown),
   });
   const tag = useMutation({
     mutationFn: (names: string[]) => api.setKeywordTags(project.id, chosen, names),
     onSuccess: refresh,
-    onError: (thrown) => notify(explain(thrown, t).message, true),
+    onError: (thrown) => fail(thrown),
   });
   const toggle = (id: number) =>
     setSelected((previous) => {

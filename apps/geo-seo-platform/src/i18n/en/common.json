@@ -76,5 +76,13 @@
   "jobSearchConsole": "Search Console sync of {name}",
   "jobGoogleLogin": "Google connection",
   "leadReports": "Builds reports with your agency's brand from rankings, Search Console, the site audit and AI visibility; download them as PDF, Excel or HTML, and on the web share them by link or e-mail.",
-  "jobReportEmail": "E-mail of the {name} report"
+  "jobReportEmail": "E-mail of the {name} report",
+  "errorUnavailable": "The data source cannot be reached right now. Try again shortly; if it keeps happening, report it to support.",
+  "reportProblem": "Report to support",
+  "reportTitle": "Report to support",
+  "reportLead": "We will send this error to the OctopusOn support team. Add a few words about what you did if you like.",
+  "reportError": "The error shown",
+  "reportNote": "Your note (optional)",
+  "reportSend": "Send",
+  "reportSent": "Your report reached the OctopusOn support team."
 }

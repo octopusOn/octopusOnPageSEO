@@ -52,10 +52,34 @@ fn account_page(context: &Context<'_>, arguments: Page) -> Result<Opened, AppErr
     Ok(Opened { url, opened })
 }
 
+/// A message to OctopusOn support about an error the person saw.
+#[derive(Debug, Deserialize)]
+struct Problem {
+    #[serde(default)]
+    message: String,
+    /// The page it happened on.
+    #[serde(default)]
+    page: String,
+    /// The error shown.
+    #[serde(default)]
+    error: String,
+}
+
+fn report_problem(context: &Context<'_>, arguments: Problem) -> Result<(), AppError> {
+    let message: String = arguments.message.trim().chars().take(2000).collect();
+    let error: String = arguments.error.trim().chars().take(500).collect();
+    if message.is_empty() && error.is_empty() {
+        return Err(AppError::Invalid("write a message".to_owned()));
+    }
+    let page: String = arguments.page.trim().chars().take(100).collect();
+    context.workspace.report_problem(&message, &page, &error)
+}
+
 /// Adds the commands.
 pub fn register(router: &mut Router) {
     router.add("account_status", account_status);
     router.add("start_account_login", start_account_login);
     router.add("account_logout", account_logout);
     router.add("account_page", account_page);
+    router.add("report_problem", report_problem);
 }

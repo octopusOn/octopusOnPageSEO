@@ -359,6 +359,31 @@ impl<'a> CloudClient<'a> {
         Ok(Metered::Charged(Self::json(&response)?))
     }
 
+    /// Sends a message to OctopusOn support: what the person wrote, and the program, page and
+    /// error it is about (`context`, an object of short strings).
+    ///
+    /// # Errors
+    /// [`CloudError::SignedOut`] for a token no longer valid; [`CloudError::Unavailable`] when the
+    /// gateway cannot be reached or refuses the message (too many in an hour).
+    pub fn support(
+        &self,
+        token: &str,
+        message: &str,
+        context: &serde_json::Value,
+    ) -> Result<(), CloudError> {
+        let response = self.send(
+            HttpRequest::post(
+                format!("{}/v1/support", self.base),
+                serde_json::json!({ "message": message, "context": context })
+                    .to_string()
+                    .into_bytes(),
+            )
+            .header("content-type", "application/json")
+            .header("authorization", format!("Bearer {token}")),
+        )?;
+        Self::json::<serde_json::Value>(&response).map(|_| ())
+    }
+
     /// Ends the session: the gateway stops accepting the token.
     ///
     /// # Errors

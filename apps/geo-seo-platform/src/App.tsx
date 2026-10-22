@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { CheckCircle2, CircleAlert, FolderPlus, Hourglass } from "lucide-react";
+import { CheckCircle2, CircleAlert, FolderPlus, Hourglass, LifeBuoy } from "lucide-react";
 import { Button, Empty } from "@octopusseo/ui";
 import { api } from "./api/client";
 import { watch, type Mode } from "./api/transport";
@@ -10,6 +10,7 @@ import { ShellContext, type Shell } from "./lib/context";
 import { explain } from "./lib/errors";
 import { isRunning, mergeJob } from "./lib/jobs";
 import { refreshSpending } from "./lib/PaidFrame";
+import { ReportProblem } from "./lib/ReportProblem";
 import { useRoute } from "./lib/route";
 import { Dashboard } from "./modules/dashboard/Dashboard";
 import { Backlinks } from "./modules/backlinks/Backlinks";
@@ -30,13 +31,24 @@ export function App({ mode }: { mode: Mode }) {
   const { t } = useI18n();
   const queryClient = useQueryClient();
   const [route, go] = useRoute();
-  const [toast, setToast] = useState<{ text: string; error: boolean } | null>(null);
+  const [toast, setToast] = useState<{ text: string; error: boolean; report?: string } | null>(null);
+  const [reporting, setReporting] = useState<string | null>(null);
   const timer = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
   const notify = useCallback((text: string, error = false) => {
     setToast({ text, error });
     clearTimeout(timer.current);
     timer.current = setTimeout(() => setToast(null), 5000);
   }, []);
+  const fail = useCallback(
+    (thrown: unknown) => {
+      const explained = explain(thrown, t);
+      setToast({ text: explained.message, error: true, report: explained.support?.detail });
+      clearTimeout(timer.current);
+      // A failure support can act on stays long enough to report it.
+      timer.current = setTimeout(() => setToast(null), explained.support ? 12_000 : 5000);
+    },
+    [t],
+  );
   useEffect(() => () => clearTimeout(timer.current), []);
 
   // A new page starts at its top.
@@ -99,7 +111,7 @@ export function App({ mode }: { mode: Mode }) {
   }, [projects.data, route.project]);
   const entry = moduleOf(route.page);
   const jobList = jobs.data ?? [];
-  const shell: Shell = { mode, notify, go, project, jobs: jobList };
+  const shell: Shell = { mode, notify, fail, report: setReporting, go, project, jobs: jobList };
 
   let content: React.ReactNode;
   if (!entry.ready) {
@@ -192,9 +204,30 @@ export function App({ mode }: { mode: Mode }) {
           <div className="oc-toasts" role="status" aria-live="polite">
             <div className={`oc-toast ${toast.error ? "error" : "success"}`}>
               {toast.error ? <CircleAlert size={17} /> : <CheckCircle2 size={17} />}
-              {toast.text}
+              <span>{toast.text}</span>
+              {toast.report !== undefined && (
+                <Button
+                  small
+                  onClick={() => {
+                    setReporting(toast.report ?? "");
+                    setToast(null);
+                  }}
+                >
+                  <LifeBuoy size={14} />
+                  {t("common.reportProblem")}
+                </Button>
+              )}
             </div>
           </div>
+        )}
+        {reporting !== null && (
+          <ReportProblem
+            detail={reporting}
+            page={route.page}
+            onClose={() => setReporting(null)}
+            onSent={() => notify(t("common.reportSent"))}
+            onFailed={(message) => notify(message, true)}
+          />
         )}
       </div>
     </ShellContext.Provider>

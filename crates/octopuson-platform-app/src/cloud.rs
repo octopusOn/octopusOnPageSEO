@@ -180,6 +180,36 @@ impl Workspace {
             .meter(&token, sku, units, key)?)
     }
 
+    /// Sends a message to OctopusOn support with the program's name and version, the page it was
+    /// sent from and the error shown there.
+    ///
+    /// # Errors
+    /// [`AppError::Account`] without an account, when the gateway cannot be reached or after too
+    /// many messages in an hour.
+    pub(crate) fn report_problem(
+        &self,
+        message: &str,
+        page: &str,
+        error: &str,
+    ) -> Result<(), AppError> {
+        let token = self.cloud_token().ok_or_else(|| {
+            AppError::Account(
+                "connect your OctopusOn SEO account to write to support, or write to destek@octopuson.com".to_owned(),
+            )
+        })?;
+        let settings = self.settings()?;
+        let transport = self.plain_transport(&settings)?;
+        let context = serde_json::json!({
+            "program": crate::APPLICATION,
+            "version": env!("CARGO_PKG_VERSION"),
+            "page": page,
+            "error": error,
+        });
+        Ok(self
+            .cloud_client(&transport)
+            .support(&token, message, &context)?)
+    }
+
     /// The catalog as last read, however old (no network).
     pub(crate) fn cached_catalog(&self) -> Option<Catalog> {
         lock(&self.cloud.catalog)

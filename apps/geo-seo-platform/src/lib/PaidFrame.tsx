@@ -1,7 +1,7 @@
 import type { ReactNode } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { RefreshCw } from "lucide-react";
-import { Button, Empty, ErrorState, Loading, Segmented } from "@octopusseo/ui";
+import { LifeBuoy, RefreshCw } from "lucide-react";
+import { Button, Empty, Loading, Segmented } from "@octopusseo/ui";
 import { paid, type PaidModule } from "../api/client";
 import type { Estimate, Fetched } from "../api/types";
 import { useI18n } from "../i18n";
@@ -38,6 +38,29 @@ export function refreshSpending(queryClient: ReturnType<typeof useQueryClient>) 
  * One paid report: what is kept, what fetching costs, the fetch button and the rows choice; the
  * report's own view renders the data. `ask` is the question as the module's commands take it.
  */
+/** A failure in words, with a retry and, when support can act on it, a report to support. */
+export function ProblemBanner({ error, retry }: { error: unknown; retry?: () => void }) {
+  const { t } = useI18n();
+  const { report } = useShell();
+  const explained = explain(error, t);
+  return (
+    <div className="oc-banner error" role="alert">
+      <span>{explained.message}</span>
+      {retry && (
+        <Button small onClick={retry}>
+          {t("common.retry")}
+        </Button>
+      )}
+      {explained.support && (
+        <Button small onClick={() => report(explained.support?.detail ?? "")}>
+          <LifeBuoy size={14} />
+          {t("common.reportProblem")}
+        </Button>
+      )}
+    </div>
+  );
+}
+
 export function PaidFrame<T>({
   module,
   ask,
@@ -59,7 +82,7 @@ export function PaidFrame<T>({
   children: (data: T, fetched: Fetched<T>) => ReactNode;
 }) {
   const { t, locale } = useI18n();
-  const { notify, go } = useShell();
+  const { notify, go, fail } = useShell();
   const queryClient = useQueryClient();
   const question = { ...ask, ...(limit ? { limit } : {}) };
   const key = [module, JSON.stringify(question)];
@@ -74,7 +97,7 @@ export function PaidFrame<T>({
       if (fetched.cached) notify(t("overview.freeFromCache"));
       else notify(t("overview.spentNow", { amount: formatUsd(fetched.spent_usd, locale) }));
     },
-    onError: (thrown) => notify(explain(thrown, t).message, true),
+    onError: (thrown) => fail(thrown),
   });
   const fetched = kept.data ?? null;
   const blocked = blockedText(estimate.data, t);
@@ -115,9 +138,9 @@ export function PaidFrame<T>({
           </Button>
         </div>
       )}
-      {estimate.error && <div className="oc-banner error">{explain(estimate.error, t).message}</div>}
+      {estimate.error && <ProblemBanner error={estimate.error} />}
       {kept.isLoading && <Loading label={t("common.loading")} />}
-      {kept.error && !estimate.error && <ErrorState title={t("common.loadFailed")} message={explain(kept.error, t).message} retry={() => void kept.refetch()} retryLabel={t("common.retry")} />}
+      {kept.error && !estimate.error && <ProblemBanner error={kept.error} retry={() => void kept.refetch()} />}
       {kept.isSuccess && !fetched && (
         <Empty title={t("overview.reportNothing")}>
           <p>{t("overview.reportNothingText")}</p>

@@ -15,7 +15,7 @@ import { ENGINES, parseKeywords, parseTags, placeLabel } from "./rank";
 /** Keywords typed or taken from a list; the first ones also choose how often they are checked. */
 export function AddKeywordsDialog({ project, setup, onClose }: { project: ProjectRow; setup: RankSetup; onClose: () => void }) {
   const { t } = useI18n();
-  const { notify } = useShell();
+  const { notify, fail } = useShell();
   const queryClient = useQueryClient();
   const first = setup.keywords === 0;
   const [text, setText] = useState("");
@@ -46,7 +46,7 @@ export function AddKeywordsDialog({ project, setup, onClose }: { project: Projec
       notify(tracked.added ? t("rank.added", { n: tracked.added }) : t("rank.alreadyTracked"));
       onClose();
     },
-    onError: (thrown) => notify(explain(thrown, t).message, true),
+    onError: (thrown) => fail(thrown),
   });
   return (
     <Modal
@@ -102,7 +102,7 @@ export function AddKeywordsDialog({ project, setup, onClose }: { project: Projec
 /** The places a project is checked in: add one (engine, device, country, city) or remove one. */
 export function PlacesDialog({ project, setup, onClose }: { project: ProjectRow; setup: RankSetup; onClose: () => void }) {
   const { t } = useI18n();
-  const { notify } = useShell();
+  const { notify, fail } = useShell();
   const queryClient = useQueryClient();
   const [engine, setEngine] = useState<SearchEngine>("google");
   const [device, setDevice] = useState<Device>("desktop");
@@ -120,12 +120,12 @@ export function PlacesDialog({ project, setup, onClose }: { project: ProjectRow;
       setLocation("");
       notify(t("rank.placeAdded"));
     },
-    onError: (thrown) => notify(explain(thrown, t).message, true),
+    onError: (thrown) => fail(thrown),
   });
   const remove = useMutation({
     mutationFn: (tracker: TrackerRow) => api.removeRankTracker(project.id, tracker.id),
     onSuccess: done,
-    onError: (thrown) => notify(explain(thrown, t).message, true),
+    onError: (thrown) => fail(thrown),
   });
   const deviceName = (name: string) => t(`rank.${name}`);
   return (

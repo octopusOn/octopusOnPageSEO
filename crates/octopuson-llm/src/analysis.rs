@@ -53,7 +53,9 @@ pub struct BrandHit {
     pub key: String,
     /// The project's own brand.
     pub own: bool,
-    /// Its place among the brands mentioned, from 1; `None` when only cited.
+    /// Its place in the answer, from 1: the number of the list item that names it when the
+    /// answer ranks things in a list, else its place among the brands mentioned; `None` when
+    /// only cited.
     pub position: Option<u32>,
     /// Its site is among the sources.
     pub cited: bool,
@@ -66,7 +68,7 @@ pub struct BrandHit {
 pub struct Analysis {
     /// The own brand is mentioned.
     pub mentioned: bool,
-    /// Its place among the brands mentioned, from 1.
+    /// Its place in the answer, from 1 (see [`BrandHit::position`]).
     pub position: Option<u32>,
     /// Its site is cited.
     pub cited: bool,
@@ -280,12 +282,97 @@ fn belongs(domain: &str, site: &str) -> bool {
             .is_some_and(|rest| rest.ends_with('.'))
 }
 
+/// One item of a list in an answer.
+#[derive(Debug, Clone, PartialEq, Eq)]
+struct ListItem {
+    /// Its rank: the number written before it, or its place among its list's bullets.
+    rank: u32,
+    /// The item's first line, folded.
+    title: String,
+    /// The item with the lines under it, folded.
+    body: String,
+}
+
+/// A list item's line: its rank as written (`3.`, `3)`), `0` for a bullet, and the text.
+fn item_line(line: &str) -> Option<(u32, &str)> {
+    let mut rest = line.trim_start();
+    for bullet in ["- ", "* ", "• ", "– ", "+ "] {
+        if let Some(text) = rest.strip_prefix(bullet) {
+            return Some((0, text));
+        }
+    }
+    // Headings and bold numbers: `### 2. Name`, `**2. Name**`.
+    rest = rest.trim_start_matches('#').trim_start();
+    rest = rest.strip_prefix("**").unwrap_or(rest);
+    let digits = rest.chars().take_while(char::is_ascii_digit).count();
+    if digits == 0 || digits > 3 {
+        return None;
+    }
+    let (number, after) = rest.split_at(digits);
+    let text = after
+        .strip_prefix(". ")
+        .or_else(|| after.strip_prefix(") "))
+        .or_else(|| after.strip_prefix(".** "))
+        .or_else(|| after.strip_prefix(".**"))?;
+    Some((number.parse().ok()?, text))
+}
+
+/// The items of an answer's lists, in order. Numbered items keep their numbers; bullets are
+/// counted within their run. Indented lines belong to the item above them.
+fn list_items(text: &str) -> Vec<ListItem> {
+    let mut items: Vec<ListItem> = Vec::new();
+    let mut bullets = 0_u32;
+    for line in text.lines() {
+        let indent = line.len() - line.trim_start().len();
+        if let Some((number, title)) = item_line(line).filter(|_| indent < 2) {
+            let rank = if number == 0 {
+                bullets += 1;
+                bullets
+            } else {
+                bullets = 0;
+                number
+            };
+            let title = fold(title);
+            items.push(ListItem {
+                rank,
+                body: title.clone(),
+                title,
+            });
+            continue;
+        }
+        let trimmed = line.trim();
+        if trimmed.is_empty() {
+            continue;
+        }
+        if indent == 0 && !trimmed.starts_with('#') {
+            // A paragraph ends a run of bullets; numbered lists carry their numbers.
+            bullets = 0;
+        }
+        if let Some(item) = items.last_mut() {
+            item.body.push(' ');
+            item.body.push_str(&fold(trimmed));
+        }
+    }
+    items
+}
+
+/// The rank of the first list item naming the brand: on its first line, else anywhere in it.
+fn list_rank(items: &[ListItem], names: &[String]) -> Option<u32> {
+    let names_in = |text: &str| names.iter().any(|name| find_words(text, name).is_some());
+    items
+        .iter()
+        .find(|item| names_in(&item.title))
+        .or_else(|| items.iter().find(|item| names_in(&item.body)))
+        .map(|item| item.rank)
+}
+
 /// Reads an answer for `brands` (the own brand among them).
 #[allow(clippy::cast_precision_loss)] // word counts
 pub fn analyze(text: &str, citations: &[Citation], brands: &[Brand]) -> Analysis {
     let folded = fold(text);
     let sentences = sentences(text);
-    let mut hits: Vec<(Option<usize>, BrandHit)> = Vec::new();
+    let items = list_items(text);
+    let mut hits: Vec<(Option<usize>, Option<u32>, BrandHit)> = Vec::new();
     for brand in brands {
         let names: Vec<String> = brand
             .names
@@ -322,8 +409,10 @@ pub fn analyze(text: &str, citations: &[Citation], brands: &[Brand]) -> Analysis
                     / 100.0
             }
         });
+        let ranked = first.and_then(|_| list_rank(&items, &names));
         hits.push((
             first,
+            ranked,
             BrandHit {
                 key: brand.key.clone(),
                 own: brand.own,
@@ -333,15 +422,15 @@ pub fn analyze(text: &str, citations: &[Citation], brands: &[Brand]) -> Analysis
             },
         ));
     }
-    hits.sort_by_key(|(first, _)| first.unwrap_or(usize::MAX));
+    hits.sort_by_key(|(first, _, _)| first.unwrap_or(usize::MAX));
     let mut place = 0_u32;
-    for (first, hit) in &mut hits {
+    for (first, ranked, hit) in &mut hits {
         if first.is_some() {
             place += 1;
-            hit.position = Some(place);
+            hit.position = ranked.or(Some(place));
         }
     }
-    let brands: Vec<BrandHit> = hits.into_iter().map(|(_, hit)| hit).collect();
+    let brands: Vec<BrandHit> = hits.into_iter().map(|(_, _, hit)| hit).collect();
     let own = brands.iter().find(|hit| hit.own);
     Analysis {
         mentioned: own.is_some_and(|hit| hit.position.is_some()),

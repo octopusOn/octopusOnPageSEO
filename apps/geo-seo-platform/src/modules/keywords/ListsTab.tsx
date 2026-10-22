@@ -6,7 +6,6 @@ import { api } from "../../api/client";
 import type { ListKeyword, ProjectRow, Topic } from "../../api/types";
 import { useI18n } from "../../i18n";
 import { useShell } from "../../lib/context";
-import { explain } from "../../lib/errors";
 import { formatNumber, formatUsd } from "../../lib/format";
 import { download, toCsv } from "../../lib/report";
 import { tableLabels } from "../../lib/tables";
@@ -43,7 +42,7 @@ function Topics({ topics, onAnalyze }: { topics: Topic[]; onAnalyze: (keyword: s
 
 export function ListsTab({ project, onAnalyze }: { project: ProjectRow; onAnalyze: (keyword: string) => void }) {
   const { t, locale } = useI18n();
-  const { notify } = useShell();
+  const { fail } = useShell();
   const queryClient = useQueryClient();
   const lists = useQuery({ queryKey: ["keyword-lists", project.id], queryFn: () => api.keywordLists(project.id) });
   const [listId, setListId] = useState<number | null>(null);
@@ -57,7 +56,7 @@ export function ListsTab({ project, onAnalyze }: { project: ProjectRow; onAnalyz
     void queryClient.invalidateQueries({ queryKey: ["keyword-lists", project.id] });
     void queryClient.invalidateQueries({ queryKey: ["list-keywords"] });
   };
-  const failed = (thrown: unknown) => notify(explain(thrown, t).message, true);
+  const failed = (thrown: unknown) => fail(thrown);
   const create = useMutation({
     mutationFn: (name: string) => api.createKeywordList(project.id, name),
     onSuccess: (list) => {

@@ -7,12 +7,11 @@ import { signOut } from "../../api/transport";
 import type { AppInfo, Settings as SettingsData } from "../../api/types";
 import { LANGUAGES, useI18n, type Lang } from "../../i18n";
 import { useShell } from "../../lib/context";
-import { explain } from "../../lib/errors";
 import { Assistants } from "./Assistants";
 
 function Proxy({ settings }: { settings: SettingsData }) {
   const { t } = useI18n();
-  const { notify } = useShell();
+  const { notify, fail } = useShell();
   const queryClient = useQueryClient();
   const [proxy, setProxy] = useState(settings.proxy ?? "");
   const save = useMutation({
@@ -21,7 +20,7 @@ function Proxy({ settings }: { settings: SettingsData }) {
       notify(t("settings.proxySaved"));
       void queryClient.invalidateQueries({ queryKey: ["settings"] });
     },
-    onError: (thrown) => notify(explain(thrown, t).message, true),
+    onError: (thrown) => fail(thrown),
   });
   return (
     <form

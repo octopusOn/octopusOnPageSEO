@@ -6,7 +6,6 @@ import { api } from "../../api/client";
 import type { KeywordData } from "../../api/types";
 import { useI18n } from "../../i18n";
 import { useShell } from "../../lib/context";
-import { explain } from "../../lib/errors";
 import { formatNumber, formatUsd } from "../../lib/format";
 import { download, fold, toCsv } from "../../lib/report";
 import { featureName, tableLabels } from "../../lib/tables";
@@ -56,7 +55,7 @@ export function Sparkline({ values }: { values: number[] }) {
 /** Picks a list (or makes one) and adds the given keywords to it. */
 export function AddToList({ projectId, keywords, onDone }: { projectId: number; keywords: KeywordData[]; onDone?: () => void }) {
   const { t } = useI18n();
-  const { notify } = useShell();
+  const { notify, fail } = useShell();
   const queryClient = useQueryClient();
   const lists = useQuery({ queryKey: ["keyword-lists", projectId], queryFn: () => api.keywordLists(projectId) });
   const [choice, setChoice] = useState("");
@@ -77,7 +76,7 @@ export function AddToList({ projectId, keywords, onDone }: { projectId: number; 
       notify(t("keywords.addedToList", { n: keywords.length }));
       onDone?.();
     },
-    onError: (thrown) => notify(explain(thrown, t).message, true),
+    onError: (thrown) => fail(thrown),
   });
   return (
     <span className="add-to-list">

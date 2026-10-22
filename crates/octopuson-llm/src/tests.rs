@@ -334,3 +334,42 @@ fn analysis_orders_brands_finds_citations_and_tone() {
     let inside = analyze("Örnekmağazacılık başka bir şey.", &[], &brands());
     assert!(!inside.mentioned);
 }
+
+#[test]
+fn a_ranked_list_gives_the_brands_their_numbers() {
+    // The own brand is named first in the intro but listed third.
+    let text = "Örnek Mağaza da sık önerilir. İşte en iyi mağazalar:\n\n\
+                1. **Diğer Dükkan** – geniş ürün yelpazesi.\n\
+                2. Bir başka site\n   Rakip Mağaza ile karşılaştırılır.\n\
+                3. **Örnek Mağaza**: hızlı kargo.\n";
+    let analysis = analyze(text, &[], &brands());
+    assert_eq!(
+        analysis.position,
+        Some(3),
+        "its item's number, not its first mention"
+    );
+    let place = |key: &str| {
+        analysis
+            .brands
+            .iter()
+            .find(|hit| hit.key == key)
+            .unwrap()
+            .position
+    };
+    assert_eq!(place("diger.com.tr"), Some(1));
+    assert_eq!(
+        place("rakip-magaza.com"),
+        Some(2),
+        "named only under item 2"
+    );
+
+    // Headings and bullets rank too; a paragraph starts a new run of bullets.
+    let headings = "### 1. Rakip Mağaza\nAçıklama.\n### 2. Örnek Mağaza\nAçıklama.";
+    assert_eq!(analyze(headings, &[], &brands()).position, Some(2));
+    let bullets =
+        "Seçenekler:\n- Diğer Dükkan\n- Rakip Mağaza\n- Örnek Mağaza\n\nDiğerleri:\n- Örnek Mağaza";
+    assert_eq!(analyze(bullets, &[], &brands()).position, Some(3));
+    // Without a list, the place among the brands named stays.
+    let prose = "Rakip Mağaza ve Örnek Mağaza öne çıkar.";
+    assert_eq!(analyze(prose, &[], &brands()).position, Some(2));
+}

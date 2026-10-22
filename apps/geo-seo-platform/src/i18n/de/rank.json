@@ -129,5 +129,6 @@
   "days30": "30 Tage",
   "days90": "90 Tage",
   "days365": "1 Jahr",
-  "alreadyTracked": "Diese Keywords werden bereits verfolgt"
+  "alreadyTracked": "Diese Keywords werden bereits verfolgt",
+  "shareCounts": "Top 10: {top10} · Top 3: {top3}"
 }

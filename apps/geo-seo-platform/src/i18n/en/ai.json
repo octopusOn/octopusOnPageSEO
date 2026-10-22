@@ -72,7 +72,7 @@
   "shareOfVoice": "Share of voice",
   "shareOfVoiceHint": "Your share of every brand mention",
   "averagePosition": "Average place",
-  "averagePositionHint": "Among the brands an answer names",
+  "averagePositionHint": "Its number in the answer's list, else among the brands named",
   "tone": "Tone",
   "toneHint": "Tone of the sentences naming your brand (lexicon based)",
   "tone_positive": "Positive",
@@ -131,5 +131,8 @@
   "colPlatform": "Platform",
   "colSources": "Sources",
   "colSeen": "Last answer",
-  "selectShown": "Select the {n} shown"
+  "selectShown": "Select the {n} shown",
+  "cell_rival": "A rival instead",
+  "cellRivalTitle": "You are not named; {rival} is in place {n}.",
+  "cellPlaceTitle": "{state} · place {n}"
 }

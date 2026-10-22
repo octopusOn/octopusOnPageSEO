@@ -568,6 +568,10 @@ export interface CompetitorShare {
   domain: string;
   visibility: number;
   keywords: number;
+  /** Keywords it ranks for in the first three results. */
+  top3: number;
+  /** Keywords it ranks for in the first ten results. */
+  top10: number;
   average_position: number | null;
   own: boolean;
 }
@@ -887,11 +891,14 @@ export interface AiRunPoint {
 
 export interface AiCell {
   mentioned: boolean;
+  /** Its place in the answer: the number of the list item naming it, else among the brands named. */
   position: number | null;
   cited: boolean;
   sentiment: number | null;
   error: string | null;
   checked_at: string;
+  /** The best-placed rival the answer names. */
+  rival: { key: string; position: number } | null;
 }
 
 export interface AiPromptRow {
