@@ -6,7 +6,7 @@
 use base64::Engine as _;
 use base64::engine::general_purpose::STANDARD;
 use octopuson_core::http::HttpRequest;
-use octopuson_serp::locale::country_name;
+use octopuson_serp::locale::location_code;
 use serde_json::{Value, json};
 
 use crate::{
@@ -43,8 +43,9 @@ impl DataForSeo {
     /// Most results one Labs task returns.
     pub const LABS_LIMIT: u32 = 1_000;
 
-    fn location(market: &Market) -> Result<&'static str, SourceError> {
-        country_name(&market.country).ok_or_else(|| {
+    /// The country's location code (2792): codes stay valid when a country is renamed.
+    fn location(market: &Market) -> Result<u32, SourceError> {
+        location_code(&market.country).ok_or_else(|| {
             SourceError::Config(format!(
                 "DataForSEO: no location known for country `{}`",
                 market.country
@@ -135,7 +136,7 @@ impl DataForSeo {
             "keywords_data/google_ads/search_volume/live",
             &json!({
                 "keywords": keywords,
-                "location_name": Self::location(market)?,
+                "location_code": Self::location(market)?,
                 "language_code": market.language,
             }),
         )?;
@@ -161,7 +162,7 @@ impl DataForSeo {
             "keywords_data/google_ads/keywords_for_keywords/live",
             &json!({
                 "keywords": seeds,
-                "location_name": Self::location(market)?,
+                "location_code": Self::location(market)?,
                 "language_code": market.language,
             }),
         )?;
@@ -180,7 +181,7 @@ impl DataForSeo {
         limit: u32,
     ) -> Result<Fetched, SourceError> {
         let limit = limit.clamp(1, Self::LABS_LIMIT);
-        task["location_name"] = json!(Self::location(market)?);
+        task["location_code"] = json!(Self::location(market)?);
         task["language_code"] = json!(market.language);
         task["limit"] = json!(limit);
         let (results, cost) = Self::post(
@@ -369,7 +370,7 @@ impl DataForSeo {
             "serp/google/autocomplete/live/advanced",
             &json!({
                 "keyword": phrase,
-                "location_name": Self::location(market)?,
+                "location_code": Self::location(market)?,
                 "language_code": market.language,
             }),
         )?;

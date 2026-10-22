@@ -19,8 +19,8 @@ use base64::engine::general_purpose::STANDARD;
 use serde_json::Value;
 
 use crate::locale::{
-    bing_market, country_name, uule, yandex_localization, yandex_region, yandex_search_base,
-    yandex_search_type,
+    bing_market, country_name, location_code, uule, yandex_localization, yandex_region,
+    yandex_search_base, yandex_search_type,
 };
 use crate::{SerpError, SerpQuery};
 
@@ -62,6 +62,14 @@ pub const PLACEHOLDERS: &[(&str, &str)] = &[
     (
         "google_location",
         "Google canonical location name, else the country name",
+    ),
+    (
+        "google_city",
+        "Google canonical name of the chosen city or region (optional)",
+    ),
+    (
+        "google_location_code",
+        "the country's Google location code (2792) when no city is chosen (optional)",
     ),
     (
         "yandex_domain",
@@ -127,6 +135,14 @@ impl TemplateContext<'_> {
             "google_location" => location
                 .and_then(|location| location.google_canonical.clone())
                 .or_else(|| country_name(&query.country).map(str::to_owned)),
+            "google_city" => location.and_then(|location| location.google_canonical.clone()),
+            "google_location_code" => {
+                if location.is_some_and(|location| location.google_canonical.is_some()) {
+                    None
+                } else {
+                    location_code(&query.country).map(|code| code.to_string())
+                }
+            }
             "yandex_domain" => Some(
                 yandex_search_base(&query.country)
                     .trim_start_matches("https://")

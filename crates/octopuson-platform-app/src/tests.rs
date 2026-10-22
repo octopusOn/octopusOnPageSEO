@@ -320,7 +320,7 @@ fn a_competitor_domain_is_asked_in_the_projects_market() {
     let body: Value =
         serde_json::from_slice(transport.requests()[0].body.as_deref().unwrap()).unwrap();
     assert_eq!(body[0]["target"], "rival.com");
-    assert_eq!(body[0]["location_name"], "Turkey");
+    assert_eq!(body[0]["location_code"], 2792);
 }
 
 #[test]

@@ -65,7 +65,7 @@ pub fn location(location: &str, market: &Market) -> Result<String, DfsError> {
     let inside = parts.len() >= 2
         && parts
             .last()
-            .is_some_and(|last| last.eq_ignore_ascii_case(country));
+            .is_some_and(|last| octopuson_serp::locale::is_country_name(&market.country, last));
     if !inside {
         return Err(DfsError::Config(format!(
             "location: a city or region of {country}, written like `Istanbul,Istanbul,Turkey`"
@@ -113,8 +113,13 @@ pub fn task(query: &RankQuery<'_>) -> Result<Value, DfsError> {
         ));
     }
     let mut task = query.market.fields()?;
+    // A city or region replaces the country's code: DataForSEO takes one location.
     if let Some(place) = query.location {
-        task["location_name"] = json!(location(place, query.market)?);
+        let name = location(place, query.market)?;
+        if let Some(fields) = task.as_object_mut() {
+            fields.remove("location_code");
+        }
+        task["location_name"] = json!(name);
     }
     task["keyword"] = json!(keyword);
     task["depth"] = json!(depth(query.depth));

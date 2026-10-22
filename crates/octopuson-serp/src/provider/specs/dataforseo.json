@@ -11,7 +11,8 @@
     "body": [
       {
         "keyword": "{keyword}",
-        "location_name": "{google_location}",
+        "location_name": "{google_city}",
+        "location_code": "{google_location_code:int}",
         "language_code": "{hl}",
         "device": "{device}",
         "depth": "{depth:int}"

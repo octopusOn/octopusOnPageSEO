@@ -163,7 +163,7 @@ fn dataforseo_reads_google_ads_numbers_and_hides_credentials() {
     assert_eq!(keyword.monthly[0].month, "2026-08");
     assert!((fetched.cost_usd - 0.075).abs() < 1e-9);
     let sent = body(&transport, 0);
-    assert_eq!(sent[0]["location_name"], "Turkey");
+    assert_eq!(sent[0]["location_code"], 2792);
     assert_eq!(sent[0]["language_code"], "tr");
 
     assert!(matches!(

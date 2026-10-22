@@ -8,7 +8,7 @@ use serde_json::{Value, json};
 
 use super::{ProviderError, SearchContext, YandexCloud};
 use crate::Engine;
-use crate::locale::{country_name, yandex_country_region};
+use crate::locale::{location_code, yandex_country_region};
 use crate::template::redact;
 
 /// Monthly searches of one keyword.
@@ -213,7 +213,7 @@ impl VolumeProvider for DataForSeoVolume {
             })?;
         let authorization = format!("Basic {}", STANDARD.encode(&credentials));
         let hide = |text: &str| redact(text, &[credentials.clone(), authorization.clone()]);
-        let location = country_name(query.country).unwrap_or("Turkey");
+        let location = location_code(query.country).unwrap_or(2792);
         let mut volumes = Vec::with_capacity(query.keywords.len());
         for batch in query.keywords.chunks(Self::BATCH) {
             if (context.cancelled)() {
@@ -221,7 +221,7 @@ impl VolumeProvider for DataForSeoVolume {
             }
             let body = json!([{
                 "keywords": batch,
-                "location_name": location,
+                "location_code": location,
                 "language_code": query.language,
             }]);
             let request = HttpRequest::post(Self::ENDPOINT, body.to_string().into_bytes())
@@ -366,6 +366,6 @@ mod tests {
         ));
         let body: Value =
             serde_json::from_slice(transport.requests()[0].body.as_deref().unwrap()).unwrap();
-        assert_eq!(body[0]["location_name"], "Turkey");
+        assert_eq!(body[0]["location_code"], 2792);
     }
 }

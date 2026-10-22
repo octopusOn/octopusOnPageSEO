@@ -63,7 +63,7 @@ fn ai_mode_reads_the_overview_and_nested_references() {
     let market = Market::new("tr", "tr");
     let task = ai_mode_task("en iyi  spor ayakkabı", &market).unwrap();
     assert_eq!(task["keyword"], "en iyi spor ayakkabı");
-    assert_eq!(task["location_name"], "Turkey");
+    assert_eq!(task["location_code"], 2792);
     let answer = ai_mode_from_result(&result(json!({
         "type": "ai_mode",
         "items": [{

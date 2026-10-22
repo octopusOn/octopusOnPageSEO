@@ -50,6 +50,8 @@ fn locations_stay_in_the_market_country() {
         location(" Istanbul, Istanbul ,Turkey ", &market).unwrap(),
         "Istanbul,Istanbul,Turkey"
     );
+    // DataForSEO's newer names say Türkiye.
+    assert!(location("Ankara,Ankara,Türkiye", &market).is_ok());
     assert!(location("Berlin,Germany", &market).is_err());
     assert!(location("Turkey", &market).is_err());
     assert!(location("Ankara,Turkey", &Market::new("zz", "tr")).is_err());
@@ -60,7 +62,8 @@ fn a_task_asks_one_live_page_with_the_late_ai_overview_on_google_only() {
     let market = Market::new("tr", "tr");
     let google = task(&query(&market, Engine::Google)).unwrap();
     assert_eq!(google["keyword"], "spor ayakkabı");
-    assert_eq!(google["location_name"], "Turkey");
+    assert_eq!(google["location_code"], 2792);
+    assert_eq!(google.get("location_name"), None);
     assert_eq!(google["language_code"], "tr");
     assert_eq!(google["depth"], 20);
     assert_eq!(google["device"], "desktop");
@@ -71,6 +74,7 @@ fn a_task_asks_one_live_page_with_the_late_ai_overview_on_google_only() {
     city.device = Device::Mobile;
     let yandex = task(&city).unwrap();
     assert_eq!(yandex["location_name"], "Istanbul,Istanbul,Turkey");
+    assert_eq!(yandex.get("location_code"), None, "one location only");
     assert_eq!(yandex["device"], "mobile");
     assert!(yandex.get("load_async_ai_overview").is_none());
 

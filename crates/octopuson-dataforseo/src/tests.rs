@@ -58,7 +58,7 @@ fn posts_one_task_with_basic_auth_and_reads_the_envelope() {
     let body: Value = serde_json::from_slice(request.body.as_deref().unwrap()).unwrap();
     assert_eq!(
         body,
-        json!([{ "target": "example.com", "location_name": "Turkey", "language_code": "tr" }])
+        json!([{ "target": "example.com", "location_code": 2792, "language_code": "tr" }])
     );
 
     assert!((answer.cost_usd - 0.0101).abs() < 1e-9);

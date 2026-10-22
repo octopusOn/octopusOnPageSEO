@@ -38,7 +38,7 @@ fn history_starts_a_fixed_number_of_months_back() {
     let task = history_task("https://www.example.com/", &market(), "2024-10-01").unwrap();
     assert_eq!(
         task,
-        json!({ "target": "example.com", "location_name": "Turkey", "language_code": "tr", "date_from": "2024-10-01" })
+        json!({ "target": "example.com", "location_code": 2792, "language_code": "tr", "date_from": "2024-10-01" })
     );
 }
 

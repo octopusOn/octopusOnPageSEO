@@ -103,13 +103,27 @@ impl Market {
         })
     }
 
+    /// The DataForSEO location code of the country (`2792`): codes stay valid when a country
+    /// is renamed, as Turkey was (Türkiye).
+    ///
+    /// # Errors
+    /// [`DfsError::Config`] for a country DataForSEO is not asked for.
+    pub fn location_code(&self) -> Result<u32, DfsError> {
+        octopuson_serp::locale::location_code(&self.country).ok_or_else(|| {
+            DfsError::Config(format!(
+                "no DataForSEO location for country `{}`",
+                self.country
+            ))
+        })
+    }
+
     /// The location and language fields of a task.
     ///
     /// # Errors
     /// [`DfsError::Config`] for an unknown country.
     pub fn fields(&self) -> Result<Value, DfsError> {
         Ok(json!({
-            "location_name": self.location_name()?,
+            "location_code": self.location_code()?,
             "language_code": self.language,
         }))
     }

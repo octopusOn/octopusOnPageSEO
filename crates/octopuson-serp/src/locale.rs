@@ -115,54 +115,74 @@ pub fn yandex_search_base(country: &str) -> &'static str {
 
 /// English name of a country, for providers that take names (`tr` → `Turkey`).
 pub fn country_name(country: &str) -> Option<&'static str> {
-    COUNTRY_NAMES
+    COUNTRIES
         .iter()
-        .find(|(code, _)| *code == country)
-        .map(|(_, name)| *name)
+        .find(|(code, _, _)| *code == country)
+        .map(|(_, name, _)| *name)
 }
 
-/// Countries agencies work with most, by ISO code.
-const COUNTRY_NAMES: &[(&str, &str)] = &[
-    ("tr", "Turkey"),
-    ("az", "Azerbaijan"),
-    ("cy", "Cyprus"),
-    ("us", "United States"),
-    ("gb", "United Kingdom"),
-    ("ie", "Ireland"),
-    ("ca", "Canada"),
-    ("au", "Australia"),
-    ("de", "Germany"),
-    ("at", "Austria"),
-    ("ch", "Switzerland"),
-    ("nl", "Netherlands"),
-    ("be", "Belgium"),
-    ("fr", "France"),
-    ("es", "Spain"),
-    ("pt", "Portugal"),
-    ("it", "Italy"),
-    ("gr", "Greece"),
-    ("bg", "Bulgaria"),
-    ("ro", "Romania"),
-    ("pl", "Poland"),
-    ("se", "Sweden"),
-    ("no", "Norway"),
-    ("dk", "Denmark"),
-    ("fi", "Finland"),
-    ("ru", "Russia"),
-    ("ua", "Ukraine"),
-    ("kz", "Kazakhstan"),
-    ("uz", "Uzbekistan"),
-    ("by", "Belarus"),
-    ("ge", "Georgia"),
-    ("ae", "United Arab Emirates"),
-    ("sa", "Saudi Arabia"),
-    ("qa", "Qatar"),
-    ("eg", "Egypt"),
-    ("il", "Israel"),
-    ("in", "India"),
-    ("br", "Brazil"),
-    ("mx", "Mexico"),
-    ("jp", "Japan"),
+/// The country's location code at Google Ads and DataForSEO (`tr` → 2792): 2000 plus its
+/// ISO 3166 numeric code. Providers that take codes get these, so a renamed country (Turkey
+/// is Türkiye in English since 2022) never breaks a request.
+pub fn location_code(country: &str) -> Option<u32> {
+    COUNTRIES
+        .iter()
+        .find(|(code, _, _)| *code == country)
+        .map(|(_, _, location)| *location)
+}
+
+/// Whether `name` is the country's English name, old or new (`Turkey`, `Türkiye`, `Turkiye`).
+pub fn is_country_name(country: &str, name: &str) -> bool {
+    let name = name.trim();
+    country_name(country).is_some_and(|known| known.eq_ignore_ascii_case(name))
+        || (country == "tr"
+            && ["Türkiye", "Turkiye"]
+                .iter()
+                .any(|alias| alias.eq_ignore_ascii_case(name)))
+}
+
+/// Countries agencies work with most: ISO code, English name, location code.
+const COUNTRIES: &[(&str, &str, u32)] = &[
+    ("tr", "Turkey", 2792),
+    ("az", "Azerbaijan", 2031),
+    ("cy", "Cyprus", 2196),
+    ("us", "United States", 2840),
+    ("gb", "United Kingdom", 2826),
+    ("ie", "Ireland", 2372),
+    ("ca", "Canada", 2124),
+    ("au", "Australia", 2036),
+    ("de", "Germany", 2276),
+    ("at", "Austria", 2040),
+    ("ch", "Switzerland", 2756),
+    ("nl", "Netherlands", 2528),
+    ("be", "Belgium", 2056),
+    ("fr", "France", 2250),
+    ("es", "Spain", 2724),
+    ("pt", "Portugal", 2620),
+    ("it", "Italy", 2380),
+    ("gr", "Greece", 2300),
+    ("bg", "Bulgaria", 2100),
+    ("ro", "Romania", 2642),
+    ("pl", "Poland", 2616),
+    ("se", "Sweden", 2752),
+    ("no", "Norway", 2578),
+    ("dk", "Denmark", 2208),
+    ("fi", "Finland", 2246),
+    ("ru", "Russia", 2643),
+    ("ua", "Ukraine", 2804),
+    ("kz", "Kazakhstan", 2398),
+    ("uz", "Uzbekistan", 2860),
+    ("by", "Belarus", 2112),
+    ("ge", "Georgia", 2268),
+    ("ae", "United Arab Emirates", 2784),
+    ("sa", "Saudi Arabia", 2682),
+    ("qa", "Qatar", 2634),
+    ("eg", "Egypt", 2818),
+    ("il", "Israel", 2376),
+    ("in", "India", 2356),
+    ("br", "Brazil", 2076),
+    ("mx", "Mexico", 2484),
+    ("jp", "Japan", 2392),
 ];
 
 /// Yandex Search API `searchType` for a country.
@@ -305,6 +325,12 @@ mod tests {
     #[test]
     fn names_countries() {
         assert_eq!(country_name("tr"), Some("Turkey"));
+        assert_eq!(location_code("tr"), Some(2792));
+        assert_eq!(location_code("us"), Some(2840));
+        assert_eq!(location_code("az"), Some(2031));
+        assert_eq!(location_code("xx"), None);
+        assert!(is_country_name("tr", "Türkiye") && is_country_name("tr", "turkey"));
+        assert!(!is_country_name("de", "Turkey"));
         assert_eq!(country_name("xx"), None);
     }
 
