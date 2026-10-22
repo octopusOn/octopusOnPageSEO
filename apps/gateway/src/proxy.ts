@@ -48,6 +48,21 @@ export interface ProxyDeps {
   now?: () => number;
 }
 
+/**
+ * What a provider says about a problem with our account (DataForSEO's `status_code` and
+ * `status_message`, or a `message` or `error`), for our log: the provider's words about us,
+ * never the user's request or data.
+ */
+export function accountProblem(body: unknown): string | undefined {
+  if (!body || typeof body !== "object") return undefined;
+  const fields = body as Record<string, unknown>;
+  const text = [fields.status_code, fields.status_message ?? fields.message ?? fields.error]
+    .filter((value) => typeof value === "string" || typeof value === "number")
+    .join(" ")
+    .trim();
+  return text ? text.slice(0, 200) : undefined;
+}
+
 /** A JSON error the apps can show and map by status (401, 402, 429 and 503 make them fall back). */
 export function problem(
   status: number,
@@ -209,7 +224,8 @@ export async function forward(
       return problem(502, "upstream_too_large", "The source's answer was too large; nothing was charged.");
     }
 
-    const outcome = settle(connector, settings.markup, upstream.status, parseJson(reply, upstream.headers.get("content-type")));
+    const answer = parseJson(reply, upstream.headers.get("content-type"));
+    const outcome = settle(connector, settings.markup, upstream.status, answer);
     const wallet = await settleHold(deps.db, holdId, outcome.chargeMicros);
     // Our account's problems are not the user's: make the apps fall back instead of signing out.
     const ours = upstream.status === 401 || upstream.status === 402 || upstream.status === 403;
@@ -230,6 +246,7 @@ export async function forward(
       route,
       status,
       upstream_status: upstream.status,
+      ...(ours ? { upstream_message: accountProblem(answer) } : {}),
       charged_micros: outcome.chargeMicros,
       ms: now() - started,
     });

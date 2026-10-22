@@ -323,12 +323,13 @@ describe("upstream outcomes", () => {
 
   it("turns problems with our provider account into 503", async () => {
     for (const status of [401, 402, 403]) {
-      handler = () => json({ status_message: "auth failed" }, status);
+      handler = () => json({ status_code: 40204, status_message: "Access denied. Activate your subscription." }, status);
       const response = await call(path, { method: "POST", body: SERP_BODY });
       expect(response.status).toBe(503);
       expect(((await response.json()) as { error: string }).error).toBe("upstream_unavailable");
     }
-    expect(logs.some((event) => event.event === "upstream_account")).toBe(true);
+    // The provider's reason reaches our log, not the user.
+    expect(logs.some((event) => event.event === "upstream_account" && event.upstream_message === "40204 Access denied. Activate your subscription.")).toBe(true);
   });
 
   it("passes rate limits through with Retry-After", async () => {
