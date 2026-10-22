@@ -395,7 +395,10 @@
     "cancelOrder": "Cancel",
     "cancelOrderConfirm": "Close this waiting order without adding credits?",
     "transferDone": "Marked paid; the credits were added.",
-    "payoneerReceived": "Payoneer payment received"
+    "payoneerReceived": "Payoneer payment received",
+    "secretEnv": "from the server settings",
+    "secretEnvHint": "Or in /etc/octopuson/cloud.env as",
+    "basicSecretHint": "login:password, for example you@example.com:API-password"
   },
   "common": {
     "back": "Back",

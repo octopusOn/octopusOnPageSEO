@@ -1,4 +1,4 @@
-import { connectorHistory, listConnectors } from "@octopusseo/cloud-core";
+import { connectorHistory, listConnectors, secretVariable } from "@octopusseo/cloud-core";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 
@@ -116,16 +116,33 @@ export default async function ConnectorPage({ params }: { params: Promise<{ id: 
         <section className="oc-card">
           <h2 className="oc-card-title">{t.admin.secrets}</h2>
           <p className="muted small">{t.admin.secretsLead}</p>
-          {[...record.secrets, ...record.missingSecrets]
+          {[...record.environment, ...record.secrets, ...record.missingSecrets]
             .filter((name, index, all) => all.indexOf(name) === index)
             .map((name) => {
+              const variable = secretVariable(id, name);
+              if (record.environment.includes(name)) {
+                return (
+                  <div key={name} className="secret-row">
+                    <div className="secret-name">
+                      <span className="mono">{name}</span>
+                      <span className="oc-badge good">{t.admin.secretEnv}</span>
+                    </div>
+                    <span className="muted small mono">{variable}</span>
+                  </div>
+                );
+              }
               const set = record.secrets.includes(name);
+              const basic = connector.auth.type === "basic" && connector.auth.secret === name;
               return (
                 <div key={name} className="secret-row">
                   <div className="secret-name">
                     <span className="mono">{name}</span>
                     <span className={`oc-badge ${set ? "good" : "warning"}`}>{set ? t.admin.secretSet : t.admin.secretMissing}</span>
                   </div>
+                  <span className="muted small">
+                    {basic ? `${t.admin.basicSecretHint} · ` : null}
+                    {t.admin.secretEnvHint} <span className="mono">{variable}</span>
+                  </span>
                   <ActionForm action={saveSecret} submit={t.admin.setSecret} inline>
                     <input type="hidden" name="id" value={id} />
                     <input type="hidden" name="name" value={name} />

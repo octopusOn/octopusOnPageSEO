@@ -395,7 +395,10 @@
     "cancelOrder": "Cancelar",
     "cancelOrderConfirm": "¿Cerrar este pedido pendiente sin añadir créditos?",
     "transferDone": "Marcado como pagado; se añadieron los créditos.",
-    "payoneerReceived": "Pago de Payoneer recibido"
+    "payoneerReceived": "Pago de Payoneer recibido",
+    "secretEnv": "de los ajustes del servidor",
+    "secretEnvHint": "O en /etc/octopuson/cloud.env como",
+    "basicSecretHint": "usuario:contraseña, por ejemplo usted@ejemplo.com:contraseña-API"
   },
   "common": {
     "back": "Volver",

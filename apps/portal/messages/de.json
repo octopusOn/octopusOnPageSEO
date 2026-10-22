@@ -395,7 +395,10 @@
     "cancelOrder": "Stornieren",
     "cancelOrderConfirm": "Diese offene Bestellung ohne Credits schließen?",
     "transferDone": "Als bezahlt markiert; die Credits wurden gutgeschrieben.",
-    "payoneerReceived": "Payoneer-Zahlung erhalten"
+    "payoneerReceived": "Payoneer-Zahlung erhalten",
+    "secretEnv": "aus den Servereinstellungen",
+    "secretEnvHint": "Oder in /etc/octopuson/cloud.env als",
+    "basicSecretHint": "Login:Passwort, zum Beispiel sie@beispiel.de:API-Passwort"
   },
   "common": {
     "back": "Zurück",

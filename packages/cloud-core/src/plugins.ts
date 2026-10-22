@@ -1,5 +1,6 @@
 // The connector store: every change is a new version, our upstream credentials are sealed,
-// and every action lands in the audit log.
+// and every action lands in the audit log. A credential can also come from the environment
+// (CONNECTOR_<ID>_<NAME>, e.g. CONNECTOR_DATAFORSEO_CREDENTIALS), which wins over a stored one.
 
 import { and, desc, eq, inArray, max } from "drizzle-orm";
 
@@ -17,6 +18,25 @@ export interface ConnectorRecord {
   secrets: string[];
   /** Secret names the configuration needs but that are not set. */
   missingSecrets: string[];
+  /** Secret names the environment provides (these win over stored ones). */
+  environment: string[];
+}
+
+type Environment = Record<string, string | undefined>;
+
+/** The environment variable that can hold a connector's secret: CONNECTOR_DATAFORSEO_CREDENTIALS. */
+export function secretVariable(connectorId: string, name: string): string {
+  return `CONNECTOR_${connectorId}_${name}`.toUpperCase().replace(/[^A-Z0-9]/g, "_");
+}
+
+/** The connector's secrets set in the environment, by secret name (lower case). */
+export function environmentSecrets(connectorId: string, env: Environment = process.env): Record<string, string> {
+  const prefix = secretVariable(connectorId, "");
+  return Object.fromEntries(
+    Object.entries(env)
+      .filter((entry): entry is [string, string] => entry[0].startsWith(prefix) && entry[0].length > prefix.length && Boolean(entry[1]?.trim()))
+      .map(([variable, value]) => [variable.slice(prefix.length).toLowerCase(), value.trim()]),
+  );
 }
 
 /** Validates and saves a configuration as the connector's new version. */
@@ -63,7 +83,7 @@ export async function getConnector(db: Db, id: string): Promise<Connector | null
 }
 
 /** Every connector with its secret state, for the admin panel. */
-export async function listConnectors(db: Db): Promise<ConnectorRecord[]> {
+export async function listConnectors(db: Db, env: Environment = process.env): Promise<ConnectorRecord[]> {
   const rows = await db
     .select({ config: connectorVersions.config, version: connectors.currentVersion, updatedAt: connectors.updatedAt })
     .from(connectors)
@@ -76,12 +96,14 @@ export async function listConnectors(db: Db): Promise<ConnectorRecord[]> {
   return rows.map((row) => {
     const connector = connectorSchema.parse(row.config);
     const secrets = stored.filter((secret) => secret.connectorId === connector.id).map((secret) => secret.name);
+    const environment = secretNames(connector).filter((name) => name.toLowerCase() in environmentSecrets(connector.id, env));
     return {
       connector,
       version: row.version,
       updatedAt: row.updatedAt,
       secrets,
-      missingSecrets: secretNames(connector).filter((name) => !secrets.includes(name)),
+      missingSecrets: secretNames(connector).filter((name) => !secrets.includes(name) && !environment.includes(name)),
+      environment,
     };
   });
 }
@@ -134,11 +156,11 @@ export async function removeConnectorSecret(db: Db, connectorId: string, name: s
   await audit(db, actorId, "connector.secret.remove", { type: "connector", id: connectorId }, { name });
 }
 
-/** The opened credentials of a connector, by name. */
-export async function connectorSecretValues(db: Db, key: Buffer, connectorId: string): Promise<Record<string, string>> {
+/** The opened credentials of a connector, by name; those in the environment win. */
+export async function connectorSecretValues(db: Db, key: Buffer, connectorId: string, env: Environment = process.env): Promise<Record<string, string>> {
   const rows = await db
     .select({ name: connectorSecrets.name, sealed: connectorSecrets.sealed })
     .from(connectorSecrets)
     .where(eq(connectorSecrets.connectorId, connectorId));
-  return Object.fromEntries(rows.map((row) => [row.name, open(key, row.sealed)]));
+  return { ...Object.fromEntries(rows.map((row) => [row.name, open(key, row.sealed)])), ...environmentSecrets(connectorId, env) };
 }

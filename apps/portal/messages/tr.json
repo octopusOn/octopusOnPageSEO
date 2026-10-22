@@ -395,7 +395,10 @@
     "cancelOrder": "İptal et",
     "cancelOrderConfirm": "Bekleyen bu sipariş kredi eklenmeden kapatılsın mı?",
     "transferDone": "Ödendi olarak işaretlendi; krediler eklendi.",
-    "payoneerReceived": "Payoneer ödemesi geldi"
+    "payoneerReceived": "Payoneer ödemesi geldi",
+    "secretEnv": "sunucu ayarlarından",
+    "secretEnvHint": "Ya da /etc/octopuson/cloud.env içinde şu adla:",
+    "basicSecretHint": "giriş:parola, örneğin siz@ornek.com:API-parolası"
   },
   "common": {
     "back": "Geri",

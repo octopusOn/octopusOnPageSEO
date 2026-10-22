@@ -12,6 +12,7 @@ import {
   listConnectors,
   removeConnectorSecret,
   saveConnector,
+  secretVariable,
   setConnectorSecret,
   setConnectorStatus,
   usableConnectors,
@@ -74,7 +75,17 @@ describe("connector store", () => {
     expect(await connectorSecretValues(db, KEY, "wordstat")).toEqual({ api_key: "AQVN-rotated", folder_id: "b1g-folder" });
     await expect(setConnectorSecret(db, KEY, "wordstat", "api_key", "   ", admin)).rejects.toThrow(/empty/);
     await removeConnectorSecret(db, "wordstat", "folder_id", admin);
-    expect(Object.keys(await connectorSecretValues(db, KEY, "wordstat"))).toEqual(["api_key"]);
+    expect(Object.keys(await connectorSecretValues(db, KEY, "wordstat", {}))).toEqual(["api_key"]);
+  });
+
+  it("takes credentials from the environment over stored ones", async () => {
+    expect(secretVariable("yandex-search", "folder_id")).toBe("CONNECTOR_YANDEX_SEARCH_FOLDER_ID");
+    const env = { CONNECTOR_WORDSTAT_API_KEY: " AQVN-from-env ", CONNECTOR_WORDSTAT_FOLDER_ID: "b1g-env", CONNECTOR_SERPER_API_KEY: "", OTHER: "x" };
+    expect(await connectorSecretValues(db, KEY, "wordstat", env)).toEqual({ api_key: "AQVN-from-env", folder_id: "b1g-env" });
+    const record = (await listConnectors(db, env)).find((item) => item.connector.id === "wordstat");
+    expect(record?.environment).toEqual(["api_key", "folder_id"]);
+    expect(record?.missingSecrets).toEqual([]);
+    expect((await listConnectors(db, {})).find((item) => item.connector.id === "wordstat")?.missingSecrets).toEqual(["folder_id"]);
   });
 
   it("audits changes without the secret values", async () => {
