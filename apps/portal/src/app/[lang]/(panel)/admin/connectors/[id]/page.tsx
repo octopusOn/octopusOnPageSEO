@@ -97,6 +97,13 @@ export default async function ConnectorPage({ params }: { params: Promise<{ id: 
               </label>
             </div>
             <label className="oc-check">
+              <input type="checkbox" name="cache_enabled" defaultChecked={connector.cache.enabled} />
+              <span>
+                {t.admin.cacheEnabled}{" "}
+                <span className="muted">{t.admin.cacheRules.replace("{n}", String(connector.cache.rules.length))}</span>
+              </span>
+            </label>
+            <label className="oc-check">
               <input type="checkbox" name="terms_confirmed" defaultChecked={connector.terms.confirmed} />
               <span>{t.admin.termsConfirmed}</span>
             </label>

@@ -55,6 +55,10 @@ export async function saveSettings(_: ActionResult, form: FormData): Promise<Act
       freeCrawlPages: Math.round(decimal(form.get("freeCrawlPages"))),
       reportPdfMicros: credits("reportPdfMicros"),
       freeReportPdfs: Math.round(decimal(form.get("freeReportPdfs"))),
+      cacheEnabled: form.get("cacheEnabled") !== "off",
+      cacheDiscountPct: Math.round(decimal(form.get("cacheDiscountPct"))),
+      cacheMaxEntryKb: Math.round(decimal(form.get("cacheMaxEntryKb"))),
+      cacheMaxTotalMb: Math.round(decimal(form.get("cacheMaxTotalMb"))),
     };
     const changed = Object.fromEntries(
       Object.entries(changes).filter(([name, value]) => JSON.stringify(value) !== JSON.stringify(current[name as keyof CloudSettings])),

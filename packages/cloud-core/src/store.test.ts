@@ -200,8 +200,8 @@ describe("usage", () => {
     expect(await chargedSince(db, owner, since)).toBe(5400);
     expect(await chargedSince(db, owner, new Date(Date.now() + 60_000))).toBe(0);
     expect(await userUsage(db, owner, since)).toEqual([
-      { connectorId: "dataforseo", app: "keyword-miner", requests: 1, failures: 0, chargedMicros: 2700 },
-      { connectorId: "serper", app: "keyword-miner", requests: 3, failures: 1, chargedMicros: 2700 },
+      { connectorId: "dataforseo", app: "keyword-miner", requests: 1, failures: 0, chargedMicros: 2700, cachedRequests: 0, discountMicros: 0 },
+      { connectorId: "serper", app: "keyword-miner", requests: 3, failures: 1, chargedMicros: 2700, cachedRequests: 0, discountMicros: 0 },
     ]);
     const report = await marginReport(db, since);
     expect(report.find((row) => row.connectorId === "serper")).toMatchObject({

@@ -101,6 +101,7 @@ export async function saveQuick(_: ActionResult, form: FormData): Promise<Action
           concurrency: number("concurrency") ?? current.limits.concurrency,
           timeout_s: number("timeout_s") ?? current.limits.timeout_s,
         },
+        cache: { ...current.cache, enabled: form.get("cache_enabled") === "on" },
         terms: {
           confirmed: form.get("terms_confirmed") === "on",
           date: String(form.get("terms_date") ?? "") || undefined,

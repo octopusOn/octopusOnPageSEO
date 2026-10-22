@@ -43,6 +43,12 @@ Teknik ayrıntılar [platform.md](platform.md) dosyasındadır.
 - Anahtarını girdiğiniz asistan doğrudan sizin hesabınızdan sorulur; ücreti o sağlayıcı hesabınızdan düşer.
 - Anahtar girmezseniz AI Görünürlüğü o asistanı DataForSEO üzerinden sorar (kendi DataForSEO anahtarınız ya da kredi).
 
+**Önbellek indirimi:** Kredili kullanımda aynı soruyu kısa süre önce başka biri sorduysa (aynı site, aynı kelime ve pazar), cevap OctopusOn önbelleğinden gelir. Sağlayıcıya yeniden ödenmez; siz normal fiyatın yalnızca %30'unu ödersiniz.
+- Fiyat tahmininde "Önbellekte: ≈ X kredi (Y yerine, %70 indirim)" yazar.
+- Saklama süreleri: backlink'ler 1 gün, Labs verileri 1 hafta, aylık hacimler 1 ay, sıralamalar yarım gün.
+- Ekranınızdaki veri hâlâ tazeyken **Yenile**'ye basarsanız cevap sağlayıcıdan taze olarak alınır.
+- Bu indirimi istemezseniz **Kaynaklar**'daki **Önbellekten indirimli cevapları kullan** seçeneğini kapatın.
+
 Kaynak kartında şunlar da var:
 - **Aylık bütçe:** bütçeyi aşacak istek yapılmaz.
 - **Bu ay:** o ayki harcamanız.

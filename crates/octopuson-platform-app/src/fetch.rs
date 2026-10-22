@@ -8,8 +8,10 @@
 //! always asked fresh, like rank checks, run through a [`PaidRun`]: paid and recorded the same
 //! way, their readings kept by the module instead of the answers.
 
-use octopuson_cloud::Via;
-use octopuson_core::http::HttpTransport;
+use std::time::Duration;
+
+use octopuson_cloud::{CACHE_HEADER, Via};
+use octopuson_core::http::{HttpRequest, HttpTransport};
 use octopuson_platform::{CacheClass, CacheEntry, SpendRecord, cache_key, unix_now};
 use serde::{Deserialize, Serialize};
 use serde_json::Value;
@@ -102,6 +104,19 @@ pub struct Blocked {
     pub message: String,
 }
 
+/// How long the gateway is given to say what a kept answer costs.
+const PEEK_TIMEOUT: Duration = Duration::from_secs(5);
+
+/// What the OctopusOn SEO gateway would charge for answers it keeps for every account and
+/// sells at a discount (ADR 0079).
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+pub struct SharedPrice {
+    /// Credits, after the discount.
+    pub credits: f64,
+    /// Credits without the discount.
+    pub full_credits: f64,
+}
+
 /// What a question would cost now.
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 pub struct Estimate {
@@ -115,6 +130,9 @@ pub struct Estimate {
     pub kept: Option<Kept>,
     /// Why it cannot be asked now (no key, no credits, over budget).
     pub blocked: Option<Blocked>,
+    /// On credits, when the gateway keeps an answer: its discounted price.
+    #[serde(default)]
+    pub shared: Option<SharedPrice>,
 }
 
 /// Data with where it came from.
@@ -132,6 +150,9 @@ pub struct Fetched<T> {
     pub spent_usd: f64,
     /// How it was paid when fetched: `own` or `credit`.
     pub via: String,
+    /// What the gateway's discount on answers it keeps for every account saved now, US dollars.
+    #[serde(default)]
+    pub saved_usd: f64,
 }
 
 const fn via_name(via: Via) -> &'static str {
@@ -182,7 +203,56 @@ impl Workspace {
             fresh: entry.is_fresh(unix_now()),
             fetched_at: entry.fetched_at,
         });
+        if !estimate.kept.as_ref().is_some_and(|kept| kept.fresh) {
+            estimate.shared = self.shared_price(std::slice::from_ref(paid));
+        }
         Ok(estimate)
+    }
+
+    /// What the gateway would charge now for answers it keeps for every account, when it keeps
+    /// one for every part (DataForSEO on credits only); `None` otherwise, or when it cannot say.
+    fn shared_price(&self, parts: &[Paid<'_>]) -> Option<SharedPrice> {
+        let settings = self.settings().ok()?;
+        if settings.fresh_only
+            || parts.iter().any(|part| {
+                part.provider != octopuson_dataforseo::ID
+                    || self.via(&settings, part.provider) != Some(Via::Credit)
+            })
+        {
+            return None;
+        }
+        self.credits_per_usd(octopuson_dataforseo::ID)?;
+        let catalog = self.cached_catalog()?;
+        #[allow(clippy::cast_precision_loss)]
+        let unit_usd = catalog.credit_unit_micros.max(1) as f64 / 1_000_000.0;
+        let transport = self.transport(&settings).ok()?;
+        let (mut credits, mut full) = (0.0, 0.0);
+        for part in parts {
+            let mut request = HttpRequest::post(
+                format!(
+                    "{}/v3/{}",
+                    octopuson_dataforseo::ORIGIN,
+                    part.endpoint.trim_start_matches('/')
+                ),
+                serde_json::json!([part.task]).to_string().into_bytes(),
+            )
+            .header("content-type", "application/json")
+            .header(CACHE_HEADER, "peek");
+            request.timeout = Some(PEEK_TIMEOUT);
+            let response = transport.send(&request).ok()?;
+            if response.status != 200 || response.header(CACHE_HEADER) != Some("hit") {
+                return None;
+            }
+            let value: Value = serde_json::from_slice(&response.body).ok()?;
+            credits += value.get("charge_usd")?.as_f64()? / unit_usd;
+            full += value.get("full_charge_usd")?.as_f64()? / unit_usd;
+        }
+        // Asking the price is free.
+        let _ = transport.take_charge_usd();
+        Some(SharedPrice {
+            credits,
+            full_credits: full,
+        })
     }
 
     /// What spending `usd` of list price on a source would cost now, and whether it can be
@@ -214,6 +284,7 @@ impl Workspace {
             via,
             kept: None,
             blocked,
+            shared: None,
         })
     }
 
@@ -231,11 +302,15 @@ impl Workspace {
         parse: impl FnOnce(&[Value]) -> T,
     ) -> Result<Fetched<T>, AppError> {
         let key = paid.key();
+        let kept = self.store()?.cached(&key)?;
+        let kept_fresh = kept
+            .as_ref()
+            .is_some_and(|entry| entry.is_fresh(unix_now()));
         if !force
-            && let Some(entry) = self.store()?.cached(&key)?
-            && entry.is_fresh(unix_now())
+            && let Some(entry) = &kept
+            && kept_fresh
         {
-            return Ok(from_entry(&entry, parse));
+            return Ok(from_entry(entry, parse));
         }
         let settings = self.settings()?;
         self.warm_catalog(&settings)?;
@@ -245,7 +320,9 @@ impl Workspace {
         if let Some(reason) = self.over_budget(paid.provider, paid.estimate_usd)? {
             return Err(AppError::Budget(reason));
         }
-        let transport = self.transport(&settings)?;
+        // Asked again while the answer here is still fresh: the person wants it anew, so the
+        // gateway's kept answers are passed by too.
+        let transport = self.transport_with(&settings, settings.fresh_only || kept_fresh)?;
         let credential = |name: &str| self.credential(via, paid.provider, name);
         let route = Route {
             transport: transport.as_ref(),
@@ -254,6 +331,7 @@ impl Workspace {
         };
         // The database is not held while the provider answers.
         let reply = ask(&route)?;
+        let saved_usd = transport.take_saved_usd().unwrap_or(0.0);
         let spent = reply.charged_usd.unwrap_or(reply.cost_usd);
         let fetched_at = now();
         let entry = CacheEntry {
@@ -269,6 +347,7 @@ impl Workspace {
         let mut fetched = from_entry(&entry, parse);
         fetched.cached = false;
         fetched.spent_usd = spent;
+        fetched.saved_usd = saved_usd;
         Ok(fetched)
     }
 }
@@ -282,7 +361,11 @@ impl Workspace {
         let first = parts
             .first()
             .ok_or_else(|| AppError::Invalid("nothing to ask".to_owned()))?;
-        let mut estimate = self.estimate(first)?;
+        let mut estimate = self.estimate_spend(first.provider, first.estimate_usd)?;
+        estimate.kept = self.store()?.cached(&first.key())?.map(|entry| Kept {
+            fresh: entry.is_fresh(unix_now()),
+            fetched_at: entry.fetched_at,
+        });
         let usd: f64 = parts.iter().map(|part| part.estimate_usd).sum();
         estimate.usd = usd;
         estimate.credits = match estimate.via {
@@ -301,6 +384,9 @@ impl Workspace {
             };
         }
         drop(store);
+        if !kept.as_ref().is_some_and(|kept| kept.fresh) {
+            estimate.shared = self.shared_price(parts);
+        }
         estimate.kept = kept;
         if estimate.via.is_some() {
             estimate.blocked = self
@@ -397,7 +483,7 @@ impl Workspace {
         Ok(PaidRun {
             workspace: self,
             via,
-            transport: self.transport(&settings)?,
+            transport: self.transport_with(&settings, settings.fresh_only)?,
         })
     }
 }
@@ -464,6 +550,7 @@ fn combine(answers: Vec<Fetched<Vec<Value>>>) -> Fetched<Vec<Vec<Value>>> {
     let fresh = answers.iter().all(|answer| answer.fresh);
     let cached = answers.iter().all(|answer| answer.cached);
     let spent_usd = answers.iter().map(|answer| answer.spent_usd).sum();
+    let saved_usd = answers.iter().map(|answer| answer.saved_usd).sum();
     let via = answers
         .iter()
         .find(|answer| !answer.cached)
@@ -477,6 +564,7 @@ fn combine(answers: Vec<Fetched<Vec<Value>>>) -> Fetched<Vec<Vec<Value>>> {
         cached,
         spent_usd,
         via,
+        saved_usd,
     }
 }
 
@@ -494,5 +582,6 @@ fn from_entry<T>(entry: &CacheEntry, parse: impl FnOnce(&[Value]) -> T) -> Fetch
         cached: true,
         spent_usd: 0.0,
         via: entry.via.clone(),
+        saved_usd: 0.0,
     }
 }

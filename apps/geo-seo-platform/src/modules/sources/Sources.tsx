@@ -331,6 +331,34 @@ function OwnKeysCard({ connected, onShow }: { connected: boolean; onShow: () => 
   );
 }
 
+/** Whether answers the gateway keeps for every account may come at a discount (ADR 0079). */
+function SharedCacheOption() {
+  const { t } = useI18n();
+  const { notify, fail } = useShell();
+  const queryClient = useQueryClient();
+  const settings = useQuery({ queryKey: ["settings"], queryFn: api.settings });
+  const save = useMutation({
+    mutationFn: (freshOnly: boolean) => api.saveSettings({ ...settings.data!, fresh_only: freshOnly }),
+    onSuccess: () => {
+      notify(t("sources.sharedCacheSaved"));
+      void queryClient.invalidateQueries({ queryKey: ["settings"] });
+    },
+    onError: (thrown) => fail(thrown),
+  });
+  if (!settings.data) return null;
+  return (
+    <section className="oc-card shared-cache">
+      <label className="oc-check">
+        <input type="checkbox" checked={!settings.data.fresh_only} disabled={save.isPending} onChange={(event) => save.mutate(!event.target.checked)} />
+        <span>
+          <strong>{t("sources.sharedCache")}</strong>
+          <span className="faint small">{t("sources.sharedCacheHint")}</span>
+        </span>
+      </label>
+    </section>
+  );
+}
+
 export function Sources({ jobs }: { jobs: Job[] }) {
   const { t } = useI18n();
   const providers = useQuery({ queryKey: ["providers"], queryFn: api.providers });
@@ -350,6 +378,7 @@ export function Sources({ jobs }: { jobs: Job[] }) {
         <AccountCard jobs={jobs} />
         <OwnKeysCard connected={connected} onShow={openKeys} />
       </div>
+      {connected && <SharedCacheOption />}
       <section className="section" id="own-keys">
         <button type="button" className="section-head section-toggle" aria-expanded={showKeys} onClick={() => setKeysOpen(!showKeys)}>
           <h2>{t("sources.providersTitle")}</h2>

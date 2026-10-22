@@ -62,5 +62,8 @@
   "ownShowConnected": "Usar mi propia clave de todos modos",
   "providersHint": "Introduzca su clave para cada fuente o conecte su cuenta arriba.",
   "providersConnected": "Su cuenta está conectada: las fuentes funcionan con créditos. No necesita cambiar nada aquí.",
-  "useOwnKey": "Usar mi propia clave para esta fuente"
+  "useOwnKey": "Usar mi propia clave para esta fuente",
+  "sharedCache": "Usar respuestas con descuento de la caché",
+  "sharedCacheHint": "Si alguien preguntó lo mismo poco antes, la respuesta llega de la caché de OctopusOn con descuento (backlinks un día, datos de Labs una semana, posiciones medio día). Desactivado, los créditos compran siempre datos frescos al proveedor.",
+  "sharedCacheSaved": "Preferencia de caché guardada"
 }

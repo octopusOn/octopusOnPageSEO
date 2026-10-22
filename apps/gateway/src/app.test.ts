@@ -23,7 +23,14 @@ import { afterAll, beforeAll, beforeEach, describe, expect, it } from "vitest";
 
 import { createApp } from "./app.ts";
 import { Concurrency, RateLimiter } from "./limits.ts";
-import { accountProblem, AVAILABLE_HEADER, CHARGE_HEADER } from "./proxy.ts";
+import {
+  accountProblem,
+  AVAILABLE_HEADER,
+  CACHE_AGE_HEADER,
+  CACHE_HEADER,
+  CHARGE_HEADER,
+  FULL_CHARGE_HEADER,
+} from "./proxy.ts";
 import { Registry } from "./registry.ts";
 
 const KEY = Buffer.alloc(32, 9);
@@ -80,6 +87,8 @@ beforeAll(async () => {
   await activate("serper", { limits: { rpm: 3, concurrency: 4, timeout_s: 60, max_body_kb: 16 } });
   await activate("yandex-search");
   await activate("wordstat", { status: "test" });
+  // The passthrough tests ask the same question again and again; the cache has its own tests.
+  await updateSettings(db, { cacheEnabled: false }, admin);
 });
 afterAll(async () => close());
 
@@ -497,5 +506,128 @@ describe("metered server work", () => {
     const refused = await meter({ sku: "crawl.page", units: 1, idempotency_key: "b" }, value);
     expect(refused.status).toBe(402);
     expect(await refused.json()).toMatchObject({ error: "insufficient_credits", available_micros: 0 });
+  });
+});
+
+describe("shared cache", () => {
+  const BACKLINKS = "/v1/p/dataforseo/v3/backlinks/summary/live";
+  const ask = (body: unknown, bearer: string | null = token, headers: Record<string, string> = {}) =>
+    call(BACKLINKS, { method: "POST", body: JSON.stringify(body), headers: { "content-type": "application/json", ...headers } }, bearer);
+  const answer = { cost: 0.02, tasks: [{ status_code: 20000, result: [{ target: "ornek.com", backlinks: 1200 }] }] };
+  let other: string;
+  let otherId: string;
+
+  beforeAll(async () => {
+    await updateSettings(db, { cacheEnabled: true }, admin);
+    otherId = await addUser(db, "second@example.com");
+    await credit(db, otherId, "purchase", 1_000_000);
+    ({ value: other } = await createToken(db, otherId, "Laptop"));
+  });
+  afterAll(async () => updateSettings(db, { cacheEnabled: false }, admin));
+
+  it("answers the same question again from the cache, for anyone, at 30% of the price", async () => {
+    handler = () => json(answer);
+    const first = await ask([{ target: "ornek.com", internal_list_limit: 10, tag: "a" }]);
+    expect(first.status).toBe(200);
+    expect(first.headers.get(CHARGE_HEADER)).toBe("0.027000");
+    expect(first.headers.get(CACHE_HEADER)).toBe("miss");
+    expect(sent).toHaveLength(1);
+
+    const before = await wallet(db, otherId);
+    const second = await ask([{ internal_list_limit: 10, target: " Ornek.com", tag: "b" }], other);
+    expect(second.status).toBe(200);
+    expect(sent).toHaveLength(1);
+    expect(second.headers.get(CACHE_HEADER)).toBe("hit");
+    expect(second.headers.get(CHARGE_HEADER)).toBe("0.008100");
+    expect(second.headers.get(FULL_CHARGE_HEADER)).toBe("0.027000");
+    expect(Number(second.headers.get(CACHE_AGE_HEADER))).toBeGreaterThanOrEqual(0);
+    expect(await second.json()).toEqual(answer);
+    expect((await wallet(db, otherId)).balanceMicros).toBe(before.balanceMicros - 8100);
+    const [row] = await db
+      .select()
+      .from(schema.usageEvents)
+      .where(eq(schema.usageEvents.userId, otherId));
+    expect(row).toMatchObject({ cached: true, upstreamCostMicros: 0, chargedMicros: 8100, savedMicros: 20_000, fullChargeMicros: 27_000 });
+    expect(logs.some((event) => event.event === "cache_hit")).toBe(true);
+    expect(JSON.stringify(logs)).not.toContain("ornek");
+  });
+
+  it("tells the price first without asking or charging", async () => {
+    handler = () => json(answer);
+    const before = await wallet(db, otherId);
+    const peek = await ask([{ target: "ornek.com", internal_list_limit: 10 }], other, { [CACHE_HEADER]: "peek" });
+    expect(await peek.json()).toMatchObject({ cached: true, cacheable: true, charge_usd: 0.0081, full_charge_usd: 0.027 });
+    const unknown = await ask([{ target: "baska.com" }], other, { [CACHE_HEADER]: "peek" });
+    expect(await unknown.json()).toMatchObject({ cached: false, cacheable: true, charge_usd: null });
+    expect(sent).toHaveLength(0);
+    expect((await wallet(db, otherId)).balanceMicros).toBe(before.balanceMicros);
+  });
+
+  it("asks again when told to, and keeps the new answer", async () => {
+    handler = () => json({ ...answer, cost: 0.03 });
+    const fresh = await ask([{ target: "ornek.com", internal_list_limit: 10 }], other, { "cache-control": "no-cache" });
+    expect(fresh.headers.get(CHARGE_HEADER)).toBe("0.040500");
+    expect(sent).toHaveLength(1);
+    const again = await ask([{ target: "ornek.com", internal_list_limit: 10 }]);
+    expect(again.headers.get(FULL_CHARGE_HEADER)).toBe("0.040500");
+    expect(again.headers.get(CHARGE_HEADER)).toBe("0.012150");
+    expect(sent).toHaveLength(1);
+  });
+
+  it("keeps no errors, and nothing when switched off", async () => {
+    handler = () => json({ cost: 0, tasks: [{ status_code: 40501, status_message: "Invalid Field" }] });
+    await ask([{ target: "hata.com" }]);
+    await ask([{ target: "hata.com" }]);
+    expect(sent).toHaveLength(2);
+
+    handler = () => json(answer);
+    await updateSettings(db, { cacheEnabled: false }, admin);
+    await ask([{ target: "kapali.com" }]);
+    const off = await ask([{ target: "kapali.com" }]);
+    expect(off.headers.get(CACHE_HEADER)).toBeNull();
+    expect(sent).toHaveLength(4);
+    await updateSettings(db, { cacheEnabled: true }, admin);
+
+    const seed = SEED_CONNECTORS.find((connector) => connector.id === "dataforseo")!;
+    await activate("dataforseo", { cache: { ...seed.cache!, enabled: false } });
+    await ask([{ target: "baglayici.com" }]);
+    await ask([{ target: "baglayici.com" }]);
+    expect(sent).toHaveLength(6);
+    await activate("dataforseo");
+  });
+
+  it("waits for the same question already on its way", async () => {
+    let calls = 0;
+    handler = async () => {
+      calls += 1;
+      await new Promise((resolve) => setTimeout(resolve, 50));
+      return json(answer);
+    };
+    const [one, two] = await Promise.all([ask([{ target: "ayni-anda.com" }]), ask([{ target: "ayni-anda.com" }], other)]);
+    expect(calls).toBe(1);
+    expect([one.headers.get(CACHE_HEADER), two.headers.get(CACHE_HEADER)].sort()).toEqual(["hit", "miss"]);
+  });
+
+  it("refuses a kept answer without the credits for it", async () => {
+    handler = () => json(answer);
+    await ask([{ target: "bakiye.com" }]);
+    const poor = await addUser(db, "no-credits-for-cache@example.com");
+    const { value } = await createToken(db, poor, "Phone");
+    const refused = await ask([{ target: "bakiye.com" }], value);
+    expect(refused.status, await refused.clone().text()).toBe(402);
+    expect(sent).toHaveLength(1);
+  });
+
+  it("keys Yandex questions without our folder id", async () => {
+    handler = () => json({ rawData: "PHhtbD4=" });
+    const search = (text: string) =>
+      call("/v1/p/yandex-search/v2/web/search", { method: "POST", body: JSON.stringify({ query: { queryText: text } }), headers: { "content-type": "application/json" } });
+    await search("Kahve");
+    const second = await search("kahve ");
+    expect(second.headers.get(CACHE_HEADER)).toBe("hit");
+    expect(sent).toHaveLength(1);
+    expect(await sent[0]!.text()).toContain("b1gfolder123");
+    const [row] = await db.select().from(schema.answerCache).where(eq(schema.answerCache.connectorId, "yandex-search"));
+    expect(row?.body.toString("latin1")).not.toContain("b1gfolder123");
   });
 });

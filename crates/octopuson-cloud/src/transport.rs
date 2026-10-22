@@ -4,10 +4,19 @@ use std::sync::{Mutex, PoisonError};
 
 use octopuson_core::http::{HttpRequest, HttpResponse, HttpTransport, TransportError};
 
-use crate::{CHARGE_HEADER, Connector};
+use crate::{CACHE_HEADER, CHARGE_HEADER, Connector, FULL_CHARGE_HEADER};
 
-/// Request headers passed to the gateway; the source's own key headers are dropped.
-const KEPT_HEADERS: &[&str] = &["content-type", "accept", "accept-language", "user-agent"];
+/// Request headers passed to the gateway; the source's own key headers are dropped. Programs
+/// ask the gateway's shared cache with `cache-control: no-cache` (a fresh answer) and
+/// `x-octopus-cache: peek` (the price of a kept one).
+const KEPT_HEADERS: &[&str] = &[
+    "content-type",
+    "accept",
+    "accept-language",
+    "user-agent",
+    "cache-control",
+    CACHE_HEADER,
+];
 
 /// Whether `path` matches a gateway route pattern: `*` is one segment (or part of one), `**`
 /// any number of segments.
@@ -60,6 +69,7 @@ pub struct CreditTransport<T> {
     app: String,
     connectors: Vec<Connector>,
     charged: Mutex<Option<f64>>,
+    saved: Mutex<Option<f64>>,
 }
 
 impl<T> std::fmt::Debug for CreditTransport<T> {
@@ -95,6 +105,7 @@ impl<T: HttpTransport> CreditTransport<T> {
             app: app.into(),
             connectors,
             charged: Mutex::new(None),
+            saved: Mutex::new(None),
         }
     }
 
@@ -158,19 +169,35 @@ impl<T: HttpTransport> HttpTransport for CreditTransport<T> {
             .headers
             .push(("x-octopus-app".to_owned(), self.app.clone()));
         let response = self.inner.send(&forwarded)?;
-        if let Some(charge) = response
-            .header(CHARGE_HEADER)
-            .and_then(|value| value.trim().parse::<f64>().ok())
-            .filter(|charge| charge.is_finite() && *charge >= 0.0)
-        {
+        let usd = |name: &str| {
+            response
+                .header(name)
+                .and_then(|value| value.trim().parse::<f64>().ok())
+                .filter(|usd| usd.is_finite() && *usd >= 0.0)
+        };
+        if let Some(charge) = usd(CHARGE_HEADER) {
             let mut charged = self.charged.lock().unwrap_or_else(PoisonError::into_inner);
             *charged = Some(charged.unwrap_or(0.0) + charge);
+            // An answer the gateway kept for everyone, sold at a discount.
+            if response.header(CACHE_HEADER) == Some("hit")
+                && let Some(full) = usd(FULL_CHARGE_HEADER)
+            {
+                let mut saved = self.saved.lock().unwrap_or_else(PoisonError::into_inner);
+                *saved = Some(saved.unwrap_or(0.0) + (full - charge).max(0.0));
+            }
         }
         Ok(response)
     }
 
     fn take_charge_usd(&self) -> Option<f64> {
         self.charged
+            .lock()
+            .unwrap_or_else(PoisonError::into_inner)
+            .take()
+    }
+
+    fn take_saved_usd(&self) -> Option<f64> {
+        self.saved
             .lock()
             .unwrap_or_else(PoisonError::into_inner)
             .take()

@@ -23,6 +23,10 @@ pub struct Settings {
     /// HTTP(S) proxy for provider requests (desktop only).
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub proxy: Option<String>,
+    /// Always ask providers anew on credits: no discounted answers the OctopusOn SEO gateway
+    /// keeps for every account (ADR 0079).
+    #[serde(default)]
+    pub fresh_only: bool,
 }
 
 impl Settings {

@@ -1,7 +1,7 @@
 // The gateway process: `node src/main.ts` with DATABASE_URL and OCTOPUS_MASTER_KEY set.
 
 import { serve } from "@hono/node-server";
-import { connect, getSettings, releaseStaleHolds } from "@octopusseo/cloud-core";
+import { connect, getSettings, purgeAnswers, releaseStaleHolds } from "@octopusseo/cloud-core";
 
 import { createApp } from "./app.ts";
 import { readConfig } from "./config.ts";
@@ -39,9 +39,21 @@ const sweeper = setInterval(async () => {
   }
 }, 60_000);
 
+// Kept answers that expired, and the oldest beyond the space allowed, go once an hour.
+const purger = setInterval(async () => {
+  try {
+    const { cacheMaxTotalMb } = await getSettings(db);
+    const { expired, trimmed } = await purgeAnswers(db, new Date(), cacheMaxTotalMb * 1024 * 1024);
+    if (expired + trimmed > 0) log({ event: "cache_purged", expired, trimmed });
+  } catch (error) {
+    log({ level: "error", event: "cache_purge_failed", message: error instanceof Error ? error.message : String(error) });
+  }
+}, 3_600_000);
+
 async function shutdown(signal: string): Promise<void> {
   log({ event: "stopping", signal });
   clearInterval(sweeper);
+  clearInterval(purger);
   server.close();
   const deadline = Date.now() + 30_000;
   while (concurrency.total > 0 && Date.now() < deadline) await new Promise((resolve) => setTimeout(resolve, 200));

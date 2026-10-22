@@ -127,7 +127,8 @@
     "balance": "Balance",
     "note": "Note",
     "never": "never",
-    "none": "none"
+    "none": "none",
+    "cached": "From cache"
   },
   "buy": {
     "title": "Buy credits",
@@ -240,7 +241,9 @@
       "adjustment": "Adjustment",
       "bonus": "Gift",
       "chargeback": "Chargeback"
-    }
+    },
+    "fromCache": "Cache · {pct}% off",
+    "saved": "{credits} credits off"
   },
   "tokens": {
     "title": "Devices",
@@ -379,7 +382,11 @@
       "crawlPageMicros": "Platform server crawl (credits per 1,000 pages)",
       "freeCrawlPages": "Free server crawl pages per month",
       "reportPdfMicros": "Platform report PDF (credits)",
-      "freeReportPdfs": "Free report PDFs per month"
+      "freeReportPdfs": "Free report PDFs per month",
+      "cacheEnabled": "Shared cache (ADR 0079)",
+      "cacheDiscountPct": "Discount on answers from the cache (%)",
+      "cacheMaxEntryKb": "Largest answer kept (KB)",
+      "cacheMaxTotalMb": "Space for the cache (MB)"
     },
     "reportsLead": "Revenue, provider cost and margin per connector and day (last 30 days).",
     "day": "Day",
@@ -416,7 +423,17 @@
     "supportContext": "Program · page · error",
     "providerProblem": "Latest provider problem: {connector}, {time}: {reason}. Check its balance and API access.",
     "openConnector": "Open the connector",
-    "providerRefused": "Our account was refused (HTTP {status}): {reason}"
+    "providerRefused": "Our account was refused (HTTP {status}): {reason}",
+    "settingsOn": "On",
+    "settingsOff": "Off",
+    "cacheEnabled": "Keep answers in the cache",
+    "cacheRules": "({n} rules; edit their times in cache.rules in the JSON)",
+    "cacheTitle": "Shared cache (last 30 days)",
+    "cacheDiscount": "{pct}% discount",
+    "cacheHits": "From the cache",
+    "cacheSaved": "Provider cost avoided",
+    "cacheRevenue": "Revenue from the cache",
+    "cacheKept": "Answers kept"
   },
   "common": {
     "back": "Back",

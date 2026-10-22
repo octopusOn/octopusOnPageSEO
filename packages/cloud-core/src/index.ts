@@ -4,6 +4,7 @@ export * from "./accounts.ts";
 export * from "./admin.ts";
 export * from "./audit.ts";
 export * from "./billing.ts";
+export * from "./cache.ts";
 export * from "./connect.ts";
 export * from "./connector.ts";
 export * from "./crypto.ts";

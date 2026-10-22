@@ -1,7 +1,12 @@
 // The first connectors, all drafts: each is activated in the admin panel only after the
 // provider's written permission to resell is recorded and our credentials are entered.
+//
+// Rule for every connector (ADR 0079): each route has a cache rule saying how long its answers
+// are kept for every account, 0 hours for answers that must always be fresh. Times follow how
+// fast the data changes: result pages half a day, backlinks a day, Labs a week, monthly volumes
+// a month.
 
-import type { ConnectorInput } from "./connector.ts";
+import { type ConnectorInput, connectorSchema } from "./connector.ts";
 import type { Db } from "./db/client.ts";
 import { getConnector, saveConnector } from "./plugins.ts";
 
@@ -33,6 +38,25 @@ export const SEED_CONNECTORS: ConnectorInput[] = [
       error: { path: "$.tasks[0].status_code", ok: [20000] },
     },
     limits: { rpm: 120, concurrency: 6, timeout_s: 120, max_body_kb: 512 },
+    cache: {
+      enabled: true,
+      normalize: ["keyword", "keywords", "target", "targets"],
+      rules: [
+        // Backlink profiles barely move within a day; their history is daily.
+        { path: "/v3/backlinks/timeseries_*/live", hours: 72 },
+        { path: "/v3/backlinks/*/live", hours: 24 },
+        // Labs databases are updated about monthly.
+        { path: "/v3/dataforseo_labs/google/*/live", hours: 168 },
+        // Google Ads volumes are monthly figures.
+        { path: "/v3/keywords_data/google_ads/*/live", hours: 720 },
+        { path: "/v3/serp/google/autocomplete/live/advanced", hours: 168 },
+        { path: "/v3/serp/google/ai_mode/live/advanced", hours: 24 },
+        // Rankings are read once a day: the same day's page.
+        { path: "/v3/serp/*/organic/live/*", hours: 12 },
+        { path: "/v3/ai_optimization/llm_mentions/*/live", hours: 168 },
+        { path: "/v3/ai_optimization/*/llm_responses/live", hours: 24 },
+      ],
+    },
     terms: { confirmed: false, note: "Ask DataForSEO to confirm in writing that reselling through OctopusOn SEO credits is allowed." },
     status: "draft",
     test: {
@@ -58,6 +82,7 @@ export const SEED_CONNECTORS: ConnectorInput[] = [
       error: { path: "$.search_metadata.status", ok: ["Success"] },
     },
     limits: { rpm: 60, concurrency: 4, timeout_s: 90, max_body_kb: 16 },
+    cache: { enabled: true, normalize: ["q"], rules: [{ path: "/search.json", hours: 12 }] },
     terms: { confirmed: false, note: "SerpApi terms (section 2) require express written permission to resell." },
     status: "draft",
     test: { method: "GET", path: "/search.json", query: { engine: "google", q: "kahve", gl: "tr", hl: "tr" } },
@@ -75,6 +100,14 @@ export const SEED_CONNECTORS: ConnectorInput[] = [
     ],
     pricing: { cost: { from: "credits", path: "$.credits", usd_per_credit: 0.001 }, hold_usd: 0.02 },
     limits: { rpm: 120, concurrency: 6, timeout_s: 60, max_body_kb: 16 },
+    cache: {
+      enabled: true,
+      normalize: ["q"],
+      rules: [
+        { path: "/search", hours: 12 },
+        { path: "/autocomplete", hours: 168 },
+      ],
+    },
     terms: { confirmed: false, note: "Serper's data licence restricts use by end users; ask for written permission." },
     status: "draft",
     test: { method: "POST", path: "/search", body: { q: "kahve", gl: "tr", hl: "tr" } },
@@ -89,6 +122,7 @@ export const SEED_CONNECTORS: ConnectorInput[] = [
     routes: [{ method: "POST", path: "/v2/web/search" }],
     pricing: { cost: { from: "fixed", usd: 0.004 }, hold_usd: 0.05 },
     limits: { rpm: 60, concurrency: 4, timeout_s: 60, max_body_kb: 16 },
+    cache: { enabled: true, normalize: ["queryText"], rules: [{ path: "/v2/web/search", hours: 12 }] },
     terms: { confirmed: false, note: "Yandex ties results to use in the customer's product; ask Yandex about reselling." },
     status: "draft",
   },
@@ -107,10 +141,30 @@ export const SEED_CONNECTORS: ConnectorInput[] = [
     ],
     pricing: { cost: { from: "fixed", usd: 0.00016 }, hold_usd: 0.01 },
     limits: { rpm: 30, concurrency: 2, timeout_s: 60, max_body_kb: 16 },
+    // Wordstat counts are monthly.
+    cache: { enabled: true, normalize: ["phrase"], rules: [{ path: "/v2/wordstat/*", hours: 720 }] },
     terms: { confirmed: false, note: "Ask Yandex whether Wordstat data may be resold." },
     status: "draft",
   },
 ];
+
+/**
+ * Gives connectors already in the database the seeds' cache rules (`cache-rules` in the CLI):
+ * each one with a seed gets a new version whose `cache` is the seed's, keeping whether the
+ * cache was switched off. Returns the connectors changed.
+ */
+export async function applySeedCacheRules(db: Db, actorId = "system"): Promise<string[]> {
+  const changed: string[] = [];
+  for (const seed of SEED_CONNECTORS) {
+    const current = await getConnector(db, seed.id);
+    if (!current || !seed.cache) continue;
+    const cache = { ...seed.cache, enabled: current.cache.rules.length === 0 ? true : current.cache.enabled };
+    if (JSON.stringify(current.cache) === JSON.stringify(connectorSchema.parse({ ...current, cache }).cache)) continue;
+    await saveConnector(db, { ...current, cache }, actorId);
+    changed.push(seed.id);
+  }
+  return changed;
+}
 
 /** Adds the seed connectors that are not in the database yet; edited ones are left alone. */
 export async function seedConnectors(db: Db, actorId = "system"): Promise<string[]> {

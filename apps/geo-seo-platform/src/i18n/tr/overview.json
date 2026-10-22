@@ -113,5 +113,7 @@
   "feature_paid": "Reklamlar",
   "feature_discussionsandforums": "Tartışmalar ve forumlar",
   "feature_shortvideos": "Kısa videolar",
-  "feature_perspectives": "Bakış açıları"
+  "feature_perspectives": "Bakış açıları",
+  "costShared": "Önbellekte: ≈ {credits} kredi ({full} yerine, %{pct} indirim)",
+  "spentShared": "Önbellekten %{pct} indirimle geldi: {amount}"
 }

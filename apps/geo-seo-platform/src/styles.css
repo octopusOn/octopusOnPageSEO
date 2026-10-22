@@ -2316,3 +2316,14 @@ a {
   justify-content: space-between;
   align-items: center;
 }
+
+/* ---------------------------------------------------------------- Shared cache */
+
+.cost-label.shared {
+  color: var(--good);
+}
+
+.shared-cache .oc-check span {
+  display: grid;
+  gap: 4px;
+}

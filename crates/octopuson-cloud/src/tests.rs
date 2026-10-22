@@ -475,3 +475,54 @@ fn support_messages_go_to_the_gateway_with_their_context() {
         Err(CloudError::SignedOut)
     );
 }
+
+#[test]
+fn notes_what_answers_from_the_gateways_cache_saved() {
+    let inner = FakeTransport::new()
+        .reply_with_headers(
+            200,
+            vec![
+                ("x-octopus-charge-usd", "0.008100"),
+                ("x-octopus-full-charge-usd", "0.027000"),
+                ("x-octopus-cache", "hit"),
+            ],
+            r#"{"cost":0.02}"#,
+        )
+        .reply_with_headers(
+            200,
+            vec![
+                ("x-octopus-charge-usd", "0.027000"),
+                ("x-octopus-cache", "miss"),
+            ],
+            r#"{"cost":0.02}"#,
+        );
+    let transport = CreditTransport::new(
+        inner,
+        BASE,
+        "oct_t",
+        "geo-seo-platform/0.1.1",
+        vec![connector(
+            "dataforseo",
+            "https://api.dataforseo.com",
+            &[("POST", "/v3/backlinks/*/live")],
+        )],
+    );
+    let request = HttpRequest::post(
+        "https://api.dataforseo.com/v3/backlinks/summary/live",
+        b"[{}]".to_vec(),
+    )
+    .header("cache-control", "no-cache")
+    .header("x-octopus-cache", "peek")
+    .header("x-api-key", "dropped");
+    transport.send(&request).unwrap();
+    transport.send(&request).unwrap();
+    let sent = transport.inner().requests();
+    assert_eq!(header(&sent[0], "cache-control"), Some("no-cache"));
+    assert_eq!(header(&sent[0], "x-octopus-cache"), Some("peek"));
+    assert_eq!(header(&sent[0], "x-api-key"), None);
+    let charged = transport.take_charge_usd().unwrap();
+    assert!((charged - 0.0351).abs() < 1e-9, "{charged}");
+    let saved = transport.take_saved_usd().unwrap();
+    assert!((saved - 0.0189).abs() < 1e-9, "{saved}");
+    assert_eq!(transport.take_saved_usd(), None);
+}

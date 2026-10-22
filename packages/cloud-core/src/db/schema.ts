@@ -6,6 +6,7 @@ import {
   bigint,
   bigserial,
   boolean,
+  customType,
   index,
   integer,
   jsonb,
@@ -17,6 +18,12 @@ import {
 } from "drizzle-orm/pg-core";
 
 const money = (name: string) => bigint(name, { mode: "number" });
+/** Bytes, as `bytea`; node-postgres reads them as a Buffer, PGlite as a Uint8Array. */
+const bytes = customType<{ data: Buffer; driverData: Uint8Array }>({
+  dataType: () => "bytea",
+  fromDriver: (value) => Buffer.from(value),
+  toDriver: (value) => value,
+});
 const created = () => timestamp("created_at", { withTimezone: true }).notNull().defaultNow();
 const updated = () => timestamp("updated_at", { withTimezone: true }).notNull().defaultNow();
 
@@ -278,12 +285,46 @@ export const usageEvents = pgTable(
     chargedMicros: money("charged_micros").notNull().default(0),
     durationMs: integer("duration_ms").notNull().default(0),
     app: text("app"),
+    /** Answered from the shared cache (ADR 0079): nothing paid upstream, the user paid less. */
+    cached: boolean("cached").notNull().default(false),
+    /** What the provider would have charged us for an answer served from the cache. */
+    savedMicros: money("saved_micros").notNull().default(0),
+    /** What the user would have paid for an answer served from the cache, before the discount. */
+    fullChargeMicros: money("full_charge_micros").notNull().default(0),
     createdAt: created(),
   },
   (table) => [
     index("usage_user_time").on(table.userId, table.createdAt),
     index("usage_connector_time").on(table.connectorId, table.createdAt),
   ],
+);
+
+/**
+ * Providers' answers kept for every account (ADR 0079): the same question asked again within
+ * its rule's time is answered from here at a discount, without paying the provider. Found by a
+ * hash of the question; who asked is not recorded.
+ */
+export const answerCache = pgTable(
+  "answer_cache",
+  {
+    key: text("key").primaryKey(),
+    connectorId: text("connector_id").notNull(),
+    /** The route pattern that matched. */
+    route: text("route").notNull(),
+    status: integer("status").notNull(),
+    contentType: text("content_type"),
+    /** The answer as the provider sent it (our credentials masked), gzip-compressed. */
+    body: bytes("body").notNull(),
+    /** What the provider charged us for it. */
+    upstreamMicros: money("upstream_micros").notNull(),
+    /** Compressed size in bytes. */
+    size: integer("size").notNull(),
+    hits: integer("hits").notNull().default(0),
+    createdAt: created(),
+    expiresAt: timestamp("expires_at", { withTimezone: true }).notNull(),
+    lastHitAt: timestamp("last_hit_at", { withTimezone: true }),
+  },
+  (table) => [index("answer_cache_expiry").on(table.expiresAt), index("answer_cache_connector").on(table.connectorId)],
 );
 
 /**

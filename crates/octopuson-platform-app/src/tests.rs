@@ -373,11 +373,23 @@ fn budgets_stop_paid_questions() {
 #[test]
 fn credits_go_through_the_gateway_and_record_the_charge() {
     let dir = tempfile::tempdir().unwrap();
-    let transport = Arc::new(FakeTransport::new().reply(200, CATALOG).reply_with_headers(
-        200,
-        vec![("x-octopus-charge-usd", "0.0136")],
-        OVERVIEW,
-    ));
+    let kept = [
+        ("x-octopus-charge-usd", "0.0041"),
+        ("x-octopus-full-charge-usd", "0.0136"),
+        ("x-octopus-cache", "hit"),
+    ];
+    let transport = Arc::new(
+        FakeTransport::new()
+            .reply(200, CATALOG)
+            // The gateway keeps an answer to the same question for every account (ADR 0079).
+            .reply_with_headers(
+                200,
+                vec![("x-octopus-cache", "hit")],
+                r#"{"cached":true,"cacheable":true,"age_s":60,"charge_usd":0.0041,"full_charge_usd":0.0136}"#,
+            )
+            .reply_with_headers(200, kept.to_vec(), OVERVIEW)
+            .reply_with_headers(200, vec![("x-octopus-charge-usd", "0.0136")], OVERVIEW),
+    );
     let platform = platform(dir.path(), &transport);
     platform
         .workspace()
@@ -390,28 +402,56 @@ fn credits_go_through_the_gateway_and_record_the_charge() {
     let credits = estimate["credits"].as_f64().unwrap();
     let expected = octopuson_dataforseo::labs::domain_overview_estimate() * 1.35 / 0.001;
     assert!((credits - expected).abs() < 1e-9, "{credits}");
+    assert!((estimate["shared"]["credits"].as_f64().unwrap() - 4.1).abs() < 1e-9);
+    assert!((estimate["shared"]["full_credits"].as_f64().unwrap() - 13.6).abs() < 1e-9);
 
     let fetched = call(&platform, "fetch_overview", json!({ "project_id": id }));
     assert_eq!(fetched["via"], "credit");
-    assert!((fetched["spent_usd"].as_f64().unwrap() - 0.0136).abs() < 1e-12);
+    assert!((fetched["spent_usd"].as_f64().unwrap() - 0.0041).abs() < 1e-12);
+    assert!((fetched["saved_usd"].as_f64().unwrap() - 0.0095).abs() < 1e-12);
+    // Asked again while fresh here: the person wants it anew, past the gateway's kept answer.
+    call(
+        &platform,
+        "fetch_overview",
+        json!({ "project_id": id, "force": true }),
+    );
 
     let requests = transport.requests();
+    let header = |request: &octopuson_core::http::HttpRequest, name: &str| {
+        request
+            .headers
+            .iter()
+            .find(|(key, _)| key.eq_ignore_ascii_case(name))
+            .map(|(_, value)| value.clone())
+    };
     assert_eq!(requests[0].url, format!("{LOCAL_GATEWAY}/v1/catalog"));
-    let proxied = &requests[1];
+    assert_eq!(
+        header(&requests[1], "x-octopus-cache").as_deref(),
+        Some("peek")
+    );
+    let proxied = &requests[2];
     assert_eq!(
         proxied.url,
         format!(
             "{LOCAL_GATEWAY}/v1/p/dataforseo/v3/dataforseo_labs/google/domain_rank_overview/live"
         )
     );
-    let authorization = proxied
-        .headers
-        .iter()
-        .find(|(name, _)| name.eq_ignore_ascii_case("authorization"))
-        .map(|(_, value)| value.as_str());
-    assert_eq!(authorization, Some("Bearer oct_test"));
+    assert_eq!(
+        header(proxied, "authorization").as_deref(),
+        Some("Bearer oct_test")
+    );
+    assert_eq!(header(proxied, "cache-control"), None);
+    assert_eq!(
+        header(&requests[3], "cache-control").as_deref(),
+        Some("no-cache")
+    );
     let usage = call(&platform, "usage", Value::Null);
     assert_eq!(usage[0]["via"], "credit");
+
+    // Kept fresh here: no price is asked of the gateway.
+    let again = call(&platform, "overview_estimate", json!({ "project_id": id }));
+    assert_eq!(again["shared"], Value::Null);
+    assert_eq!(transport.requests().len(), 4);
 }
 
 #[test]

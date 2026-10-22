@@ -84,6 +84,32 @@ impl HttpTransport for Shared {
     fn take_charge_usd(&self) -> Option<f64> {
         self.0.take_charge_usd()
     }
+
+    fn take_saved_usd(&self) -> Option<f64> {
+        self.0.take_saved_usd()
+    }
+}
+
+/// A transport asking the gateway for fresh answers, past the answers it keeps for every
+/// account (ADR 0079): providers ignore the header.
+pub(crate) struct Fresh(pub(crate) Box<dyn HttpTransport>);
+
+impl HttpTransport for Fresh {
+    fn send(&self, request: &HttpRequest) -> Result<HttpResponse, TransportError> {
+        let mut request = request.clone();
+        request
+            .headers
+            .push(("cache-control".to_owned(), "no-cache".to_owned()));
+        self.0.send(&request)
+    }
+
+    fn take_charge_usd(&self) -> Option<f64> {
+        self.0.take_charge_usd()
+    }
+
+    fn take_saved_usd(&self) -> Option<f64> {
+        self.0.take_saved_usd()
+    }
 }
 
 /// The program as it names itself to the gateway.
@@ -354,6 +380,24 @@ impl Workspace {
             ))),
             _ => Ok(Box::new(plain)),
         }
+    }
+
+    /// The transport for provider requests; with `fresh`, past the answers the gateway keeps
+    /// for every account.
+    ///
+    /// # Errors
+    /// [`AppError::Invalid`] for an unusable proxy setting.
+    pub(crate) fn transport_with(
+        &self,
+        settings: &Settings,
+        fresh: bool,
+    ) -> Result<Box<dyn HttpTransport>, AppError> {
+        let transport = self.transport(settings)?;
+        Ok(if fresh {
+            Box::new(Fresh(transport))
+        } else {
+            transport
+        })
     }
 
     /// Credits per US dollar of provider price for a source on credits: the catalog's

@@ -127,7 +127,8 @@
     "balance": "Guthaben",
     "note": "Notiz",
     "never": "nie",
-    "none": "keins"
+    "none": "keins",
+    "cached": "Aus Cache"
   },
   "buy": {
     "title": "Credits kaufen",
@@ -240,7 +241,9 @@
       "adjustment": "Korrektur",
       "bonus": "Geschenk",
       "chargeback": "Rückbuchung"
-    }
+    },
+    "fromCache": "Cache · {pct} % Rabatt",
+    "saved": "{credits} Credits Rabatt"
   },
   "tokens": {
     "title": "Geräte",
@@ -379,7 +382,11 @@
       "crawlPageMicros": "Server-Crawl der Plattform (Credits pro 1.000 Seiten)",
       "freeCrawlPages": "Kostenlose Server-Crawl-Seiten pro Monat",
       "reportPdfMicros": "Berichts-PDF der Plattform (Credits)",
-      "freeReportPdfs": "Kostenlose Berichts-PDFs pro Monat"
+      "freeReportPdfs": "Kostenlose Berichts-PDFs pro Monat",
+      "cacheEnabled": "Gemeinsamer Cache (ADR 0079)",
+      "cacheDiscountPct": "Rabatt auf Antworten aus dem Cache (%)",
+      "cacheMaxEntryKb": "Größte gespeicherte Antwort (KB)",
+      "cacheMaxTotalMb": "Platz für den Cache (MB)"
     },
     "reportsLead": "Umsatz, Anbieterkosten und Marge pro Konnektor und Tag (letzte 30 Tage).",
     "day": "Tag",
@@ -416,7 +423,17 @@
     "supportContext": "Programm · Seite · Fehler",
     "providerProblem": "Letztes Anbieterproblem: {connector}, {time}: {reason}. Prüfen Sie Guthaben und API-Zugang.",
     "openConnector": "Connector öffnen",
-    "providerRefused": "Unser Konto wurde abgelehnt (HTTP {status}): {reason}"
+    "providerRefused": "Unser Konto wurde abgelehnt (HTTP {status}): {reason}",
+    "settingsOn": "An",
+    "settingsOff": "Aus",
+    "cacheEnabled": "Antworten im Cache halten",
+    "cacheRules": "({n} Regeln; Zeiten im JSON unter cache.rules bearbeiten)",
+    "cacheTitle": "Gemeinsamer Cache (letzte 30 Tage)",
+    "cacheDiscount": "{pct} % Rabatt",
+    "cacheHits": "Aus dem Cache",
+    "cacheSaved": "Vermiedene Anbieterkosten",
+    "cacheRevenue": "Umsatz aus dem Cache",
+    "cacheKept": "Gespeicherte Antworten"
   },
   "common": {
     "back": "Zurück",

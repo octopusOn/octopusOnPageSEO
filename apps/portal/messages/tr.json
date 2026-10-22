@@ -127,7 +127,8 @@
     "balance": "Bakiye",
     "note": "Not",
     "never": "hiç",
-    "none": "yok"
+    "none": "yok",
+    "cached": "Önbellekten"
   },
   "buy": {
     "title": "Kredi yükle",
@@ -240,7 +241,9 @@
       "adjustment": "Düzeltme",
       "bonus": "Hediye",
       "chargeback": "Ters ibraz"
-    }
+    },
+    "fromCache": "Önbellek · %{pct} indirim",
+    "saved": "{credits} kredi indirim"
   },
   "tokens": {
     "title": "Cihazlar",
@@ -379,7 +382,11 @@
       "crawlPageMicros": "Platform sunucu taraması (1.000 sayfa başına kredi)",
       "freeCrawlPages": "Aylık ücretsiz sunucu tarama sayfası",
       "reportPdfMicros": "Platform rapor PDF'i (kredi)",
-      "freeReportPdfs": "Aylık ücretsiz rapor PDF'i"
+      "freeReportPdfs": "Aylık ücretsiz rapor PDF'i",
+      "cacheEnabled": "Paylaşılan önbellek (ADR 0079)",
+      "cacheDiscountPct": "Önbellekten gelen cevaplarda indirim (%)",
+      "cacheMaxEntryKb": "Önbelleğe alınan en büyük cevap (KB)",
+      "cacheMaxTotalMb": "Önbellek için en fazla yer (MB)"
     },
     "reportsLead": "Bağlayıcı ve gün bazında gelir, sağlayıcı maliyeti ve kâr (son 30 gün).",
     "day": "Gün",
@@ -416,7 +423,17 @@
     "supportContext": "Program · sayfa · hata",
     "providerProblem": "Son sağlayıcı sorunu: {connector}, {time}: {reason}. Bakiyeyi ve API erişimini kontrol edin.",
     "openConnector": "Bağlayıcıyı aç",
-    "providerRefused": "Hesabımız reddedildi (HTTP {status}): {reason}"
+    "providerRefused": "Hesabımız reddedildi (HTTP {status}): {reason}",
+    "settingsOn": "Açık",
+    "settingsOff": "Kapalı",
+    "cacheEnabled": "Cevapları önbellekte tut",
+    "cacheRules": "({n} kural; süreleri JSON'daki cache.rules ile düzenleyin)",
+    "cacheTitle": "Paylaşılan önbellek (son 30 gün)",
+    "cacheDiscount": "%{pct} indirim",
+    "cacheHits": "Önbellekten",
+    "cacheSaved": "Kaçınılan sağlayıcı maliyeti",
+    "cacheRevenue": "Önbellekten gelir",
+    "cacheKept": "Tutulan cevap"
   },
   "common": {
     "back": "Geri",

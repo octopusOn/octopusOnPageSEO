@@ -62,5 +62,8 @@
   "ownShowConnected": "Yine de kendi anahtarımı kullan",
   "providersHint": "Her kaynak için kendi anahtarınızı girin ya da yukarıdan hesabınızı bağlayın.",
   "providersConnected": "Hesabınız bağlı: kaynaklar krediyle çalışıyor. Burada değiştirmeniz gereken bir şey yok.",
-  "useOwnKey": "Bu kaynakta kendi anahtarımı kullan"
+  "useOwnKey": "Bu kaynakta kendi anahtarımı kullan",
+  "sharedCache": "Önbellekten indirimli cevapları kullan",
+  "sharedCacheHint": "Aynı soruyu kısa süre önce bir başkası sorduysa cevap OctopusOn önbelleğinden indirimli gelir (backlink'ler 1 gün, Labs verileri 1 hafta, sıralamalar yarım gün saklanır). Kapatırsanız krediyle her zaman sağlayıcıdan taze veri alınır.",
+  "sharedCacheSaved": "Önbellek tercihi kaydedildi"
 }

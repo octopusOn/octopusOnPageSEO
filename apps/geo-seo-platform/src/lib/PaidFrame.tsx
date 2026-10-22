@@ -14,6 +14,19 @@ export const ROW_CHOICES = [100, 500, 1000] as const;
 /** What fetching would cost, in the way it would be paid. */
 export function CostLabel({ estimate }: { estimate: Estimate }) {
   const { t, locale } = useI18n();
+  const shared = estimate.shared;
+  if (estimate.via === "credit" && shared && shared.full_credits > 0) {
+    // Someone asked the same shortly before: the gateway sells its kept answer at a discount.
+    return (
+      <span className="cost-label shared">
+        {t("overview.costShared", {
+          credits: formatCredits(shared.credits, locale),
+          full: formatCredits(shared.full_credits, locale),
+          pct: Math.round((1 - shared.credits / shared.full_credits) * 100),
+        })}
+      </span>
+    );
+  }
   if (estimate.via === "credit" && estimate.credits !== null) {
     return <span className="cost-label">{t("overview.costCredits", { credits: formatCredits(estimate.credits, locale) })}</span>;
   }
@@ -94,7 +107,15 @@ export function PaidFrame<T>({
       queryClient.setQueryData(key, fetched);
       void queryClient.invalidateQueries({ queryKey: [`${module}-estimate`] });
       refreshSpending(queryClient);
+      const saved = fetched.saved_usd ?? 0;
       if (fetched.cached) notify(t("overview.freeFromCache"));
+      else if (saved > 0)
+        notify(
+          t("overview.spentShared", {
+            amount: formatUsd(fetched.spent_usd, locale),
+            pct: Math.round((saved / (saved + fetched.spent_usd)) * 100),
+          }),
+        );
       else notify(t("overview.spentNow", { amount: formatUsd(fetched.spent_usd, locale) }));
     },
     onError: (thrown) => fail(thrown),

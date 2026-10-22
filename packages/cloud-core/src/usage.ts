@@ -29,6 +29,10 @@ export async function userUsage(db: Db, userId: string, since: Date) {
       requests: sql<string>`count(*)`,
       failures: sql<string>`count(*) filter (where ${usageEvents.status} >= 400)`,
       charged: sql<string>`coalesce(sum(${usageEvents.chargedMicros}), 0)`,
+      cached: sql<string>`count(*) filter (where ${usageEvents.cached})`,
+      // What the user would have paid without the cache, less what they paid for cached answers.
+      fullOnCached: sql<string>`coalesce(sum(${usageEvents.fullChargeMicros}) filter (where ${usageEvents.cached}), 0)`,
+      chargedOnCached: sql<string>`coalesce(sum(${usageEvents.chargedMicros}) filter (where ${usageEvents.cached}), 0)`,
     })
     .from(usageEvents)
     .where(and(eq(usageEvents.userId, userId), gte(usageEvents.createdAt, since)))
@@ -40,6 +44,8 @@ export async function userUsage(db: Db, userId: string, since: Date) {
     requests: Number(row.requests),
     failures: Number(row.failures),
     chargedMicros: Number(row.charged),
+    cachedRequests: Number(row.cached),
+    discountMicros: Number(row.fullOnCached) - Number(row.chargedOnCached),
   }));
 }
 

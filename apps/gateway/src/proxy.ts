@@ -1,19 +1,33 @@
 // The passthrough: checks a request against its connector, reserves credits, forwards it with
 // our credentials, charges what the upstream reports and hides our credentials from the reply.
 // Usage records keep metadata only: never bodies, queries or result content.
+//
+// Answers are kept for every account (ADR 0079): a question asked again within its connector's
+// cache rule is answered from the cache, without asking the provider, at a discounted price.
+// `Cache-Control: no-cache` asks the provider anyway (and keeps the new answer);
+// `X-Octopus-Cache: peek` only says whether an answer is kept and what it would cost.
 
 import {
+  cachedAnswer,
+  cacheKey,
+  cacheSeconds,
   chargedSince,
+  chargeFor,
+  type Connector,
   type Db,
+  discounted,
   DuplicateRequest,
+  hasCachedAnswer,
   hold,
   holdFor,
   injectFields,
   InsufficientFunds,
+  keepAnswer,
   maskSecrets,
   microsToUsd,
   monthSpend,
   normalizePath,
+  noteCacheHit,
   noteProviderProblem,
   parseJson,
   recordUsage,
@@ -26,6 +40,8 @@ import {
   type TokenOwner,
   upstreamHeaders,
   upstreamUrl,
+  usdToMicros,
+  wallet as walletOf,
 } from "@octopusseo/cloud-core";
 
 import type { Concurrency, RateLimiter } from "./limits.ts";
@@ -38,6 +54,15 @@ export const MAX_RESPONSE_BYTES = 32 * 1024 * 1024;
 export const CHARGE_HEADER = "X-Octopus-Charge-Usd";
 /** The balance left for new requests, in US dollars. */
 export const AVAILABLE_HEADER = "X-Octopus-Available-Usd";
+/** `hit` (answered from the cache), `miss` (asked, and kept), absent when not kept; `peek` asks. */
+export const CACHE_HEADER = "X-Octopus-Cache";
+/** How old a cached answer is, in seconds. */
+export const CACHE_AGE_HEADER = "X-Octopus-Cache-Age";
+/** What a cached answer would have cost without the discount, in US dollars. */
+export const FULL_CHARGE_HEADER = "X-Octopus-Full-Charge-Usd";
+
+/** Questions on their way to a provider, by cache key: the same question waits for the answer. */
+const inflight = new Map<string, Promise<void>>();
 
 export interface ProxyDeps {
   db: Db;
@@ -106,6 +131,40 @@ function usd(micros: number): string {
   return microsToUsd(micros).toFixed(6);
 }
 
+/** The full price of an answer whose provider cost was `upstreamMicros`. */
+function fullPrice(connector: Connector, defaultMarkup: number, upstreamMicros: number): number {
+  return chargeFor(upstreamMicros, connector.pricing.markup ?? defaultMarkup, usdToMicros(connector.pricing.min_charge_usd));
+}
+
+/** Reserves credits for a request: its hold id, or the refusal to send. */
+async function reserve(
+  deps: ProxyDeps,
+  owner: TokenOwner,
+  connectorId: string,
+  micros: number,
+  key: string | null,
+): Promise<string | Response> {
+  try {
+    const { holdId } = await hold(deps.db, owner.userId, micros, {
+      connectorId,
+      tokenId: owner.tokenId,
+      idempotencyKey: key ? `${owner.userId}:${key.slice(0, 120)}` : undefined,
+    });
+    return holdId;
+  } catch (error) {
+    if (error instanceof InsufficientFunds) {
+      return problem(402, "insufficient_credits", "Not enough OctopusOn SEO credits.", {}, {
+        available_usd: microsToUsd(error.availableMicros),
+        needed_usd: microsToUsd(micros),
+      });
+    }
+    if (error instanceof DuplicateRequest || (error as { code?: string }).code === "23505") {
+      return problem(409, "duplicate_request", "This request was already sent.");
+    }
+    throw error;
+  }
+}
+
 function startOfUtcDay(now: number): Date {
   const date = new Date(now);
   return new Date(Date.UTC(date.getUTCFullYear(), date.getUTCMonth(), date.getUTCDate()));
@@ -140,12 +199,15 @@ export async function forward(
   }
 
   let body: Uint8Array | null = null;
+  // The question as asked, before our credentials are written into it: what the cache key uses.
+  let asked: Uint8Array | null = null;
   if (method === "POST") {
     const limit = connector.limits.max_body_kb * 1024;
     if (Number(request.headers.get("content-length") ?? 0) > limit) return problem(413, "body_too_large", "The request body is too large.");
     const read = await readLimited(request.body, limit);
     if (read === TOO_LARGE) return problem(413, "body_too_large", "The request body is too large.");
     body = read;
+    asked = read;
     if (connector.inject.length > 0) {
       body = injectFields(connector, body, secrets);
       if (!body) return problem(400, "invalid_body", "This source expects a JSON object or a list of objects.");
@@ -157,8 +219,42 @@ export async function forward(
   const release = deps.concurrency.acquire(`${owner.userId}:${connector.id}`, connector.limits.concurrency);
   if (!release) return problem(429, "too_many_parallel", "Too many requests at once; try again shortly.", { "retry-after": "1" });
 
+  let done: (() => void) | undefined;
+  let waitingFor: string | null = null;
   try {
     const settings = await deps.registry.settings();
+    const route = routePattern(connector.routes, method, path);
+    const seconds = settings.cacheEnabled ? cacheSeconds(connector, method, path) : 0;
+    const key = seconds > 0 ? cacheKey(connector, method, path, url.searchParams, asked) : null;
+    const refresh = /no-cache|no-store/i.test(request.headers.get("cache-control") ?? "");
+    if (request.headers.get(CACHE_HEADER)?.toLowerCase() === "peek") {
+      // The price of a question before asking it: free, and the provider is not asked.
+      const kept = key ? await hasCachedAnswer(deps.db, key, new Date(now())) : null;
+      const full = kept ? fullPrice(connector, settings.markup, kept.upstreamMicros) : 0;
+      return new Response(
+        JSON.stringify({
+          cached: kept !== null,
+          cacheable: key !== null,
+          age_s: kept ? Math.max(0, Math.round((now() - kept.createdAt.getTime()) / 1000)) : null,
+          charge_usd: kept ? microsToUsd(discounted(full, settings.cacheDiscountPct)) : null,
+          full_charge_usd: kept ? microsToUsd(full) : null,
+        }),
+        {
+          status: 200,
+          headers: { "content-type": "application/json; charset=utf-8", "cache-control": "no-store", [CACHE_HEADER]: kept ? "hit" : "miss" },
+        },
+      );
+    }
+    if (key) {
+      // The same question on its way to the provider for someone else: wait for its answer,
+      // then become the one others wait for (no await between the check and the claim).
+      const pending = refresh ? undefined : inflight.get(key);
+      if (pending) await pending;
+      if (!inflight.has(key)) {
+        waitingFor = key;
+        inflight.set(key, new Promise<void>((resolve) => (done = resolve)));
+      }
+    }
     const holdMicros = holdFor(connector, method, path);
     if (owner.monthlyCapMicros !== null && (await monthSpend(deps.db, owner.tokenId)) + holdMicros > owner.monthlyCapMicros) {
       return problem(402, "token_limit", "This device reached its monthly spending limit.");
@@ -170,28 +266,7 @@ export async function forward(
       return problem(402, "daily_limit", "The daily spending limit of this account is reached.");
     }
 
-    const key = request.headers.get("idempotency-key");
-    let holdId: string;
-    try {
-      ({ holdId } = await hold(deps.db, owner.userId, holdMicros, {
-        connectorId: connector.id,
-        tokenId: owner.tokenId,
-        idempotencyKey: key ? `${owner.userId}:${key.slice(0, 120)}` : undefined,
-      }));
-    } catch (error) {
-      if (error instanceof InsufficientFunds) {
-        return problem(402, "insufficient_credits", "Not enough OctopusOn SEO credits.", {}, {
-          available_usd: microsToUsd(error.availableMicros),
-          needed_usd: microsToUsd(holdMicros),
-        });
-      }
-      if (error instanceof DuplicateRequest || (error as { code?: string }).code === "23505") {
-        return problem(409, "duplicate_request", "This request was already sent.");
-      }
-      throw error;
-    }
-
-    const route = routePattern(connector.routes, method, path);
+    const idempotency = request.headers.get("idempotency-key");
     const usage = {
       userId: owner.userId,
       tokenId: owner.tokenId,
@@ -200,6 +275,47 @@ export async function forward(
       route,
       app,
     };
+
+    if (key && !refresh) {
+      const kept = await cachedAnswer(deps.db, key, new Date(now()));
+      if (kept) {
+        const full = fullPrice(connector, settings.markup, kept.upstreamMicros);
+        const price = discounted(full, settings.cacheDiscountPct);
+        let available: number;
+        if (price > 0) {
+          const reserved = await reserve(deps, owner, connector.id, price, idempotency);
+          if (reserved instanceof Response) return reserved;
+          available = (await settleHold(deps.db, reserved, price)).availableMicros;
+        } else {
+          available = (await walletOf(deps.db, owner.userId)).availableMicros;
+        }
+        await noteCacheHit(deps.db, key, new Date(now()));
+        await recordUsage(deps.db, {
+          ...usage,
+          status: kept.status,
+          chargedMicros: price,
+          cached: true,
+          savedMicros: kept.upstreamMicros,
+          fullChargeMicros: full,
+          durationMs: now() - started,
+        });
+        deps.log({ level: "info", event: "cache_hit", connector: connector.id, route, key: key.slice(0, 8), charged_micros: price, ms: now() - started });
+        const headers = new Headers({
+          "cache-control": "no-store",
+          [CHARGE_HEADER]: usd(price),
+          [AVAILABLE_HEADER]: usd(available),
+          [FULL_CHARGE_HEADER]: usd(full),
+          [CACHE_HEADER]: "hit",
+          [CACHE_AGE_HEADER]: String(Math.max(0, Math.round((now() - kept.createdAt.getTime()) / 1000))),
+        });
+        if (kept.contentType) headers.set("content-type", kept.contentType);
+        return new Response(Buffer.from(kept.body), { status: kept.status, headers });
+      }
+    }
+
+    const reserved = await reserve(deps, owner, connector.id, holdMicros, idempotency);
+    if (reserved instanceof Response) return reserved;
+    const holdId = reserved;
     const target = upstreamUrl(connector, raw, url.searchParams, secrets);
     let upstream: Response;
     let reply: Uint8Array | typeof TOO_LARGE;
@@ -267,8 +383,30 @@ export async function forward(
     if (contentType) headers.set("content-type", contentType);
     const retryAfter = upstream.headers.get("retry-after");
     if (upstream.status === 429 || upstream.status === 503) headers.set("retry-after", retryAfter ?? "30");
-    return new Response(maskSecrets(reply, secretForms(connector, secrets)), { status, headers });
+    const masked = maskSecrets(reply, secretForms(connector, secrets));
+    if (key && upstream.status === 200 && !outcome.error) {
+      // Kept for everyone who asks the same within the rule's time; our credentials masked.
+      const kept = await keepAnswer(deps.db, {
+        key,
+        connectorId: connector.id,
+        route,
+        status: 200,
+        contentType,
+        body: masked,
+        upstreamMicros: outcome.upstreamMicros,
+        seconds,
+        now: new Date(now()),
+        maxBytes: settings.cacheMaxEntryKb * 1024,
+      }).catch((error: unknown) => {
+        deps.log({ level: "warn", event: "cache_write_failed", connector: connector.id, message: error instanceof Error ? error.message : String(error) });
+        return false;
+      });
+      if (kept) headers.set(CACHE_HEADER, "miss");
+    }
+    return new Response(masked, { status, headers });
   } finally {
+    if (waitingFor) inflight.delete(waitingFor);
+    done?.();
     release();
   }
 }

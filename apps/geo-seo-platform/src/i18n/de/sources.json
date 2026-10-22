@@ -62,5 +62,8 @@
   "ownShowConnected": "Trotzdem eigenen Schlüssel verwenden",
   "providersHint": "Geben Sie für jede Quelle Ihren Schlüssel ein oder verbinden Sie oben Ihr Konto.",
   "providersConnected": "Ihr Konto ist verbunden: Die Quellen laufen über Credits. Hier ist nichts zu ändern.",
-  "useOwnKey": "Für diese Quelle meinen eigenen Schlüssel verwenden"
+  "useOwnKey": "Für diese Quelle meinen eigenen Schlüssel verwenden",
+  "sharedCache": "Rabattierte Antworten aus dem Cache nutzen",
+  "sharedCacheHint": "Hat kurz zuvor jemand dasselbe gefragt, kommt die Antwort mit Rabatt aus dem OctopusOn-Cache (Backlinks einen Tag, Labs-Daten eine Woche, Rankings einen halben Tag). Ausgeschaltet kaufen Credits immer frische Daten beim Anbieter.",
+  "sharedCacheSaved": "Cache-Einstellung gespeichert"
 }

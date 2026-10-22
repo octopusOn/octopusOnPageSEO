@@ -236,6 +236,7 @@ fn regrouped(fetched: Fetched<Vec<Vec<Value>>>, question: &Question) -> Fetched<
         cached: fetched.cached,
         spent_usd: fetched.spent_usd,
         via: fetched.via,
+        saved_usd: fetched.saved_usd,
     }
 }
 

@@ -37,6 +37,16 @@ Both apps share the database and `OCTOPUS_MASTER_KEY`, which seals our provider 
 
 **Holds per route.** A route can reserve its own amount (`"hold_usd"` on the route) instead of the connector's `pricing.hold_usd`; the gateway reserves the matching route's hold before forwarding and charges the real price after. LLM Mentions holds $2, since a task with 1,000 rows costs about $1.10 upstream.
 
+**Shared answer cache** ([ADR 0079](adr/0079-shared-answer-cache.md)). The gateway keeps providers' answers for every account and answers the same question again from the cache, without paying the provider, at a discount (70% by default: the customer pays 30%).
+- **Rules.** Each connector's `cache.rules` say how long each route's answers are kept: backlinks 24 hours (time series 72), Labs 7 days, Google Ads volumes 30 days, result pages 12 hours, AI answers 24 hours, LLM Mentions 7 days, Wordstat 30 days. **Every new connector gives every route a rule (`hours: 0` for answers that must stay fresh); a test checks the seeds.**
+- **Key.** The question's connector, method, path, sorted query and canonical JSON body (sorted keys, no `tag`, `normalize` fields in lower case), taken before our credentials are added. Who asked is not recorded.
+- **Headers.** A kept answer comes with `X-Octopus-Cache: hit`, `X-Octopus-Cache-Age`, the discounted `X-Octopus-Charge-Usd` and `X-Octopus-Full-Charge-Usd`.
+  - `Cache-Control: no-cache` asks the provider anew.
+  - `X-Octopus-Cache: peek` says for free whether an answer is kept and its price.
+- **Storage.** `answer_cache` (migration `0005_answer_cache`), gzip-compressed. Expired and overflowing answers go hourly.
+- **Settings.** `cacheEnabled`, `cacheDiscountPct`, `cacheMaxEntryKb`, `cacheMaxTotalMb` in Admin → Settings, and a switch per connector. Admin → Reports shows hits and the provider cost avoided; the usage page labels discounted answers.
+- **Existing connectors.** `account-cli.sh cache-rules` gives connectors already in the database the seeds' rules.
+
 Queued `task_post` requests and the LLM Scraper stay closed. `seed` adds only missing connectors, so a DataForSEO connector already in the database needs these routes added when the platform is released. Assistants asked with the user's own OpenAI, Anthropic, Gemini or Perplexity key never pass through the gateway.
 
 ## Running locally
@@ -143,6 +153,7 @@ Database chores run with the services' settings through `scripts/account-cli.sh`
 bash /home/octopuson/octopusOnPageSEO/scripts/account-cli.sh seed                      # add missing connectors as drafts
 bash /home/octopuson/octopusOnPageSEO/scripts/account-cli.sh promote you@example.com   # make a signed-up account an admin
 bash /home/octopuson/octopusOnPageSEO/scripts/account-cli.sh adjust you@example.com 5000 "reason"   # add credits by hand (negative takes), audited
+bash /home/octopuson/octopusOnPageSEO/scripts/account-cli.sh cache-rules               # give existing connectors the seeds' cache rules
 ```
 
 ### First installation

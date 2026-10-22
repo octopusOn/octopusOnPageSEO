@@ -3,7 +3,15 @@
 import type { Dictionary, Locale } from "@/i18n";
 import { formatCredits, formatNumber, formatTime } from "@/lib/format";
 
-export type SourceRow = { connectorId: string; app: string | null; requests: number; failures: number; chargedMicros: number };
+export type SourceRow = {
+  connectorId: string;
+  app: string | null;
+  requests: number;
+  failures: number;
+  chargedMicros: number;
+  cachedRequests?: number;
+  discountMicros?: number;
+};
 export type EventRow = {
   id: number;
   createdAt: Date;
@@ -12,7 +20,16 @@ export type EventRow = {
   status: number;
   chargedMicros: number;
   app: string | null;
+  /** Answered from the shared cache at a discount. */
+  cached?: boolean;
+  fullChargeMicros?: number;
 };
+
+/** The discount of an answer from the cache, in whole percent. */
+function discountOf(row: EventRow): number {
+  const full = row.fullChargeMicros ?? 0;
+  return full > 0 ? Math.round(((full - row.chargedMicros) / full) * 100) : 0;
+}
 
 export function SourceTable({ rows, t, locale, unit }: { rows: SourceRow[]; t: Dictionary; locale: Locale; unit: number }) {
   return (
@@ -24,6 +41,7 @@ export function SourceTable({ rows, t, locale, unit }: { rows: SourceRow[]; t: D
             <th>{t.table.app}</th>
             <th className="num">{t.table.requests}</th>
             <th className="num">{t.table.failures}</th>
+            <th className="num">{t.table.cached}</th>
             <th className="num">{t.table.credits}</th>
           </tr>
         </thead>
@@ -34,6 +52,12 @@ export function SourceTable({ rows, t, locale, unit }: { rows: SourceRow[]; t: D
               <td className="muted">{row.app ?? "—"}</td>
               <td className="num">{formatNumber(row.requests, locale)}</td>
               <td className="num">{formatNumber(row.failures, locale)}</td>
+              <td className="num">
+                {formatNumber(row.cachedRequests ?? 0, locale)}
+                {(row.discountMicros ?? 0) > 0 ? (
+                  <span className="muted"> · {t.usage.saved.replace("{credits}", formatCredits(row.discountMicros ?? 0, unit, locale))}</span>
+                ) : null}
+              </td>
               <td className="num">{formatCredits(row.chargedMicros, unit, locale)}</td>
             </tr>
           ))}
@@ -71,6 +95,7 @@ export function EventTable({ rows, t, locale, unit }: { rows: EventRow[]; t: Dic
               <td className="mono muted">{row.route}</td>
               <td>
                 <span className={`oc-badge ${statusTone(row.status)}`}>{row.status}</span>
+                {row.cached ? <span className="oc-badge accent">{t.usage.fromCache.replace("{pct}", String(discountOf(row)))}</span> : null}
               </td>
               <td className="num">{formatCredits(row.chargedMicros, unit, locale)}</td>
             </tr>

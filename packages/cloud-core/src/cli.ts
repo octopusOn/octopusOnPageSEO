@@ -4,6 +4,7 @@
 //   node src/cli.ts promote <email>    make a signed-up account an admin
 //   node src/cli.ts adjust <email> <credits> <reason…>
 //                                      add (or, negative, take) credits by hand, recorded and audited
+//   node src/cli.ts cache-rules        give the connectors in the database the seeds' cache rules
 
 import { eq } from "drizzle-orm";
 
@@ -13,15 +14,21 @@ import { getSettings } from "./settings.ts";
 import { connect } from "./db/client.ts";
 import { migrate } from "./db/migrate.ts";
 import { user } from "./db/schema.ts";
-import { seedConnectors } from "./seeds.ts";
+import { applySeedCacheRules, seedConnectors } from "./seeds.ts";
 
 const [command, argument, amount, ...words] = process.argv.slice(2);
 const url = process.env.DATABASE_URL;
 const reason = words.join(" ").trim();
 const known =
-  command === "migrate" || command === "seed" || (command === "promote" && argument) || (command === "adjust" && argument && amount && reason);
+  command === "migrate" ||
+  command === "seed" ||
+  command === "cache-rules" ||
+  (command === "promote" && argument) ||
+  (command === "adjust" && argument && amount && reason);
 if (!url || !known) {
-  console.error("usage: DATABASE_URL=postgres://… node src/cli.ts migrate | seed | promote <email> | adjust <email> <credits> <reason…>");
+  console.error(
+    "usage: DATABASE_URL=postgres://… node src/cli.ts migrate | seed | cache-rules | promote <email> | adjust <email> <credits> <reason…>",
+  );
   process.exit(2);
 }
 
@@ -48,6 +55,10 @@ try {
   if (command === "seed") {
     const added = await seedConnectors(db);
     console.log(added.length ? `connectors added as drafts: ${added.join(", ")}` : "connectors already present");
+  }
+  if (command === "cache-rules") {
+    const changed = await applySeedCacheRules(db, "cli:cache-rules");
+    console.log(changed.length ? `cache rules given to: ${changed.join(", ")}` : "every connector already has the seeds' cache rules");
   }
 } finally {
   await close();

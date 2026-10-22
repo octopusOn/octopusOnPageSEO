@@ -42,6 +42,14 @@ export const settingsSchema = z.object({
   reportPdfMicros: z.number().int().min(0).max(10_000_000).default(20_000),
   /** Report PDFs each account prints free every month on the web platform. */
   freeReportPdfs: z.number().int().min(0).max(100_000).default(30),
+  /** Providers' answers are kept for every account and sold again at a discount (ADR 0079). */
+  cacheEnabled: z.boolean().default(true),
+  /** Discount on an answer served from the cache, in percent (70: the user pays 30%). */
+  cacheDiscountPct: z.number().int().min(0).max(100).default(70),
+  /** Largest answer kept, in kilobytes before compression. */
+  cacheMaxEntryKb: z.number().int().min(1).max(32_768).default(4096),
+  /** Space the kept answers may take, in megabytes compressed; the oldest go first. */
+  cacheMaxTotalMb: z.number().int().min(1).max(1_000_000).default(2048),
 });
 
 export type CloudSettings = z.infer<typeof settingsSchema>;

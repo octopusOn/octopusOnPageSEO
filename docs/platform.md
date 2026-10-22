@@ -370,6 +370,13 @@ Every paid question goes through `Workspace::fetch`:
 
 Pages first show what is kept (`get_…`) and the estimate (`…_estimate`, in credits on credits). They pay only when the user asks for fresh data (`fetch_…`, `force` to refresh a fresh answer).
 
+On credits, the gateway also keeps answers for every account ([ADR 0079](adr/0079-shared-answer-cache.md)).
+- **Estimates.** An estimate asks the gateway (`X-Octopus-Cache: peek`) whether it keeps the DataForSEO answer and shows its discounted price (`shared`).
+- **Fetching.**
+  - A fetch reports what the discount saved (`saved_usd`).
+  - Refreshing an answer that is still fresh here passes the gateway's cache by (`Cache-Control: no-cache`).
+- **Option.** Sources → "Use discounted answers from the cache" (`fresh_only` in `settings.json`) turns it off on this device.
+
 ## Sync
 
 A desktop signed in to an OctopusOn SEO account keeps its data the same as the account's web workspace; [ADR 0078](adr/0078-platform-sync.md) has the design.

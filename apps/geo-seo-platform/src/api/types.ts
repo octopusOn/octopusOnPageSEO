@@ -75,6 +75,8 @@ export interface Settings {
   modes: Record<string, SourceMode>;
   budgets: Record<string, number>;
   proxy?: string;
+  /** Always ask providers anew: no discounted answers kept by the gateway. */
+  fresh_only?: boolean;
 }
 
 export interface ProjectSpec {
@@ -182,6 +184,8 @@ export interface Estimate {
   via: Via | null;
   kept: Kept | null;
   blocked: Blocked | null;
+  /** On credits, when the gateway keeps an answer for every account: its discounted price. */
+  shared?: { credits: number; full_credits: number } | null;
 }
 
 export interface Fetched<T> {
@@ -191,6 +195,8 @@ export interface Fetched<T> {
   cached: boolean;
   spent_usd: number;
   via: Via;
+  /** What the gateway's discount on a kept answer saved now, US dollars. */
+  saved_usd?: number;
 }
 
 export interface RankMetrics {

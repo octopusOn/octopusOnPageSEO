@@ -33,6 +33,10 @@ export default async function Settings() {
     freeCrawlPages: n(settings.freeCrawlPages),
     reportPdfMicros: n(settings.reportPdfMicros / unit),
     freeReportPdfs: n(settings.freeReportPdfs),
+    // Providers' answers kept for every account and sold again at a discount (ADR 0079).
+    cacheDiscountPct: n(settings.cacheDiscountPct),
+    cacheMaxEntryKb: n(settings.cacheMaxEntryKb),
+    cacheMaxTotalMb: n(settings.cacheMaxTotalMb),
   };
   return (
     <>
@@ -45,6 +49,13 @@ export default async function Settings() {
               <input className="oc-input" name={name} defaultValue={value} required inputMode={name.startsWith("packages") ? "text" : "decimal"} />
             </label>
           ))}
+          <label className="oc-field">
+            <span className="type-label">{t.admin.settingsFields.cacheEnabled}</span>
+            <select className="oc-input" name="cacheEnabled" defaultValue={settings.cacheEnabled ? "on" : "off"}>
+              <option value="on">{t.admin.settingsOn}</option>
+              <option value="off">{t.admin.settingsOff}</option>
+            </select>
+          </label>
         </ActionForm>
       </section>
     </>

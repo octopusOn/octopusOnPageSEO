@@ -151,6 +151,12 @@ pub trait HttpTransport: Send + Sync {
     fn take_charge_usd(&self) -> Option<f64> {
         None
     }
+
+    /// US dollars saved since the last call by answers the OctopusOn SEO gateway kept for every
+    /// account and sold at a discount; `None` when none came from there.
+    fn take_saved_usd(&self) -> Option<f64> {
+        None
+    }
 }
 
 pub mod testing {

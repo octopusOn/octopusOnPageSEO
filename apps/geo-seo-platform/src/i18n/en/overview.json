@@ -113,5 +113,7 @@
   "feature_paid": "Ads",
   "feature_discussionsandforums": "Discussions and forums",
   "feature_shortvideos": "Short videos",
-  "feature_perspectives": "Perspectives"
+  "feature_perspectives": "Perspectives",
+  "costShared": "In the cache: ≈ {credits} credits (instead of {full}, {pct}% off)",
+  "spentShared": "From the cache at {pct}% off: {amount}"
 }

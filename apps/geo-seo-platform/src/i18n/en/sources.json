@@ -62,5 +62,8 @@
   "ownShowConnected": "Use my own key anyway",
   "providersHint": "Enter your own key for each source, or connect your account above.",
   "providersConnected": "Your account is connected: the sources run on credits. Nothing needs changing here.",
-  "useOwnKey": "Use my own key for this source"
+  "useOwnKey": "Use my own key for this source",
+  "sharedCache": "Use discounted answers from the cache",
+  "sharedCacheHint": "When someone asked the same shortly before, the answer comes from the OctopusOn cache at a discount (backlinks are kept a day, Labs data a week, rankings half a day). Turned off, credits always buy fresh data from the provider.",
+  "sharedCacheSaved": "Cache preference saved"
 }

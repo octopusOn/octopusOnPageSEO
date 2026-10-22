@@ -113,5 +113,7 @@
   "feature_paid": "Anuncios",
   "feature_discussionsandforums": "Debates y foros",
   "feature_shortvideos": "Vídeos cortos",
-  "feature_perspectives": "Perspectivas"
+  "feature_perspectives": "Perspectivas",
+  "costShared": "En la caché: ≈ {credits} créditos (en lugar de {full}, {pct} % de descuento)",
+  "spentShared": "De la caché con un {pct} % de descuento: {amount}"
 }

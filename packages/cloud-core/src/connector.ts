@@ -82,6 +82,29 @@ export const limitsSchema = z.object({
   max_body_kb: z.number().int().min(1).max(4096).default(256),
 });
 
+/**
+ * Which answers are kept for every account and how long (ADR 0079). The first rule whose
+ * method and path match decides; no rule, or 0 hours, means the answer is not kept. Every
+ * route needs a rule, 0 included: see the seeds.
+ */
+export const cacheSchema = z.object({
+  enabled: z.boolean().default(true),
+  /** Fields (in the body, at any depth, or the query) compared trimmed and in lower case. */
+  normalize: z.array(z.string().regex(/^[A-Za-z_][A-Za-z0-9_]*$/)).default([]),
+  rules: z
+    .array(
+      z.object({
+        method: z.enum(["GET", "POST"]).optional(),
+        path: routePath,
+        /** How long an answer stays, in hours (0: never kept). */
+        hours: z.number().min(0).max(24 * 366),
+      }),
+    )
+    .default([]),
+});
+
+export type CacheConfig = z.infer<typeof cacheSchema>;
+
 export const connectorStatus = z.enum(["draft", "test", "active", "disabled"]);
 export type ConnectorStatus = z.infer<typeof connectorStatus>;
 
@@ -114,6 +137,8 @@ export const connectorSchema = z
     deny: z.array(routePath).default([]),
     pricing: pricingSchema,
     limits: limitsSchema.default({ rpm: 60, concurrency: 4, timeout_s: 60, max_body_kb: 256 }),
+    /** Answers kept for every account; without rules nothing is kept. */
+    cache: cacheSchema.default({ enabled: true, normalize: [], rules: [] }),
     /** Written confirmation that the provider allows reselling through our service. */
     terms: z.object({
       confirmed: z.boolean(),

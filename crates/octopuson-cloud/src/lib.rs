@@ -56,6 +56,13 @@ pub const PLACEHOLDER_LOGIN: &str = "octopusseo:credit";
 /// Response header with the US dollars a request was charged.
 pub const CHARGE_HEADER: &str = "x-octopus-charge-usd";
 
+/// Response header saying an answer came from the gateway's shared cache (`hit`); sent as
+/// `peek` to ask what a kept answer would cost.
+pub const CACHE_HEADER: &str = "x-octopus-cache";
+
+/// Response header with what a cached answer would have cost without the discount.
+pub const FULL_CHARGE_HEADER: &str = "x-octopus-full-charge-usd";
+
 /// Why the account or the catalog cannot be used.
 #[derive(Debug, Clone, PartialEq, thiserror::Error)]
 pub enum CloudError {

@@ -127,7 +127,8 @@
     "balance": "Saldo",
     "note": "Nota",
     "never": "nunca",
-    "none": "ninguno"
+    "none": "ninguno",
+    "cached": "De caché"
   },
   "buy": {
     "title": "Comprar créditos",
@@ -240,7 +241,9 @@
       "adjustment": "Ajuste",
       "bonus": "Regalo",
       "chargeback": "Contracargo"
-    }
+    },
+    "fromCache": "Caché · {pct} % de descuento",
+    "saved": "{credits} créditos de descuento"
   },
   "tokens": {
     "title": "Dispositivos",
@@ -379,7 +382,11 @@
       "crawlPageMicros": "Rastreo en el servidor de la plataforma (créditos por 1.000 páginas)",
       "freeCrawlPages": "Páginas de rastreo gratuitas al mes",
       "reportPdfMicros": "PDF de informe de la plataforma (créditos)",
-      "freeReportPdfs": "PDF de informe gratuitos al mes"
+      "freeReportPdfs": "PDF de informe gratuitos al mes",
+      "cacheEnabled": "Caché compartida (ADR 0079)",
+      "cacheDiscountPct": "Descuento en respuestas de la caché (%)",
+      "cacheMaxEntryKb": "Respuesta más grande guardada (KB)",
+      "cacheMaxTotalMb": "Espacio para la caché (MB)"
     },
     "reportsLead": "Ingresos, coste del proveedor y margen por conector y día (últimos 30 días).",
     "day": "Día",
@@ -416,7 +423,17 @@
     "supportContext": "Programa · página · error",
     "providerProblem": "Último problema de proveedor: {connector}, {time}: {reason}. Revise su saldo y el acceso a la API.",
     "openConnector": "Abrir el conector",
-    "providerRefused": "Nuestra cuenta fue rechazada (HTTP {status}): {reason}"
+    "providerRefused": "Nuestra cuenta fue rechazada (HTTP {status}): {reason}",
+    "settingsOn": "Activada",
+    "settingsOff": "Desactivada",
+    "cacheEnabled": "Guardar respuestas en la caché",
+    "cacheRules": "({n} reglas; edita sus tiempos en cache.rules del JSON)",
+    "cacheTitle": "Caché compartida (últimos 30 días)",
+    "cacheDiscount": "{pct} % de descuento",
+    "cacheHits": "De la caché",
+    "cacheSaved": "Coste del proveedor evitado",
+    "cacheRevenue": "Ingresos de la caché",
+    "cacheKept": "Respuestas guardadas"
   },
   "common": {
     "back": "Volver",
