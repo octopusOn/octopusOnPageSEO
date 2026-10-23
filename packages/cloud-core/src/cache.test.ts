@@ -2,6 +2,7 @@ import { afterEach, beforeEach, describe, expect, it } from "vitest";
 
 import {
   applySeedCacheRules,
+  applySeedRoutes,
   cachedAnswer,
   cacheKey,
   cacheReport,
@@ -51,6 +52,10 @@ describe("rules", () => {
     expect(cacheSeconds(dataforseo, "POST", "/v3/keywords_data/google_ads/search_volume/live")).toBe(720 * 3600);
     expect(cacheSeconds(dataforseo, "POST", "/v3/serp/google/organic/live/advanced")).toBe(12 * 3600);
     expect(cacheSeconds(dataforseo, "POST", "/v3/ai_optimization/chat_gpt/llm_responses/live")).toBe(24 * 3600);
+    expect(cacheSeconds(dataforseo, "POST", "/v3/serp/google/maps/live/advanced")).toBe(12 * 3600);
+    expect(cacheSeconds(dataforseo, "POST", "/v3/business_data/google/my_business_info/live")).toBe(168 * 3600);
+    expect(cacheSeconds(dataforseo, "POST", "/v3/business_data/business_listings/search/live")).toBe(168 * 3600);
+    expect(cacheSeconds(dataforseo, "GET", "/v3/dataforseo_labs/categories")).toBe(720 * 3600);
     expect(cacheSeconds({ ...dataforseo, cache: { ...dataforseo.cache, enabled: false } }, "POST", "/v3/backlinks/summary/live")).toBe(0);
     const plain = connectorSchema.parse({ ...SEED_CONNECTORS[0], cache: undefined } as ConnectorInput);
     expect(plain.cache.rules).toEqual([]);
@@ -167,5 +172,19 @@ describe("storage", () => {
       { path: "/autocomplete", hours: 168 },
     ]);
     expect(await applySeedCacheRules(db, "test")).toEqual([]);
+  });
+
+  it("adds the seeds' new routes to connectors in the database and keeps their own", async () => {
+    const seed = SEED_CONNECTORS.find((connector) => connector.id === "dataforseo")!;
+    const own = { method: "POST" as const, path: "/v3/on_page/instant_pages" };
+    await saveConnector(db, { ...seed, routes: [...seed.routes.filter((route) => !route.path.includes("business_data")), own] }, "test");
+    const changed = await applySeedRoutes(db, "test");
+    expect(changed).toEqual([
+      { id: "dataforseo", added: ["POST /v3/business_data/google/my_business_info/live", "POST /v3/business_data/business_listings/search/live"] },
+    ]);
+    const routes = (await getConnector(db, "dataforseo"))!.routes.map((route) => route.path);
+    expect(routes).toContain("/v3/on_page/instant_pages");
+    expect(routes.filter((path) => path.startsWith("/v3/business_data"))).toHaveLength(2);
+    expect(await applySeedRoutes(db, "test")).toEqual([]);
   });
 });

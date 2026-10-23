@@ -7,6 +7,7 @@
 #   bash /home/octopuson/octopusOnPageSEO/scripts/account-cli.sh promote you@example.com
 #   bash /home/octopuson/octopusOnPageSEO/scripts/account-cli.sh adjust you@example.com 5000 "reason"
 #   bash /home/octopuson/octopusOnPageSEO/scripts/account-cli.sh cache-rules
+#   bash /home/octopuson/octopusOnPageSEO/scripts/account-cli.sh routes
 #
 # systemd reads the settings file and starts the command as the site user, so the database
 # address and the master key never appear on a command line.

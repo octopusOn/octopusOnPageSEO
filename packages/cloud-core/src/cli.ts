@@ -5,6 +5,7 @@
 //   node src/cli.ts adjust <email> <credits> <reason…>
 //                                      add (or, negative, take) credits by hand, recorded and audited
 //   node src/cli.ts cache-rules        give the connectors in the database the seeds' cache rules
+//   node src/cli.ts routes             give the connectors in the database the seeds' routes they lack
 
 import { eq } from "drizzle-orm";
 
@@ -14,7 +15,7 @@ import { getSettings } from "./settings.ts";
 import { connect } from "./db/client.ts";
 import { migrate } from "./db/migrate.ts";
 import { user } from "./db/schema.ts";
-import { applySeedCacheRules, seedConnectors } from "./seeds.ts";
+import { applySeedCacheRules, applySeedRoutes, seedConnectors } from "./seeds.ts";
 
 const [command, argument, amount, ...words] = process.argv.slice(2);
 const url = process.env.DATABASE_URL;
@@ -23,11 +24,12 @@ const known =
   command === "migrate" ||
   command === "seed" ||
   command === "cache-rules" ||
+  command === "routes" ||
   (command === "promote" && argument) ||
   (command === "adjust" && argument && amount && reason);
 if (!url || !known) {
   console.error(
-    "usage: DATABASE_URL=postgres://… node src/cli.ts migrate | seed | cache-rules | promote <email> | adjust <email> <credits> <reason…>",
+    "usage: DATABASE_URL=postgres://… node src/cli.ts migrate | seed | cache-rules | routes | promote <email> | adjust <email> <credits> <reason…>",
   );
   process.exit(2);
 }
@@ -59,6 +61,11 @@ try {
   if (command === "cache-rules") {
     const changed = await applySeedCacheRules(db, "cli:cache-rules");
     console.log(changed.length ? `cache rules given to: ${changed.join(", ")}` : "every connector already has the seeds' cache rules");
+  }
+  if (command === "routes") {
+    const changed = await applySeedRoutes(db, "cli:routes");
+    for (const { id, added } of changed) console.log(`${id}: added ${added.join(", ")}`);
+    if (changed.length === 0) console.log("every connector already has the seeds' routes");
   }
 } finally {
   await close();

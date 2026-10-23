@@ -29,6 +29,13 @@ export const SEED_CONNECTORS: ConnectorInput[] = [
       { method: "POST", path: "/v3/ai_optimization/*/llm_responses/live" },
       // $0.10 a task plus $0.001 a row: up to 1,000 rows cost more than the usual hold.
       { method: "POST", path: "/v3/ai_optimization/llm_mentions/*/live", hold_usd: 2 },
+      // Local SEO (the GEO-SEO Platform 0.2.0): map points checked by hand, the business's
+      // profile and the businesses around it.
+      { method: "POST", path: "/v3/serp/google/maps/live/advanced" },
+      { method: "POST", path: "/v3/business_data/google/my_business_info/live" },
+      { method: "POST", path: "/v3/business_data/business_listings/search/live" },
+      // The names of Labs' categories, free.
+      { method: "GET", path: "/v3/dataforseo_labs/categories" },
     ],
     // Account data and asynchronous tasks (task ids are readable by anyone on our account).
     deny: ["/v3/appendix/**", "/v3/**/task_get/**", "/v3/**/task_post", "/v3/**/tasks_ready", "/v3/**/tasks_fixed"],
@@ -55,6 +62,12 @@ export const SEED_CONNECTORS: ConnectorInput[] = [
         { path: "/v3/serp/*/organic/live/*", hours: 12 },
         { path: "/v3/ai_optimization/llm_mentions/*/live", hours: 168 },
         { path: "/v3/ai_optimization/*/llm_responses/live", hours: 24 },
+        // A map point is read like a result page; a business's profile and its neighbours change
+        // slowly.
+        { path: "/v3/serp/google/maps/live/advanced", hours: 12 },
+        { path: "/v3/business_data/*/*/live", hours: 168 },
+        // Category names change with Labs' rare taxonomy updates.
+        { path: "/v3/dataforseo_labs/categories", hours: 720 },
       ],
     },
     terms: { confirmed: false, note: "Ask DataForSEO to confirm in writing that reselling through OctopusOn SEO credits is allowed." },
@@ -162,6 +175,26 @@ export async function applySeedCacheRules(db: Db, actorId = "system"): Promise<s
     if (JSON.stringify(current.cache) === JSON.stringify(connectorSchema.parse({ ...current, cache }).cache)) continue;
     await saveConnector(db, { ...current, cache }, actorId);
     changed.push(seed.id);
+  }
+  return changed;
+}
+
+/**
+ * Gives connectors already in the database the seeds' routes they lack (`routes` in the CLI): a
+ * new version with the missing routes added after their own. Routes are never removed or changed,
+ * so one switched off by hand (deleted) comes back only through this command. Returns the
+ * connectors changed with the routes added.
+ */
+export async function applySeedRoutes(db: Db, actorId = "system"): Promise<{ id: string; added: string[] }[]> {
+  const changed: { id: string; added: string[] }[] = [];
+  for (const seed of SEED_CONNECTORS) {
+    const current = await getConnector(db, seed.id);
+    if (!current) continue;
+    const known = new Set(current.routes.map((route) => `${route.method} ${route.path}`));
+    const missing = seed.routes.filter((route) => !known.has(`${route.method} ${route.path}`));
+    if (missing.length === 0) continue;
+    await saveConnector(db, { ...current, routes: [...current.routes, ...missing] }, actorId);
+    changed.push({ id: seed.id, added: missing.map((route) => `${route.method} ${route.path}`) });
   }
   return changed;
 }

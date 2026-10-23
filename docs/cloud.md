@@ -47,7 +47,7 @@ Both apps share the database and `OCTOPUS_MASTER_KEY`, which seals our provider 
 - **Settings.** `cacheEnabled`, `cacheDiscountPct`, `cacheMaxEntryKb`, `cacheMaxTotalMb` in Admin → Settings, and a switch per connector. Admin → Reports shows hits and the provider cost avoided; the usage page labels discounted answers.
 - **Existing connectors.** `account-cli.sh cache-rules` gives connectors already in the database the seeds' rules.
 
-Queued `task_post` requests and the LLM Scraper stay closed. `seed` adds only missing connectors, so a DataForSEO connector already in the database needs these routes added when the platform is released. Assistants asked with the user's own OpenAI, Anthropic, Gemini or Perplexity key never pass through the gateway.
+Queued `task_post` requests and the LLM Scraper stay closed. `seed` adds only missing connectors. `account-cli.sh routes` gives connectors already in the database the seeds' routes they lack: a new version with them added after their own, never removing or changing one. GEO-SEO Platform 0.2.0 needs Google Maps result pages (`/v3/serp/google/maps/live/advanced`), the business profile and listings (`/v3/business_data/google/my_business_info/live`, `/v3/business_data/business_listings/search/live`) and Labs' category names (`GET /v3/dataforseo_labs/categories`). Assistants asked with the user's own OpenAI, Anthropic, Gemini or Perplexity key never pass through the gateway.
 
 ## Running locally
 
@@ -154,6 +154,7 @@ bash /home/octopuson/octopusOnPageSEO/scripts/account-cli.sh seed               
 bash /home/octopuson/octopusOnPageSEO/scripts/account-cli.sh promote you@example.com   # make a signed-up account an admin
 bash /home/octopuson/octopusOnPageSEO/scripts/account-cli.sh adjust you@example.com 5000 "reason"   # add credits by hand (negative takes), audited
 bash /home/octopuson/octopusOnPageSEO/scripts/account-cli.sh cache-rules               # give existing connectors the seeds' cache rules
+bash /home/octopuson/octopusOnPageSEO/scripts/account-cli.sh routes                    # give existing connectors the seeds' routes they lack
 ```
 
 ### First installation
