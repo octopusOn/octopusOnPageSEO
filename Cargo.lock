@@ -3928,6 +3928,7 @@ dependencies = [
  "octopuson-crawl-store",
  "octopuson-dataforseo",
  "octopuson-google",
+ "octopuson-html",
  "octopuson-keyword-sources",
  "octopuson-keywords",
  "octopuson-llm",

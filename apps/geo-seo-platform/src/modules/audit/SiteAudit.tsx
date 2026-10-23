@@ -1,6 +1,6 @@
 import { useMemo, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { ArrowDown, ArrowUp, Bot, CheckCircle2, ChevronLeft, ChevronRight, CircleAlert, CircleX, ExternalLink, Play, ScanSearch, Search, Trash2 } from "lucide-react";
+import { ArrowDown, ArrowUp, Bot, CheckCircle2, ChevronLeft, ChevronRight, CircleAlert, CircleX, Download, ExternalLink, Play, ScanSearch, Search, Trash2 } from "lucide-react";
 import { Button, Empty, ErrorState, Field, Loading, Modal, Segmented, Stat } from "@octopusseo/ui";
 import { api } from "../../api/client";
 import type { AuditReport, AuditSchedule, AuditSetup, GeoReadiness, GeoSignal, IssueKind, IssueReport, Job, ProjectRow } from "../../api/types";
@@ -10,7 +10,14 @@ import { useScheduleNote } from "../../lib/sync";
 import { explain } from "../../lib/errors";
 import { formatCredits, formatNumber, formatPercent, relativeTime } from "../../lib/format";
 import { refreshSpending } from "../../lib/PaidFrame";
+import { download } from "../../lib/report";
 import { ALL_ISSUES, changeOf, creditsPerThousand, filterCategories, KINDS, pageChoices, scoreChange, totals, type IssueFilters } from "./audit";
+import { AuditTrend, HreflangView, LinksView } from "./AuditViews";
+import { PageExplorer } from "./PageExplorer";
+import { VitalsView } from "./Vitals";
+
+const TABS = ["issues", "links", "pages", "hreflang", "vitals", "trend"] as const;
+type Tab = (typeof TABS)[number];
 
 function one(value: number, locale: string): string {
   return new Intl.NumberFormat(locale, { maximumFractionDigits: 1 }).format(value);
@@ -23,7 +30,7 @@ function SetupBar({ project, setup, running }: { project: ProjectRow; setup: Aud
   const { notify, fail } = useShell();
   const queryClient = useQueryClient();
   const save = useMutation({
-    mutationFn: (next: { schedule: AuditSchedule; maxPages: number }) => api.saveAuditSettings(project.id, next.schedule, next.maxPages),
+    mutationFn: (next: { schedule: AuditSchedule; maxPages: number; checkOutbound?: boolean }) => api.saveAuditSettings(project.id, next.schedule, next.maxPages, next.checkOutbound ?? Boolean(setup.settings.check_outbound)),
     onSuccess: (next) => queryClient.setQueryData(["audit", "setup", project.id], next),
     onError: (thrown) => fail(thrown),
   });
@@ -68,6 +75,10 @@ function SetupBar({ project, setup, running }: { project: ProjectRow; setup: Aud
             ))}
           </select>
         </Field>
+        <label className="oc-check" title={t("audit.checkOutboundHint")}>
+          <input type="checkbox" checked={Boolean(settings.check_outbound)} disabled={save.isPending} onChange={(event) => save.mutate({ schedule: settings.schedule, maxPages: settings.max_pages, checkOutbound: event.target.checked })} />
+          <span>{t("audit.checkOutbound")}</span>
+        </label>
       </div>
       <div className="rank-run">
         <div className="rank-run-text">
@@ -397,7 +408,9 @@ function ReportView({ project, report, onOpen }: { project: ProjectRow; report: 
 
 export function SiteAudit({ project }: { project: ProjectRow }) {
   const { t, lang, locale } = useI18n();
-  const { jobs, fail } = useShell();
+  const { jobs, fail, go, params } = useShell();
+  const tab: Tab = (TABS as readonly string[]).includes(params.tab ?? "") ? (params.tab as Tab) : "issues";
+  const tabLabels: Record<Tab, string> = { issues: t("audit.tabIssues"), links: t("audit.tabLinks"), pages: t("audit.tabPages"), hreflang: t("audit.tabHreflang"), vitals: t("audit.tabVitals"), trend: t("audit.tabTrend") };
   const queryClient = useQueryClient();
   const setup = useQuery({ queryKey: ["audit", "setup", project.id], queryFn: () => api.auditSetup(project.id) });
   const [auditId, setAuditId] = useState<number | null>(null);
@@ -417,15 +430,39 @@ export function SiteAudit({ project }: { project: ProjectRow }) {
     },
     onError: (thrown) => fail(thrown),
   });
+  const findings = useMutation({
+    mutationFn: () => api.auditFindingsCsv(project.id, auditId, lang),
+    onSuccess: (file) => download(file.name, file.csv),
+    onError: (thrown) => fail(thrown),
+  });
   if (setup.isLoading) return <Loading label={t("common.loading")} />;
   if (setup.error || !setup.data) {
     return <ErrorState title={t("common.loadFailed")} message={explain(setup.error, t).message} retry={() => void setup.refetch()} retryLabel={t("common.retry")} />;
   }
   const data = setup.data;
   const shown = report.data?.audit;
+  const tabs = (
+    <div className="oc-tabs" role="tablist" aria-label={t("common.navAudit")}>
+      {TABS.map((entry) => (
+        <button key={entry} type="button" role="tab" aria-selected={tab === entry} className={`oc-tab ${tab === entry ? "active" : ""}`} onClick={() => go({ params: { ...params, tab: entry } })}>
+          {tabLabels[entry]}
+        </button>
+      ))}
+    </div>
+  );
+  if (tab === "vitals") {
+    return (
+      <div className="page-stack">
+        <SetupBar project={project} setup={data} running={running} />
+        {tabs}
+        <VitalsView project={project} />
+      </div>
+    );
+  }
   return (
     <div className="page-stack">
       <SetupBar project={project} setup={data} running={running} />
+      {tabs}
       {data.audits.length === 0 ? (
         <div className="oc-card">
           <Empty icon={<ScanSearch size={28} />} title={t("audit.emptyTitle")}>
@@ -457,10 +494,24 @@ export function SiteAudit({ project }: { project: ProjectRow }) {
                 {t("audit.delete")}
               </Button>
             )}
+            {shown && shown.status !== "running" && shown.crawl_id && (
+              <Button small busy={findings.isPending} onClick={() => findings.mutate()} title={t("audit.findingsCsvHint")}>
+                <Download size={14} />
+                {t("audit.findingsCsv")}
+              </Button>
+            )}
           </div>
-          {report.isLoading && <Loading label={t("common.loading")} />}
-          {report.error && <ErrorState title={t("common.loadFailed")} message={explain(report.error, t).message} retry={() => void report.refetch()} retryLabel={t("common.retry")} />}
-          {report.data && <ReportView project={project} report={report.data} onOpen={setIssue} />}
+          {tab === "issues" && (
+            <>
+              {report.isLoading && <Loading label={t("common.loading")} />}
+              {report.error && <ErrorState title={t("common.loadFailed")} message={explain(report.error, t).message} retry={() => void report.refetch()} retryLabel={t("common.retry")} />}
+              {report.data && <ReportView project={project} report={report.data} onOpen={setIssue} />}
+            </>
+          )}
+          {tab === "links" && <LinksView project={project} auditId={shown?.id ?? null} />}
+          {tab === "pages" && <PageExplorer project={project} auditId={shown?.id ?? null} />}
+          {tab === "hreflang" && <HreflangView project={project} auditId={shown?.id ?? null} />}
+          {tab === "trend" && <AuditTrend audits={data.audits} />}
         </>
       )}
       {issue && shown && <IssueDialog project={project} auditId={shown.id} issue={issue} onClose={() => setIssue(null)} />}

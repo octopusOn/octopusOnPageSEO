@@ -4,12 +4,16 @@
 //! - [`search_console`]: the user's properties and search analytics (clicks, impressions,
 //!   CTR and average position) by date, query, page, country or device, 25,000 rows a request;
 //! - [`analytics`]: the user's Google Analytics 4 properties and organic search sessions,
-//!   engaged sessions, key events and revenue by landing page or by day.
+//!   engaged sessions, key events and revenue by landing page or by day;
+//! - [`vitals`]: Core Web Vitals with the user's API key: real-user data from the Chrome UX
+//!   Report (now and week by week) and PageSpeed Insights lab runs.
 //!
-//! Requests go only to Google's API hosts; the token is never part of an error.
+//! Requests go only to Google's API hosts; the token or key is never part of an error or an
+//! address (keys travel in the `X-goog-api-key` header).
 
 pub mod analytics;
 pub mod search_console;
+pub mod vitals;
 
 use octopuson_core::http::{HttpRequest, HttpResponse, HttpTransport};
 use serde_json::Value;
@@ -20,6 +24,7 @@ const HOSTS: &[&str] = &[
     "searchconsole.googleapis.com",
     "analyticsdata.googleapis.com",
     "analyticsadmin.googleapis.com",
+    "chromeuxreport.googleapis.com",
 ];
 
 /// Why Google did not answer.
@@ -37,6 +42,9 @@ pub enum GoogleError {
         /// Seconds to wait, when known.
         retry_after: Option<u64>,
     },
+    /// Google has nothing for the question (the Chrome UX Report has too few visits).
+    #[error("Google has no data: {0}")]
+    NotFound(String),
     /// Google or the network failed.
     #[error("Google is unavailable: {0}")]
     Unavailable(String),
@@ -66,6 +74,22 @@ pub(crate) fn send(
     token: &str,
     request: HttpRequest,
 ) -> Result<Value, GoogleError> {
+    let request = allowed(request)?.header("Authorization", format!("Bearer {token}"));
+    answer(transport, &request, token)
+}
+
+/// Sends a request with an API key and reads the JSON answer.
+pub(crate) fn send_keyed(
+    transport: &dyn HttpTransport,
+    key: &str,
+    request: HttpRequest,
+) -> Result<Value, GoogleError> {
+    let request = allowed(request)?.header("X-goog-api-key", key);
+    answer(transport, &request, key)
+}
+
+/// The request, when it goes to one of Google's API hosts.
+fn allowed(request: HttpRequest) -> Result<HttpRequest, GoogleError> {
     let host = url::Url::parse(&request.url)
         .ok()
         .and_then(|url| url.host_str().map(str::to_owned));
@@ -75,15 +99,24 @@ pub(crate) fn send(
             request.url
         )));
     }
-    let request = request.header("Authorization", format!("Bearer {token}"));
+    Ok(request)
+}
+
+/// Sends a request and reads the JSON answer; `secret` never appears in an error.
+fn answer(
+    transport: &dyn HttpTransport,
+    request: &HttpRequest,
+    secret: &str,
+) -> Result<Value, GoogleError> {
     let response = transport
-        .send(&request)
-        .map_err(|error| GoogleError::Unavailable(error.to_string().replace(token, "…")))?;
+        .send(request)
+        .map_err(|error| GoogleError::Unavailable(error.to_string().replace(secret, "…")))?;
     if !response.is_success() {
-        let message = message_of(&response).replace(token, "…");
+        let message = message_of(&response).replace(secret, "…");
         return Err(match response.status {
             401 => GoogleError::Auth(message),
             403 => GoogleError::Forbidden(message),
+            404 => GoogleError::NotFound(message),
             429 => GoogleError::RateLimited {
                 retry_after: response.retry_after(),
             },

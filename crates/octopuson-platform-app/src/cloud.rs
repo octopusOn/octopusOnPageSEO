@@ -116,7 +116,7 @@ impl HttpTransport for Fresh {
 pub fn app_name() -> String {
     format!(
         "geo-seo-platform/{} {}",
-        env!("CARGO_PKG_VERSION"),
+        env!("PLATFORM_VERSION"),
         std::env::consts::OS
     )
 }
@@ -227,7 +227,7 @@ impl Workspace {
         let transport = self.plain_transport(&settings)?;
         let context = serde_json::json!({
             "program": crate::APPLICATION,
-            "version": env!("CARGO_PKG_VERSION"),
+            "version": env!("PLATFORM_VERSION"),
             "page": page,
             "error": error,
         });
@@ -277,6 +277,16 @@ impl Workspace {
         let id = connector_for(provider_id)?;
         self.cloud_token()?;
         self.cached_catalog()?.connector(id).cloned()
+    }
+
+    /// Whether the gateway forwards a request (`POST`, `/v3/serp/…`) of a source on credits.
+    pub(crate) fn credit_allows(&self, provider_id: &str, method: &str, path: &str) -> bool {
+        self.credit_connector(provider_id).is_some_and(|connector| {
+            connector.routes.iter().any(|route| {
+                route.method.eq_ignore_ascii_case(method)
+                    && octopuson_cloud::matches_pattern(path, &route.path)
+            })
+        })
     }
 
     /// An own key, when saved for the provider's addresses.

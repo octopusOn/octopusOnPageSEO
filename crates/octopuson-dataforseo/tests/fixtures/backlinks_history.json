@@ -1,0 +1,144 @@
+{
+  "version": "0.1.20260701",
+  "status_code": 20000,
+  "status_message": "Ok.",
+  "time": "0.2 sec.",
+  "cost": 0.02012,
+  "tasks_count": 1,
+  "tasks_error": 0,
+  "tasks": [
+    {
+      "id": "10231200-1535-0387-0000-6f9e1a2c6b11",
+      "status_code": 20000,
+      "status_message": "Ok.",
+      "time": "0.1 sec.",
+      "cost": 0.02012,
+      "result_count": 1,
+      "path": [
+        "v3",
+        "backlinks",
+        "history",
+        "live"
+      ],
+      "data": {
+        "api": "backlinks",
+        "function": "history",
+        "target": "example.com",
+        "date_from": "2019-01-01",
+        "rank_scale": "one_hundred"
+      },
+      "result": [
+        {
+          "target": "example.com",
+          "date_from": "2019-01-01 00:00:00 +00:00",
+          "date_to": "2026-10-23 00:00:00 +00:00",
+          "items_count": 3,
+          "items": [
+            {
+              "type": "backlinks_history",
+              "date": "2026-09-01 00:00:00 +00:00",
+              "rank": 44,
+              "backlinks": 8650,
+              "crawled_pages": 900,
+              "info": {
+                "server": "nginx",
+                "cms": null,
+                "platform_type": [
+                  "unknown"
+                ],
+                "ip_address": "1.2.3.4",
+                "country": "TR",
+                "is_ip": false,
+                "target_spam_score": 4
+              },
+              "internal_links_count": 3000,
+              "external_links_count": 400,
+              "referring_domains": 431,
+              "referring_domains_nofollow": 40,
+              "referring_main_domains": 411,
+              "referring_main_domains_nofollow": 30,
+              "referring_ips": 300,
+              "referring_subnets": 250,
+              "referring_pages": 8150,
+              "referring_pages_nofollow": 800,
+              "broken_backlinks": 12,
+              "broken_pages": 3,
+              "new_backlinks": 120,
+              "lost_backlinks": 80,
+              "new_referring_domains": 9,
+              "lost_referring_domains": 4
+            },
+            {
+              "type": "backlinks_history",
+              "date": "2019-01-01 00:00:00 +00:00",
+              "rank": 21,
+              "backlinks": 1200,
+              "crawled_pages": 900,
+              "info": {
+                "server": "nginx",
+                "cms": null,
+                "platform_type": [
+                  "unknown"
+                ],
+                "ip_address": "1.2.3.4",
+                "country": "TR",
+                "is_ip": false,
+                "target_spam_score": 4
+              },
+              "internal_links_count": 3000,
+              "external_links_count": 400,
+              "referring_domains": 90,
+              "referring_domains_nofollow": 40,
+              "referring_main_domains": 70,
+              "referring_main_domains_nofollow": 30,
+              "referring_ips": 300,
+              "referring_subnets": 250,
+              "referring_pages": 700,
+              "referring_pages_nofollow": 800,
+              "broken_backlinks": 12,
+              "broken_pages": 3,
+              "new_backlinks": 0,
+              "lost_backlinks": 0,
+              "new_referring_domains": 0,
+              "lost_referring_domains": 0
+            },
+            {
+              "type": "backlinks_history",
+              "date": "2026-10-01 00:00:00 +00:00",
+              "rank": 45,
+              "backlinks": 8800,
+              "crawled_pages": 900,
+              "info": {
+                "server": "nginx",
+                "cms": null,
+                "platform_type": [
+                  "unknown"
+                ],
+                "ip_address": "1.2.3.4",
+                "country": "TR",
+                "is_ip": false,
+                "target_spam_score": 4
+              },
+              "internal_links_count": 3000,
+              "external_links_count": 400,
+              "referring_domains": 440,
+              "referring_domains_nofollow": 40,
+              "referring_main_domains": 420,
+              "referring_main_domains_nofollow": 30,
+              "referring_ips": 300,
+              "referring_subnets": 250,
+              "referring_pages": 8300,
+              "referring_pages_nofollow": 800,
+              "broken_backlinks": 12,
+              "broken_pages": 3,
+              "new_backlinks": 210,
+              "lost_backlinks": 60,
+              "new_referring_domains": 14,
+              "lost_referring_domains": 5
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

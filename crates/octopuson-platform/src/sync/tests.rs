@@ -6,8 +6,9 @@ use tempfile::TempDir;
 
 use super::*;
 use crate::{
-    Branding, CacheClass, CacheEntry, CheckResult, GscData, Period, ProjectSpec, RankCheckRow,
-    RankSettings, ReportSpec, RunEnd, SearchKind, SearchRow, TrackerSpec,
+    AdSeen, Branding, CacheClass, CacheEntry, CheckResult, GscData, LinkProspect, LocalPointRow,
+    LocalReviewRow, LocalSettings, MetricPoint, Period, ProjectSpec, RankCheckRow, RankSettings,
+    ReportColors, ReportSpec, RunEnd, ScoreToSave, SearchKind, SearchRow, TrackerSpec,
 };
 
 const T0: &str = "2026-10-22T09:00:00Z";
@@ -150,6 +151,8 @@ fn report_spec(name: &str, recipients: &[&str]) -> ReportSpec {
             .iter()
             .map(|&address| address.to_owned())
             .collect(),
+        design: "clean".to_owned(),
+        colors: ReportColors::default(),
     }
 }
 
@@ -189,7 +192,19 @@ fn a_project_with_everything_it_holds_reaches_every_copy() {
         .add_to_keyword_list(list.id, &[("bot".to_owned(), json!({ "volume": 10 }))], T0)
         .unwrap();
     store
-        .save_report(id, None, &report_spec("Aylık", &["a@ornek.com"]), T0)
+        .save_report(
+            id,
+            None,
+            &ReportSpec {
+                design: "elegant".to_owned(),
+                colors: ReportColors {
+                    cover: Some("#102030".to_owned()),
+                    ..ReportColors::default()
+                },
+                ..report_spec("Aylık", &["a@ornek.com"])
+            },
+            T0,
+        )
         .unwrap();
     store
         .save_report_branding(&Branding {
@@ -225,6 +240,11 @@ fn a_project_with_everything_it_holds_reaches_every_copy() {
         assert_eq!(
             here.reports(id).unwrap()[0].spec.recipients,
             ["a@ornek.com"]
+        );
+        assert_eq!(here.reports(id).unwrap()[0].spec.design, "elegant");
+        assert_eq!(
+            here.reports(id).unwrap()[0].spec.colors.cover.as_deref(),
+            Some("#102030")
         );
         assert_eq!(
             here.report_branding().unwrap().company.as_deref(),
@@ -391,6 +411,7 @@ fn check(run: i64, project: i64, keyword: i64, tracker: i64) -> RankCheckRow {
         ai_overview: true,
         ai_cited: false,
         snippet: false,
+        owned: Vec::new(),
         results: vec![CheckResult {
             position: 1,
             domain: "rakip.com".to_owned(),
@@ -534,6 +555,18 @@ fn search_console_numbers_and_kept_answers_travel() {
         .store
         .keep("k2", "serp/x", CacheClass::Serp, Some(id), &entry)
         .unwrap();
+    // A filtered page of a list is kept where it was asked.
+    desktop
+        .store
+        .keep(
+            "k3",
+            "dataforseo_labs/x",
+            CacheClass::Domain,
+            Some(id),
+            &entry,
+        )
+        .unwrap();
+    desktop.store.keep_here_only("k3").unwrap();
     round(&desktop, &hub, 1_000);
     let on_hub = project_id(&hub.store, "ornek.com");
     let rows = hub
@@ -544,6 +577,7 @@ fn search_console_numbers_and_kept_answers_travel() {
     assert!(hub.store.cached("k1").unwrap().is_some());
     // Live result pages stay where they were fetched.
     assert!(hub.store.cached("k2").unwrap().is_none());
+    assert!(hub.store.cached("k3").unwrap().is_none());
 
     // An expired answer leaves without a word; a newer one on the web comes back.
     desktop.store.drop_stale(5_000_000_000, 0).unwrap();
@@ -628,4 +662,415 @@ fn forgetting_starts_over_without_losing_data() {
     let crawls = hub.store.sync_clear().unwrap();
     assert_eq!(crawls, [] as [String; 0]);
     assert_eq!(hub.store.project_count().unwrap(), 0);
+}
+
+#[test]
+fn finished_snapshots_travel_with_their_settings() {
+    let desktop = workspace("desktop");
+    let hub = workspace("hub");
+    let id = project(&desktop.store, "ornek.com");
+    desktop
+        .store
+        .save_snapshot_settings(
+            id,
+            &crate::SnapshotSettings {
+                schedule: "monthly".to_owned(),
+                competitors: vec!["rakip.com".to_owned()],
+                last_run_at: None,
+            },
+        )
+        .unwrap();
+    let snapshot = desktop
+        .store
+        .begin_snapshot(id, false, Some("Başlangıç"), T0)
+        .unwrap();
+    round(&desktop, &hub, 1_000);
+    let on_hub = project_id(&hub.store, "ornek.com");
+    assert_eq!(
+        hub.store.snapshot_settings(on_hub).unwrap().competitors,
+        ["rakip.com"]
+    );
+    // Still running: it stays where it is taken.
+    assert_eq!(hub.store.snapshots(on_hub).unwrap().len(), 0);
+    desktop
+        .store
+        .finish_snapshot(
+            snapshot,
+            &crate::SnapshotEnd {
+                status: "done",
+                cost_usd: 0.3,
+                error: None,
+                data: &json!({ "keywords": [{ "keyword": "spor ayakkabı", "position": 4 }] }),
+            },
+            T0,
+        )
+        .unwrap();
+    round(&desktop, &hub, 2_000);
+    let rows = hub.store.snapshots(on_hub).unwrap();
+    assert_eq!(rows.len(), 1);
+    let kept = hub.store.snapshot(on_hub, rows[0].id).unwrap();
+    assert_eq!(kept.label.as_deref(), Some("Başlangıç"));
+    assert_eq!(kept.data.unwrap()["keywords"][0]["position"], 4);
+    assert_eq!(desktop.store.sync_scan(3_000).unwrap(), 0);
+}
+
+#[test]
+fn metric_points_of_a_day_are_one_record_on_every_copy() {
+    let desktop = workspace("desktop");
+    let hub = workspace("hub");
+    let id = project(&desktop.store, "ornek.com");
+    let point = |traffic: f64, taken_at: &str| MetricPoint {
+        target: "ornek.com".to_owned(),
+        kind: "domain".to_owned(),
+        market: "tr-tr".to_owned(),
+        day: "2026-10-22".to_owned(),
+        metrics: json!({ "traffic": traffic }),
+        taken_at: taken_at.to_owned(),
+    };
+    desktop
+        .store
+        .note_metrics(id, &point(900.0, "2026-10-22T08:00:00Z"))
+        .unwrap();
+    round(&desktop, &hub, 1_000);
+    let on_hub = project_id(&hub.store, "ornek.com");
+    let points = |copy: &Copy, project: i64| {
+        copy.store
+            .metric_points(project, "ornek.com", "domain", "tr-tr")
+            .unwrap()
+    };
+    assert_eq!(points(&hub, on_hub)[0].metrics["traffic"], 900.0);
+
+    // The web fetched the same day later: its numbers reach the desktop, still one point.
+    hub.store
+        .note_metrics(on_hub, &point(950.0, "2026-10-22T18:00:00Z"))
+        .unwrap();
+    round(&desktop, &hub, 2_000);
+    let kept = points(&desktop, id);
+    assert_eq!(kept.len(), 1);
+    assert_eq!(kept[0].metrics["traffic"], 950.0);
+}
+
+#[test]
+fn ad_copies_seen_on_two_copies_are_one_with_both_sightings() {
+    let desktop = workspace("desktop");
+    let hub = workspace("hub");
+    let id = project(&desktop.store, "ornek.com");
+    let seen = |keyword: &str| AdSeen {
+        title: "%40 indirim".to_owned(),
+        description: Some("Ücretsiz kargo.".to_owned()),
+        breadcrumb: None,
+        url: None,
+        keyword: keyword.to_owned(),
+    };
+    desktop
+        .store
+        .note_ads(id, "rival.com", &[seen("bot")], "2026-10-01T09:00:00Z")
+        .unwrap();
+    round(&desktop, &hub, 1_000);
+    let on_hub = project_id(&hub.store, "ornek.com");
+    hub.store
+        .note_ads(
+            on_hub,
+            "rival.com",
+            &[seen("terlik")],
+            "2026-10-20T09:00:00Z",
+        )
+        .unwrap();
+    round(&desktop, &hub, 2_000);
+    let copies = desktop.store.ad_copies(id, "rival.com").unwrap();
+    assert_eq!(copies.len(), 1);
+    assert_eq!(copies[0].first_seen, "2026-10-01T09:00:00Z");
+    assert_eq!(copies[0].last_seen, "2026-10-20T09:00:00Z");
+    assert_eq!(copies[0].keywords, ["terlik", "bot"]);
+}
+
+#[test]
+fn link_decisions_and_prospects_reach_every_copy() {
+    let desktop = workspace("desktop");
+    let hub = workspace("hub");
+    let id = project(&desktop.store, "ornek.com");
+    desktop
+        .store
+        .decide_link(id, "spam.xyz", Some("disavow"), Some("ağ"), T0)
+        .unwrap();
+    let prospect = LinkProspect {
+        domain: "blog.example.org".to_owned(),
+        url: None,
+        source: "lost".to_owned(),
+        status: "prospect".to_owned(),
+        note: None,
+        added_at: String::new(),
+        updated_at: String::new(),
+    };
+    desktop.store.save_prospect(id, &prospect, T0).unwrap();
+    round(&desktop, &hub, 1_000);
+    let on_hub = project_id(&hub.store, "ornek.com");
+    assert_eq!(
+        hub.store.link_decisions(on_hub).unwrap()[0].decision,
+        "disavow"
+    );
+    // Won on the web: the desktop sees it.
+    hub.store
+        .save_prospect(
+            on_hub,
+            &LinkProspect {
+                status: "won".to_owned(),
+                ..prospect
+            },
+            "2026-10-23T09:00:00Z",
+        )
+        .unwrap();
+    hub.store
+        .decide_link(on_hub, "spam.xyz", None, None, T0)
+        .unwrap();
+    round(&desktop, &hub, 2_000);
+    assert_eq!(desktop.store.prospects(id).unwrap()[0].status, "won");
+    assert_eq!(desktop.store.link_decisions(id).unwrap().len(), 0);
+}
+
+#[test]
+fn local_settings_runs_reviews_and_ratings_reach_every_copy() {
+    let desktop = workspace("desktop");
+    let hub = workspace("hub");
+    let store = &desktop.store;
+    let id = project(store, "ornek.com");
+    store
+        .save_local_settings(
+            id,
+            &LocalSettings {
+                business: Some(
+                    json!({ "title": "Örnek Kahve", "cid": "222", "lat": 40.99, "lng": 29.03 }),
+                ),
+                keywords: vec!["kahve".to_owned()],
+                grid: 3,
+                radius_km: 1.5,
+                schedule: "weekly".to_owned(),
+                last_run_at: None,
+            },
+        )
+        .unwrap();
+    let run = store
+        .begin_local_run(id, true, 9, 3, 1.5, (40.99, 29.03), T0)
+        .unwrap();
+    let point = |row: u32, position: Option<u16>| LocalPointRow {
+        run_id: run,
+        project_id: id,
+        keyword: "kahve".to_owned(),
+        row,
+        col: 0,
+        lat: 40.99,
+        lng: 29.03,
+        position,
+        top: json!([{ "position": 1, "title": "Rakip" }]),
+        error: None,
+        checked_at: T0.to_owned(),
+    };
+    store
+        .add_local_points(&[point(0, Some(2)), point(1, None)])
+        .unwrap();
+    store
+        .finish_local_run(
+            run,
+            &RunEnd {
+                status: "done",
+                checked: 2,
+                failed: 0,
+                cost_usd: 0.004,
+                error: None,
+            },
+            T0,
+        )
+        .unwrap();
+    let review = LocalReviewRow {
+        review_id: "r-1".to_owned(),
+        rating: Some(5),
+        text: Some("Harika".to_owned()),
+        author: Some("Ayşe".to_owned()),
+        author_url: None,
+        url: None,
+        published_at: Some(T0.to_owned()),
+        owner_answer: None,
+        answered_at: None,
+        photos: 0,
+        local_guide: false,
+        first_seen: T0.to_owned(),
+    };
+    store.save_local_reviews(id, &[review], T0).unwrap();
+    store
+        .note_local_profile(
+            id,
+            "2026-10-22",
+            Some(4.5),
+            Some(640),
+            Some(&json!({ "title": "Örnek Kahve" })),
+            T0,
+        )
+        .unwrap();
+    round(&desktop, &hub, 1_000);
+
+    let on_hub = project_id(&hub.store, "ornek.com");
+    let settings = hub.store.local_settings(on_hub).unwrap();
+    assert_eq!(settings.keywords, ["kahve"]);
+    assert_eq!(settings.business.unwrap()["cid"], "222");
+    let runs = hub.store.local_runs(on_hub, 10).unwrap();
+    assert_eq!((runs[0].status.as_str(), runs[0].grid), ("done", 3));
+    let points = hub.store.local_points(runs[0].id).unwrap();
+    assert_eq!(points.len(), 2);
+    assert_eq!(points[0].position, Some(2));
+    assert_eq!(points[0].top[0]["title"], "Rakip");
+    assert_eq!(
+        hub.store.local_reviews(on_hub, 10).unwrap()[0]
+            .text
+            .as_deref(),
+        Some("Harika")
+    );
+    assert_eq!(
+        hub.store.local_profiles(on_hub).unwrap()[0].votes,
+        Some(640)
+    );
+}
+
+#[test]
+fn briefs_and_their_scores_reach_every_copy_and_go_together() {
+    let desktop = workspace("desktop");
+    let web = workspace("web");
+    let hub = workspace("hub");
+    let store = &desktop.store;
+    let id = project(store, "ornek.com");
+    let running = store
+        .begin_content_brief(id, "spor ayakkabı", ("tr", "tr"), false, T0)
+        .unwrap();
+    round(&desktop, &hub, 1_000);
+    let on_hub = project_id(&hub.store, "ornek.com");
+    assert_eq!(hub.store.content_briefs(on_hub).unwrap().len(), 0);
+
+    store
+        .finish_content_brief(
+            running,
+            &json!({ "keyword": "spor ayakkabı", "terms": [] }),
+            &json!({ "pages": [{ "url": "https://rakip.com/" }] }),
+            0.002,
+            T0,
+        )
+        .unwrap();
+    store
+        .note_brief_writing(running, "# Brief", "claude:claude-opus-5-5", 0.05, T0)
+        .unwrap();
+    let result = json!({ "words": 900 });
+    store
+        .save_content_score(
+            running,
+            id,
+            ScoreToSave {
+                kind: "url",
+                url: Some("https://ornek.com/spor"),
+                title: None,
+                description: None,
+                body: None,
+                score: 61.0,
+                result: &result,
+            },
+            T0,
+        )
+        .unwrap();
+    round(&desktop, &hub, 1_100);
+    round(&web, &hub, 1_200);
+
+    let on_web = project_id(&web.store, "ornek.com");
+    let briefs = web.store.content_briefs(on_web).unwrap();
+    assert_eq!(briefs.len(), 1);
+    assert_eq!(briefs[0].status, "done");
+    assert_eq!(briefs[0].ai_text.as_deref(), Some("# Brief"));
+    assert!((briefs[0].cost_usd - 0.052).abs() < 1e-9);
+    let source = web
+        .store
+        .content_brief_source(briefs[0].id)
+        .unwrap()
+        .unwrap();
+    assert_eq!(source["pages"][0]["url"], "https://rakip.com/");
+    let scores = web.store.content_scores(briefs[0].id).unwrap();
+    assert_eq!(scores.len(), 1);
+    assert_eq!(scores[0].project_id, on_web);
+    assert_eq!(scores[0].result["words"], 900);
+
+    web.store.delete_content_brief(briefs[0].id).unwrap();
+    round(&web, &hub, 1_300);
+    round(&desktop, &hub, 1_400);
+    assert_eq!(store.content_briefs(id).unwrap().len(), 0);
+    assert_eq!(store.content_scores(running).unwrap().len(), 0);
+}
+
+#[test]
+fn vitals_checks_and_the_search_console_comparison_reach_every_copy() {
+    let desktop = workspace("desktop");
+    let hub = workspace("hub");
+    let store = &desktop.store;
+    let id = project(store, "ornek.com");
+    store
+        .save_vital_check(
+            id,
+            &crate::VitalCheck {
+                target: "https://ornek.com".to_owned(),
+                scope: "origin".to_owned(),
+                device: "phone".to_owned(),
+                day: "2026-10-22".to_owned(),
+                field: Some(json!({ "lcp": { "p75": 2400 } })),
+                lab: None,
+                history: Some(json!({ "dates": ["2026-10-19"], "lcp": [2400] })),
+                checked_at: T0.to_owned(),
+            },
+        )
+        .unwrap();
+    let mut settings = store.gsc_settings(id).unwrap();
+    settings.property = Some("sc-domain:ornek.com".to_owned());
+    settings.compare = "year".to_owned();
+    store.save_gsc_settings(id, &settings).unwrap();
+    round(&desktop, &hub, 1_000);
+    let on_hub = project_id(&hub.store, "ornek.com");
+    let checks = hub.store.latest_vitals(on_hub).unwrap();
+    assert_eq!(checks.len(), 1);
+    assert_eq!(checks[0].field.as_ref().unwrap()["lcp"]["p75"], 2400);
+    assert_eq!(checks[0].history.as_ref().unwrap()["lcp"][0], 2400);
+    assert_eq!(hub.store.gsc_settings(on_hub).unwrap().compare, "year");
+}
+
+#[test]
+fn an_alert_found_on_two_copies_is_one_and_reading_it_travels() {
+    let desktop = workspace("desktop");
+    let web = workspace("web");
+    let hub = workspace("hub");
+    let on_desktop = project(&desktop.store, "ornek.com");
+    round(&desktop, &hub, 1_000);
+    round(&web, &hub, 1_100);
+    let on_web = project_id(&web.store, "ornek.com");
+    let alert = crate::NewAlert {
+        key: "gsc|2026-10-20".to_owned(),
+        kind: "gsc_drop".to_owned(),
+        severity: "bad".to_owned(),
+        page: "gsc".to_owned(),
+        params: json!({}),
+        detail: json!({ "drop": 25 }),
+        created_at: T0.to_owned(),
+    };
+    desktop.store.add_alert(on_desktop, &alert).unwrap();
+    web.store.add_alert(on_web, &alert).unwrap();
+    let mut settings = desktop.store.alert_settings(on_desktop).unwrap();
+    settings.rules.links = true;
+    desktop
+        .store
+        .save_alert_settings(on_desktop, &settings)
+        .unwrap();
+    round(&desktop, &hub, 1_200);
+    round(&web, &hub, 1_300);
+    round(&desktop, &hub, 1_400);
+    assert_eq!(web.store.alerts(Some(on_web), false, 10).unwrap().len(), 1);
+    assert!(web.store.alert_settings(on_web).unwrap().rules.links);
+    web.store
+        .mark_alerts_read(Some(on_web), None, "2026-10-22T10:00:00Z")
+        .unwrap();
+    round(&web, &hub, 1_500);
+    round(&desktop, &hub, 1_600);
+    let seen = desktop.store.alerts(Some(on_desktop), false, 10).unwrap();
+    assert_eq!(seen.len(), 1);
+    assert_eq!(seen[0].read_at.as_deref(), Some("2026-10-22T10:00:00Z"));
 }

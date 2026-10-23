@@ -4,11 +4,17 @@
 //! DataForSEO prices a live page per ten results, so a check's depth is rounded up to whole
 //! pages. Google may load an AI Overview after the page; asking for it costs a little more,
 //! refunded when there is none.
+//!
+//! Checks that need not answer at once (the schedule's) go through the standard queue instead:
+//! up to a hundred tasks a request, each read back by its id within minutes, for less than a
+//! third of the live price.
 
 use octopuson_serp::{Device, Engine};
 use serde::{Deserialize, Serialize};
 use serde_json::{Value, json};
 
+use crate::prices::{SERP_STANDARD_AI_OVERVIEW, SERP_STANDARD_PAGE};
+pub use crate::queue::{Posted, QUEUE_BATCH, posted_from_tasks};
 use crate::serp::LIVE_PAGE;
 use crate::{DfsError, Market, count, items_of, target_domain};
 
@@ -19,10 +25,16 @@ pub const MAX_DEPTH: u32 = 100;
 pub const KEPT_RESULTS: usize = 20;
 
 /// Extra price of an AI Overview Google loads after the page, US dollars.
-pub const AI_OVERVIEW_USD: f64 = 0.002;
+pub const AI_OVERVIEW_USD: f64 = crate::prices::SERP_AI_OVERVIEW;
 
 /// Longest keyword DataForSEO takes.
 const MAX_KEYWORD: usize = 700;
+
+/// Radius of a place given by coordinates without one (DataForSEO's example).
+const DEFAULT_RADIUS: f64 = 200.0;
+
+/// Smallest and largest radius DataForSEO takes with coordinates.
+const RADII: std::ops::RangeInclusive<f64> = 199.0..=199_999.0;
 
 /// The live endpoint of an engine's organic results.
 pub const fn endpoint(engine: Engine) -> &'static str {
@@ -31,6 +43,20 @@ pub const fn endpoint(engine: Engine) -> &'static str {
         Engine::Bing => "serp/bing/organic/live/advanced",
         Engine::Yandex => "serp/yandex/organic/live/advanced",
     }
+}
+
+/// The standard queue's endpoint taking an engine's checks.
+pub const fn queue_post(engine: Engine) -> &'static str {
+    match engine {
+        Engine::Google => "serp/google/organic/task_post",
+        Engine::Bing => "serp/bing/organic/task_post",
+        Engine::Yandex => "serp/yandex/organic/task_post",
+    }
+}
+
+/// Where a queued check's result page is read, free, by the id the queue gave it.
+pub fn queue_get(engine: Engine, id: &str) -> String {
+    format!("serp/{}/organic/task_get/advanced/{id}", engine.as_str())
 }
 
 /// Results looked at: 10–100, rounded up to whole pages of ten.
@@ -50,12 +76,67 @@ pub fn estimate(engine: Engine, results: u32, ai_overview: bool) -> f64 {
     LIVE_PAGE * f64::from(pages) + late
 }
 
-/// A city or region as DataForSEO names it (`Istanbul,Istanbul,Turkey`), checked to be in the
-/// market's country.
+/// The list price of one check through the standard queue, US dollars.
+pub fn queue_estimate(engine: Engine, results: u32, ai_overview: bool) -> f64 {
+    let pages = depth(results) / 10;
+    let late = if ai_overview && engine == Engine::Google {
+        SERP_STANDARD_AI_OVERVIEW
+    } else {
+        0.0
+    };
+    SERP_STANDARD_PAGE * f64::from(pages) + late
+}
+
+/// Whether a place is written as coordinates (`latitude,longitude` and maybe a radius) rather
+/// than named.
+pub fn is_coordinate(location: &str) -> bool {
+    let parts: Vec<&str> = location.split(',').map(str::trim).collect();
+    (2..=3).contains(&parts.len()) && parts.iter().all(|part| part.parse::<f64>().is_ok())
+}
+
+/// A number with at most seven decimals and no trailing zeros.
+fn decimal(value: f64) -> String {
+    let text = format!("{value:.7}");
+    text.trim_end_matches('0').trim_end_matches('.').to_owned()
+}
+
+/// Coordinates as DataForSEO takes them: `latitude,longitude,radius`, seven decimals at most.
+fn coordinates(location: &str) -> Result<String, DfsError> {
+    let numbers: Vec<f64> = location
+        .split(',')
+        .filter_map(|part| part.trim().parse().ok())
+        .collect();
+    let (latitude, longitude) = (numbers[0], numbers[1]);
+    let radius = numbers.get(2).copied().unwrap_or(DEFAULT_RADIUS);
+    if !(-90.0..=90.0).contains(&latitude)
+        || !(-180.0..=180.0).contains(&longitude)
+        || !RADII.contains(&radius)
+    {
+        return Err(DfsError::Config(
+            "location: coordinates as latitude,longitude with an optional radius of 199–199999"
+                .to_owned(),
+        ));
+    }
+    Ok(format!(
+        "{},{},{}",
+        decimal(latitude),
+        decimal(longitude),
+        decimal(radius.round())
+    ))
+}
+
+/// A city, region or postal code as DataForSEO names it (`Istanbul,Istanbul,Turkey`), checked
+/// to be in the market's country; or coordinates (`41.0082,28.9784` with an optional radius),
+/// which DataForSEO takes as they are.
 ///
 /// # Errors
-/// [`DfsError::Config`] for a location outside the country, or an unknown country.
+/// [`DfsError::Config`] for a location outside the country, unusable coordinates, or an unknown
+/// country.
 pub fn location(location: &str, market: &Market) -> Result<String, DfsError> {
+    if is_coordinate(location) {
+        market.location_name()?;
+        return coordinates(location);
+    }
     let parts: Vec<&str> = location
         .split(',')
         .map(str::trim)
@@ -113,13 +194,17 @@ pub fn task(query: &RankQuery<'_>) -> Result<Value, DfsError> {
         ));
     }
     let mut task = query.market.fields()?;
-    // A city or region replaces the country's code: DataForSEO takes one location.
+    // A city, region or point replaces the country's code: DataForSEO takes one location.
     if let Some(place) = query.location {
-        let name = location(place, query.market)?;
+        let place = location(place, query.market)?;
         if let Some(fields) = task.as_object_mut() {
             fields.remove("location_code");
         }
-        task["location_name"] = json!(name);
+        if is_coordinate(&place) {
+            task["location_coordinate"] = json!(place);
+        } else {
+            task["location_name"] = json!(place);
+        }
     }
     task["keyword"] = json!(keyword);
     task["depth"] = json!(depth(query.depth));
@@ -127,6 +212,18 @@ pub fn task(query: &RankQuery<'_>) -> Result<Value, DfsError> {
     if query.ai_overview && query.engine == Engine::Google {
         task["load_async_ai_overview"] = json!(true);
     }
+    Ok(task)
+}
+
+/// The task of a check sent to the standard queue (normal priority), named by `tag` so its
+/// answer finds its keyword and place.
+///
+/// # Errors
+/// As [`task`].
+pub fn queued_task(query: &RankQuery<'_>, tag: &str) -> Result<Value, DfsError> {
+    let mut task = task(query)?;
+    task["priority"] = json!(1);
+    task["tag"] = json!(tag.chars().take(255).collect::<String>());
     Ok(task)
 }
 
@@ -161,6 +258,9 @@ pub struct RankCheck {
     pub ai_cited: bool,
     /// The site holds the featured snippet.
     pub snippet: bool,
+    /// Element types of the page that show the site (its featured snippet, an AI Overview
+    /// citing it, its place in the local pack, a video or a question's answer from it).
+    pub owned: Vec<String>,
     /// The first organic results, for the shares.
     pub results: Vec<RankResult>,
     /// Results the engine reports.
@@ -217,6 +317,38 @@ fn cited(item: &Value) -> Vec<String> {
     domains
 }
 
+/// Every host an element of the page names: its own, its parts' and their references', a few
+/// levels down.
+fn hosts_in(value: &Value, levels: u8, hosts: &mut Vec<String>) {
+    if levels == 0 {
+        return;
+    }
+    match value {
+        Value::Object(fields) => {
+            if let Some(domain) = host(value) {
+                hosts.push(domain);
+            } else if let Some(url) = fields.get("url").and_then(Value::as_str) {
+                let domain = target_domain(url);
+                if !domain.is_empty() {
+                    hosts.push(domain);
+                }
+            }
+            for child in fields
+                .values()
+                .filter(|child| child.is_array() || child.is_object())
+            {
+                hosts_in(child, levels - 1, hosts);
+            }
+        }
+        Value::Array(list) => {
+            for child in list {
+                hosts_in(child, levels - 1, hosts);
+            }
+        }
+        _ => {}
+    }
+}
+
 /// Reads a check's result page for `site` (a domain; its subdomains count as the site).
 pub fn rank_from_result(result: &[Value], site: &str) -> RankCheck {
     let site = target_domain(site);
@@ -240,9 +372,19 @@ pub fn rank_from_result(result: &[Value], site: &str) -> RankCheck {
         ..RankCheck::default()
     };
     let mut organic: Vec<RankResult> = Vec::new();
+    let mut owned: Vec<String> = Vec::new();
     for item in items_of(result) {
         let kind = item.get("type").and_then(Value::as_str).unwrap_or_default();
         let ours = host(item).is_some_and(|host| belongs(&host, &site));
+        if !kind.is_empty() && kind != "organic" && kind != "paid" {
+            let mut hosts = Vec::new();
+            hosts_in(item, 5, &mut hosts);
+            if hosts.iter().any(|host| belongs(host, &site))
+                && !owned.iter().any(|known| known == kind)
+            {
+                owned.push(kind.to_owned());
+            }
+        }
         match kind {
             "organic" => {
                 let (Some(position), Some(domain), Some(url)) = (
@@ -284,6 +426,11 @@ pub fn rank_from_result(result: &[Value], site: &str) -> RankCheck {
         check.position = Some(*position);
         check.url = Some(url.clone());
     }
+    // A snippet shown as an organic result is held the same way.
+    if check.snippet && !owned.iter().any(|kind| kind == "featured_snippet") {
+        owned.push("featured_snippet".to_owned());
+    }
+    check.owned = owned;
     organic.truncate(KEPT_RESULTS);
     check.results = organic;
     check

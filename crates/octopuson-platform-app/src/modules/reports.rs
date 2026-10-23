@@ -3,7 +3,8 @@
 //! scheduled e-mails (web).
 //!
 //! A report never pays a source: it shows what rank tracking, Search Console, the site audit,
-//! AI visibility and the kept domain and backlink answers already hold. PDFs are printed by an
+//! AI visibility, the kept domain and backlink answers and the project's snapshots already hold.
+//! A report can be e-mailed after each new snapshot, with what moved since. PDFs are printed by an
 //! installed Chrome, Chromium or Edge; on the web each PDF is metered (`report.pdf`) once the
 //! gateway prices it. Share links and e-mails exist only on the web.
 
@@ -13,11 +14,14 @@ use base64::Engine as _;
 use base64::engine::general_purpose::{STANDARD, URL_SAFE_NO_PAD};
 use octopuson_cloud::Metered;
 use octopuson_core::{Date, Timestamp};
-use octopuson_platform::{Branding, DeliveryRow, REPORT_WIDGETS, ReportRow, ReportSpec, unix_now};
+use octopuson_platform::{
+    Branding, DeliveryRow, REPORT_DESIGNS, REPORT_WIDGETS, ReportRow, ReportSpec, unix_now,
+};
 use octopuson_serp_score::rank::seconds_of;
 use serde::{Deserialize, Serialize};
 use serde_json::{Value, json};
 
+use super::snapshots::{self, CompareAsk, Compared};
 use crate::jobs::{JobDone, JobManager, NoEvents};
 use crate::mail::{Attachment, Mail};
 use crate::report::{self, Sources, texts};
@@ -39,6 +43,8 @@ const SCHEDULE_COMMANDS: &[&str] = &[
     "delete_report",
     "send_report",
     "delete_project",
+    "start_snapshot",
+    "delete_snapshot",
 ];
 
 /// Whether a command may move when a report e-mail is due next.
@@ -60,6 +66,7 @@ fn day(back: u32) -> String {
 }
 
 /// The modules' reports a report needs.
+#[allow(clippy::too_many_lines)] // one question per part
 fn sources(workspace: &Arc<Workspace>, report: &ReportRow) -> Sources {
     let jobs = JobManager::new(Arc::new(NoEvents));
     let open: Opener = Arc::new(|_| false);
@@ -122,7 +129,170 @@ fn sources(workspace: &Arc<Workspace>, report: &ReportRow) -> Sources {
                 )
             })
             .flatten(),
+        comparison: wants(&["comparison"])
+            .then(|| compared(workspace, report, false))
+            .flatten(),
+        comparison_previous: wants(&["comparison_previous"])
+            .then(|| compared(workspace, report, true))
+            .flatten(),
+        organic: wants(&["organic"])
+            .then(|| organic(&ask, project))
+            .flatten(),
+        links: wants(&["link_history"])
+            .then(|| links(&ask, project))
+            .flatten(),
+        gap: wants(&["gap"])
+            .then(|| {
+                ask(
+                    "get_gap",
+                    json!({ "project_id": project, "report": "keywords" }),
+                )
+                .and_then(|kept| kept.get("data").cloned())
+            })
+            .flatten(),
+        lists: wants(&["keyword_lists"])
+            .then(|| keyword_lists(&ask, project))
+            .flatten(),
+        opportunities: wants(&["opportunities"])
+            .then(|| {
+                ask(
+                    "opportunities",
+                    json!({ "project_id": project, "lang": report.spec.language }),
+                )
+            })
+            .flatten(),
+        local: wants(&["local"])
+            .then(|| {
+                let at = json!({ "project_id": project });
+                Some(json!({
+                    "setup": ask("local_setup", at.clone())?,
+                    "grid": ask("local_grid", at.clone())?,
+                    "reviews": ask("local_reviews", at),
+                }))
+            })
+            .flatten(),
     }
+}
+
+/// The data of a kept answer and when it was fetched.
+fn kept_data(kept: Option<Value>) -> (Value, Value) {
+    kept.map_or((Value::Null, Value::Null), |kept| {
+        (
+            kept.get("data").cloned().unwrap_or(Value::Null),
+            kept.get("fetched_at").cloned().unwrap_or(Value::Null),
+        )
+    })
+}
+
+/// Organic search as the Site Explorer keeps it: the summary, the keywords (the snapshot's
+/// thousand, else the page's hundred), the lost ones, the history and the program's own points.
+fn organic(ask: &dyn Fn(&str, Value) -> Option<Value>, project: i64) -> Option<Value> {
+    let overview = |extra: Value| {
+        let mut arguments = json!({ "project_id": project });
+        if let (Some(fields), Some(extra)) = (arguments.as_object_mut(), extra.as_object()) {
+            fields.extend(extra.clone());
+        }
+        ask("get_overview", arguments)
+    };
+    let (summary, fetched_at) = kept_data(overview(json!({ "report": "summary" })));
+    let (keywords, _) = kept_data(
+        overview(json!({ "report": "keywords", "limit": crate::snapshot::LIST_ROWS }))
+            .or_else(|| overview(json!({ "report": "keywords" }))),
+    );
+    if summary.is_null() && keywords.is_null() {
+        return None;
+    }
+    let (lost, _) = kept_data(overview(json!({ "report": "keywords", "set": "lost" })));
+    let (history, _) = kept_data(overview(json!({ "report": "history" })));
+    Some(json!({
+        "summary": summary,
+        "fetched_at": fetched_at,
+        "keywords": keywords,
+        "lost": lost,
+        "history": history,
+        "points": ask("metric_history", json!({ "project_id": project, "kind": "domain" })),
+    }))
+}
+
+/// Backlinks over time as the Backlinks page keeps them, with the user's own link work.
+fn links(ask: &dyn Fn(&str, Value) -> Option<Value>, project: i64) -> Option<Value> {
+    let backlinks = |report: &str| {
+        ask(
+            "get_backlinks",
+            json!({ "project_id": project, "report": report }),
+        )
+    };
+    let (summary, fetched_at) = kept_data(backlinks("summary"));
+    let (history, _) = kept_data(backlinks("history"));
+    let (new_lost, _) = kept_data(backlinks("new_lost"));
+    let (audit, _) = kept_data(backlinks("audit"));
+    let at = json!({ "project_id": project });
+    let data = json!({
+        "summary": summary,
+        "fetched_at": fetched_at,
+        "history": history,
+        "new_lost": new_lost,
+        "audit": audit,
+        "points": ask("metric_history", json!({ "project_id": project, "kind": "backlinks" })),
+        "decisions": ask("link_decisions", at.clone()),
+        "prospects": ask("link_prospects", at),
+    });
+    let something = [
+        "summary",
+        "history",
+        "new_lost",
+        "audit",
+        "decisions",
+        "prospects",
+        "points",
+    ]
+    .iter()
+    .any(|key| match data.get(key) {
+        Some(Value::Array(rows)) => !rows.is_empty(),
+        Some(value) => !value.is_null(),
+        None => false,
+    });
+    something.then_some(data)
+}
+
+/// The project's keyword lists with their keywords, the largest first.
+fn keyword_lists(ask: &dyn Fn(&str, Value) -> Option<Value>, project: i64) -> Option<Value> {
+    let lists = ask("keyword_lists", json!({ "project_id": project }))?;
+    let mut rows: Vec<&Value> = lists.as_array()?.iter().collect();
+    rows.sort_by_key(|list| {
+        std::cmp::Reverse(
+            list.get("keywords")
+                .and_then(Value::as_u64)
+                .unwrap_or_default(),
+        )
+    });
+    let filled: Vec<Value> = rows
+        .into_iter()
+        .take(report::research::LISTS_SHOWN)
+        .filter_map(|list| {
+            let id = list.get("id")?.as_i64()?;
+            Some(json!({
+                "name": list.get("name"),
+                "keywords": ask("list_keywords", json!({ "list_id": id }))?,
+            }))
+        })
+        .collect();
+    (!filled.is_empty()).then_some(Value::Array(filled))
+}
+
+/// The project's latest snapshot against its first (or, `previous`, the one before it).
+fn compared(workspace: &Workspace, report: &ReportRow, previous: bool) -> Option<Compared> {
+    let ask = CompareAsk {
+        project_id: report.project_id,
+        from: None,
+        to: None,
+        lang: Some(report.spec.language.clone()),
+        previous,
+    };
+    snapshots::compared(workspace, &ask)
+        .inspect_err(|error| tracing::warn!(report = report.id, %error, "snapshots not compared"))
+        .ok()
+        .flatten()
 }
 
 /// A report drawn now, as a page.
@@ -230,6 +400,8 @@ struct ReportsSetup {
     branding: Branding,
     /// Parts a report can show, in order.
     widgets: Vec<&'static str>,
+    /// Designs a report can have, the default first.
+    designs: Vec<&'static str>,
     /// PDFs can be printed here.
     can_print: bool,
     /// Read-only links can be made (web).
@@ -251,6 +423,7 @@ fn reports_setup(context: &Context<'_>, ask: ProjectAsk) -> Result<ReportsSetup,
         reports,
         branding,
         widgets: REPORT_WIDGETS.to_vec(),
+        designs: REPORT_DESIGNS.to_vec(),
         can_print: workspace.can_print(),
         can_share: workspace.host() == Host::Web,
         can_email: workspace.mailer.is_some(),
@@ -311,6 +484,46 @@ fn report_html(context: &Context<'_>, ask: ReportAsk) -> Result<Page, AppError> 
         .store()?
         .report(ask.project_id, ask.report_id)?;
     let view = draw(context.workspace, &report)?;
+    Ok(Page {
+        name: file_name(&report, "html"),
+        html: report::html::render(&view),
+    })
+}
+
+#[derive(Debug, Deserialize)]
+struct PreviewAsk {
+    project_id: i64,
+    /// The report being edited; none for a new one.
+    #[serde(default)]
+    report_id: Option<i64>,
+    #[serde(flatten)]
+    spec: ReportSpec,
+}
+
+/// A report drawn with settings not saved yet (the edit dialog's preview); nothing is stored.
+fn report_preview(context: &Context<'_>, ask: PreviewAsk) -> Result<Page, AppError> {
+    let workspace = context.workspace;
+    let report = {
+        let store = workspace.store()?;
+        let (id, now_at) = if let Some(id) = ask.report_id {
+            let saved = store.report(ask.project_id, id)?;
+            (saved.id, saved.updated_at)
+        } else {
+            store.project(ask.project_id)?;
+            (0, now())
+        };
+        ReportRow {
+            id,
+            project_id: ask.project_id,
+            spec: ask.spec,
+            share_token: None,
+            share_views: 0,
+            last_sent_at: None,
+            created_at: now_at.clone(),
+            updated_at: now_at,
+        }
+    };
+    let view = draw(workspace, &report)?;
     Ok(Page {
         name: file_name(&report, "html"),
         html: report::html::render(&view),
@@ -492,23 +705,62 @@ fn send_report(context: &Context<'_>, ask: ReportAsk) -> Result<String, AppError
     start(context.workspace, context.jobs, report, false)
 }
 
+/// Seconds before a report sent after each snapshot looks again while one is being taken.
+const SNAPSHOT_WAIT: i64 = 600;
+
 /// When a report's e-mail is due, seconds since the Unix epoch.
-fn due_at(report: &ReportRow) -> Option<i64> {
+fn due_at(workspace: &Workspace, report: &ReportRow) -> Result<Option<i64>, AppError> {
     let interval = match report.spec.schedule.as_str() {
         "weekly" => 6 * 86_400 + 12 * 3_600,
         "monthly" => 29 * 86_400,
-        _ => return None,
+        "snapshot" => return after_snapshot(workspace, report),
+        _ => return Ok(None),
     };
     if report.spec.recipients.is_empty() {
-        return None;
+        return Ok(None);
     }
-    Some(
+    Ok(Some(
         report
             .last_sent_at
             .as_deref()
             .and_then(seconds_of)
             .map_or(0, |last| last + interval),
-    )
+    ))
+}
+
+/// When a report sent after each new snapshot is due: when a snapshot finished since it was
+/// last sent or saved (and there is one before it to compare with); a little later while one is
+/// being taken; else not until one is.
+fn after_snapshot(workspace: &Workspace, report: &ReportRow) -> Result<Option<i64>, AppError> {
+    if report.spec.recipients.is_empty() {
+        return Ok(None);
+    }
+    let rows = workspace.store()?.snapshots(report.project_id)?;
+    let since = [
+        report.last_sent_at.as_deref(),
+        Some(report.updated_at.as_str()),
+    ]
+    .into_iter()
+    .flatten()
+    .filter_map(seconds_of)
+    .max()
+    .unwrap_or(0);
+    let finished: Vec<i64> = rows
+        .iter()
+        .filter(|row| matches!(row.status.as_str(), "done" | "partial"))
+        .filter_map(|row| row.finished_at.as_deref().and_then(seconds_of))
+        .collect();
+    if finished.len() > 1
+        && let Some(latest) = finished.iter().copied().max().filter(|at| *at > since)
+    {
+        return Ok(Some(latest));
+    }
+    let now_secs = unix_now();
+    let taking = rows.iter().any(|row| {
+        row.status == "running"
+            && seconds_of(&row.taken_at).is_some_and(|at| now_secs - at < 6 * 3_600)
+    });
+    Ok(taking.then_some(now_secs + SNAPSHOT_WAIT))
 }
 
 /// Starts the report e-mails that are due; returns the jobs started.
@@ -520,12 +772,13 @@ pub fn run_due(workspace: &Arc<Workspace>, jobs: &JobManager) -> Result<Vec<Stri
         return Ok(Vec::new());
     }
     let now_secs = unix_now();
-    let due: Vec<ReportRow> = workspace
-        .store()?
-        .report_plans()?
-        .into_iter()
-        .filter(|report| due_at(report).is_some_and(|at| at <= now_secs))
-        .collect();
+    let plans = workspace.store()?.report_plans()?;
+    let mut due: Vec<ReportRow> = Vec::new();
+    for report in plans {
+        if due_at(workspace, &report)?.is_some_and(|at| at <= now_secs) {
+            due.push(report);
+        }
+    }
     let mut started = Vec::new();
     for report in due {
         let id = report.id;
@@ -547,12 +800,14 @@ pub fn next_due(workspace: &Workspace) -> Result<Option<i64>, AppError> {
     if workspace.mailer.is_none() {
         return Ok(None);
     }
-    Ok(workspace
-        .store()?
-        .report_plans()?
-        .iter()
-        .filter_map(due_at)
-        .min())
+    let plans = workspace.store()?.report_plans()?;
+    let mut next: Option<i64> = None;
+    for report in &plans {
+        if let Some(at) = due_at(workspace, report)? {
+            next = Some(next.map_or(at, |next| next.min(at)));
+        }
+    }
+    Ok(next)
 }
 
 /// The page a read-only link shows, drawn now; `None` for a token that opens nothing.
@@ -577,6 +832,7 @@ pub fn register(router: &mut Router) {
     router.add("save_report", save_report);
     router.add("delete_report", delete_report);
     router.add("report_html", report_html);
+    router.add("report_preview", report_preview);
     router.add("report_pdf", report_pdf);
     router.add("report_xlsx", report_xlsx);
     router.add("share_report", share_report);

@@ -1,14 +1,17 @@
 import { useMemo, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Download, ListPlus, Search, Sparkles } from "lucide-react";
-import { Button, DataTable, Field, type Column } from "@octopusseo/ui";
+import { Button, DataTable, Field, type Column, type SortDirection } from "@octopusseo/ui";
 import { api } from "../../api/client";
 import type { KeywordData } from "../../api/types";
 import { useI18n } from "../../i18n";
+import { Entity } from "../../lib/Entity";
+import { useGlossary } from "../../lib/glossary";
 import { useShell } from "../../lib/context";
 import { formatNumber, formatUsd } from "../../lib/format";
 import { download, fold, toCsv } from "../../lib/report";
-import { featureName, tableLabels } from "../../lib/tables";
+import { filterRows, KEYWORD_ACCESSORS, type QueryFilter, type QueryOrder } from "../../lib/query";
+import { featureName, PAGE_SIZES, tableLabels } from "../../lib/tables";
 import { TrackButton } from "../rank/TrackButton";
 
 export const INTENTS = ["informational", "navigational", "commercial", "transactional"] as const;
@@ -97,25 +100,38 @@ export function AddToList({ projectId, keywords, onDone }: { projectId: number; 
   );
 }
 
-/** Keywords with their numbers: filters, selection, adding to a list, CSV, analysing one. */
+/** The table column a sorting field reads. */
+function tableSort(order: readonly QueryOrder[] | undefined): { key: string; direction: SortDirection } {
+  const first = order?.[0];
+  if (!first) return { key: "volume", direction: "desc" };
+  return { key: first.field === "kd" ? "difficulty" : first.field, direction: first.direction };
+}
+
+/** Keywords with their numbers: filters, selection, adding to a list, CSV; each keyword opens its menu. */
 export function KeywordTable({
   rows,
   projectId,
   fileName,
-  onAnalyze,
   extraFilter,
+  query,
 }: {
   rows: KeywordData[];
   projectId: number;
   fileName: string;
-  onAnalyze: (keyword: string) => void;
   /** Narrows the rows further (questions only). */
   extraFilter?: (row: KeywordData) => boolean;
+  /** The page's filter bar: its filters running here and its order; only a search box is added. */
+  query?: { filters: QueryFilter[]; order: QueryOrder[] };
 }) {
   const { t, locale } = useI18n();
+  const gloss = useGlossary();
   const [filters, setFilters] = useState<KeywordFilters>(ALL_KEYWORDS);
   const [selected, setSelected] = useState<Set<string>>(new Set());
-  const shown = useMemo(() => filterKeywordData(extraFilter ? rows.filter(extraFilter) : rows, filters), [rows, filters, extraFilter]);
+  const shown = useMemo(() => {
+    const narrowed = extraFilter ? rows.filter(extraFilter) : rows;
+    const barred = query ? filterRows(narrowed, query.filters, KEYWORD_ACCESSORS) : narrowed;
+    return filterKeywordData(barred, query ? { ...ALL_KEYWORDS, query: filters.query } : filters);
+  }, [rows, filters, extraFilter, query]);
   const toggle = (keyword: string) =>
     setSelected((previous) => {
       const next = new Set(previous);
@@ -137,17 +153,17 @@ export function KeywordTable({
       key: "keyword",
       label: t("overview.colKeyword"),
       render: (row) => (
-        <button type="button" className="link-button cell-main" onClick={() => onAnalyze(row.keyword)} title={t("keywords.analyzeThis")}>
-          {row.keyword}
-        </button>
+        <Entity kind="keyword" value={row.keyword}>
+          <strong className="cell-main">{row.keyword}</strong>
+        </Entity>
       ),
       sort: (row) => row.keyword,
     },
-    { key: "volume", label: t("overview.colVolume"), render: (row) => (row.volume === null ? "—" : formatNumber(row.volume, locale)), sort: (row) => row.volume, numeric: true },
+    { key: "volume", label: t("overview.colVolume"), help: gloss("volume"), render: (row) => (row.volume === null ? "—" : formatNumber(row.volume, locale)), sort: (row) => row.volume, numeric: true },
     { key: "trend", label: t("keywords.colTrend"), render: (row) => <Sparkline values={row.monthly.slice(-12).map((month) => month.volume)} /> },
-    { key: "difficulty", label: t("overview.colKd"), render: (row) => <Difficulty value={row.difficulty} />, sort: (row) => row.difficulty, numeric: true },
-    { key: "cpc", label: t("overview.colCpc"), render: (row) => (row.cpc === null ? "—" : formatUsd(row.cpc, locale)), sort: (row) => row.cpc, numeric: true },
-    { key: "intent", label: t("overview.colIntent"), render: (row) => (row.intent ? t(`overview.intent_${row.intent}`) : ""), sort: (row) => row.intent },
+    { key: "difficulty", label: t("overview.colKd"), help: gloss("kd"), render: (row) => <Difficulty value={row.difficulty} />, sort: (row) => row.difficulty, numeric: true },
+    { key: "cpc", label: t("overview.colCpc"), help: gloss("cpc"), render: (row) => (row.cpc === null ? "—" : formatUsd(row.cpc, locale)), sort: (row) => row.cpc, numeric: true },
+    { key: "intent", label: t("overview.colIntent"), help: gloss("intent"), render: (row) => (row.intent ? t(`overview.intent_${row.intent}`) : ""), sort: (row) => row.intent },
     {
       key: "features",
       label: t("overview.colFeatures"),
@@ -174,27 +190,31 @@ export function KeywordTable({
           <span className="sr-only">{t("keywords.filterSearch")}</span>
           <input className="oc-input" value={filters.query} placeholder={t("keywords.filterSearch")} onChange={(event) => setFilters({ ...filters, query: event.target.value })} />
         </label>
-        <Field label={t("overview.filterIntent")}>
-          <select className="oc-select" value={filters.intent} onChange={(event) => setFilters({ ...filters, intent: event.target.value })}>
-            <option value="">{t("overview.intentAll")}</option>
-            {INTENTS.map((intent) => (
-              <option key={intent} value={intent}>
-                {t(`overview.intent_${intent}`)}
-              </option>
-            ))}
-          </select>
-        </Field>
-        <Field label={t("overview.minVolume")}>
-          <input className="oc-input narrow" inputMode="numeric" value={filters.minVolume || ""} onChange={(event) => setFilters({ ...filters, minVolume: Number(event.target.value.replace(/\D/g, "")) || 0 })} />
-        </Field>
-        <Field label={t("keywords.maxDifficulty")}>
-          <input
-            className="oc-input narrow"
-            inputMode="numeric"
-            value={filters.maxDifficulty >= 100 ? "" : filters.maxDifficulty}
-            onChange={(event) => setFilters({ ...filters, maxDifficulty: Math.min(100, Number(event.target.value.replace(/\D/g, "")) || 100) })}
-          />
-        </Field>
+        {!query && (
+          <>
+            <Field label={t("overview.filterIntent")}>
+              <select className="oc-select" value={filters.intent} onChange={(event) => setFilters({ ...filters, intent: event.target.value })}>
+                <option value="">{t("overview.intentAll")}</option>
+                {INTENTS.map((intent) => (
+                  <option key={intent} value={intent}>
+                    {t(`overview.intent_${intent}`)}
+                  </option>
+                ))}
+              </select>
+            </Field>
+            <Field label={t("overview.minVolume")}>
+              <input className="oc-input narrow" inputMode="numeric" value={filters.minVolume || ""} onChange={(event) => setFilters({ ...filters, minVolume: Number(event.target.value.replace(/\D/g, "")) || 0 })} />
+            </Field>
+            <Field label={t("keywords.maxDifficulty")}>
+              <input
+                className="oc-input narrow"
+                inputMode="numeric"
+                value={filters.maxDifficulty >= 100 ? "" : filters.maxDifficulty}
+                onChange={(event) => setFilters({ ...filters, maxDifficulty: Math.min(100, Number(event.target.value.replace(/\D/g, "")) || 100) })}
+              />
+            </Field>
+          </>
+        )}
       </div>
       <div className="table-toolbar">
         <label className="oc-check">
@@ -233,7 +253,7 @@ export function KeywordTable({
           {t("overview.export")}
         </Button>
       </div>
-      <DataTable rows={shown} columns={columns} rowKey={(row) => row.keyword} initialSort={{ key: "volume", direction: "desc" }} empty={t("overview.emptyRows")} labels={tableLabels(t, locale)} />
+      <DataTable key={JSON.stringify(query?.order ?? [])} rows={shown} columns={columns} rowKey={(row) => row.keyword} initialSort={tableSort(query?.order)} tableId="keyword-table" pageSizes={PAGE_SIZES} empty={t("overview.emptyRows")} labels={tableLabels(t, locale)} />
     </div>
   );
 }

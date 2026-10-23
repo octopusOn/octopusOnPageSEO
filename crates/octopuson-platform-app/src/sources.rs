@@ -77,6 +77,18 @@ pub const PROVIDERS: &[ProviderDef] = &[
         signup_url: "https://www.perplexity.ai/account/api",
     },
     ProviderDef {
+        id: crate::modules::vitals::PROVIDER,
+        secrets_of: crate::modules::vitals::PROVIDER,
+        name: "Google PageSpeed & CrUX",
+        origins: &[
+            "https://www.googleapis.com",
+            "https://chromeuxreport.googleapis.com",
+        ],
+        secrets: &[LLM_KEY],
+        modules: &["audit"],
+        signup_url: "https://console.cloud.google.com/apis/credentials",
+    },
+    ProviderDef {
         id: Wordstat::ID,
         secrets_of: Wordstat::SECRETS,
         name: "Yandex Wordstat",

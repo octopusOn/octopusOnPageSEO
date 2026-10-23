@@ -12,6 +12,7 @@ use std::sync::{Arc, OnceLock};
 use std::time::{Duration, Instant};
 
 use octopuson_platform_app::jobs::NoEvents;
+use octopuson_platform_app::mail::Notifier;
 use octopuson_platform_app::router::Opener;
 use octopuson_platform_app::{CallError, EventSink, Job, Platform, Workspace};
 use serde_json::Value;
@@ -37,6 +38,17 @@ const SYNC_START: Duration = Duration::from_secs(5);
 
 /// Longest wait between syncs while they fail.
 const SYNC_BACKOFF: Duration = Duration::from_secs(300);
+
+/// The program as Windows knows it (its installer registers the name for notifications).
+const APP_ID: &str = "com.octopuson.geo-seo-platform";
+
+/// Shows a Windows notification; the words come from the environment, never inside the script.
+const WINDOWS_TOAST: &str = "[Windows.UI.Notifications.ToastNotificationManager, Windows.UI.Notifications, ContentType = WindowsRuntime] > $null; \
+$template = [Windows.UI.Notifications.ToastNotificationManager]::GetTemplateContent([Windows.UI.Notifications.ToastTemplateType]::ToastText02); \
+$texts = $template.GetElementsByTagName('text'); \
+$texts.Item(0).AppendChild($template.CreateTextNode($env:OCTOPUSON_TITLE)) > $null; \
+$texts.Item(1).AppendChild($template.CreateTextNode($env:OCTOPUSON_BODY)) > $null; \
+[Windows.UI.Notifications.ToastNotificationManager]::CreateToastNotifier($env:OCTOPUSON_APP).Show([Windows.UI.Notifications.ToastNotification]::new($template))";
 
 type Emit = Box<dyn Fn(&Job) + Send + Sync>;
 
@@ -132,6 +144,10 @@ fn start_schedule(platform: Arc<Platform>) {
                 {
                     tracing::warn!(%error, "scheduled work did not start");
                 }
+                // Checks this computer posted to the queue can only be read here.
+                if let Err(error) = platform.collect_queued() {
+                    tracing::warn!(%error, "queued rank checks were not read");
+                }
                 std::thread::sleep(SCHEDULE_TICK);
             }
         });
@@ -204,6 +220,70 @@ fn open_browser(url: &str) -> bool {
     command.is_ok_and(|status| status.success())
 }
 
+/// Shows alerts as the system's notifications.
+struct SystemNotifier;
+
+impl Notifier for SystemNotifier {
+    fn notify(&self, title: &str, body: &str) {
+        let mut command = notification(title, body);
+        // Waited for off the caller's thread, so no finished process is left behind.
+        let spawned = std::thread::Builder::new()
+            .name("notify".to_owned())
+            .spawn(move || match command.status() {
+                Ok(status) if status.success() => {}
+                Ok(status) => tracing::warn!(%status, "the notification was not shown"),
+                Err(error) => tracing::warn!(%error, "the notification was not shown"),
+            });
+        if let Err(error) = spawned {
+            tracing::warn!(%error, "the notification was not shown");
+        }
+    }
+}
+
+/// The system's command showing a notification; the words travel as arguments (in the
+/// environment on Windows), never inside a script.
+fn notification(title: &str, body: &str) -> std::process::Command {
+    if cfg!(target_os = "macos") {
+        let mut command = std::process::Command::new("osascript");
+        command.args([
+            "-e",
+            "on run argv",
+            "-e",
+            "display notification (item 2 of argv) with title (item 1 of argv)",
+            "-e",
+            "end run",
+            "--",
+            title,
+            body,
+        ]);
+        command
+    } else if cfg!(windows) {
+        let mut command = std::process::Command::new("powershell");
+        command
+            .args(["-NoProfile", "-NonInteractive", "-Command", WINDOWS_TOAST])
+            .env("OCTOPUSON_APP", APP_ID)
+            .env("OCTOPUSON_TITLE", title)
+            .env("OCTOPUSON_BODY", body);
+        #[cfg(windows)]
+        {
+            use std::os::windows::process::CommandExt as _;
+            // No console window flashes up.
+            command.creation_flags(0x0800_0000);
+        }
+        command
+    } else {
+        let mut command = std::process::Command::new("notify-send");
+        command.args([
+            "--app-name",
+            "OctopusOn GEO-SEO Platform",
+            "--",
+            title,
+            body,
+        ]);
+        command
+    }
+}
+
 /// Serves the MCP tools on standard input and output instead of opening the window (the
 /// program started as `<program> mcp`); the exit code. Logs would corrupt the answers on
 /// standard output, so none are written, and the schedule stays with the window.
@@ -245,7 +325,7 @@ pub fn run() {
             std::process::exit(1);
         }
     };
-    let state = AppState::new(workspace);
+    let state = AppState::new(workspace.with_notifier(Arc::new(SystemNotifier)));
     start_schedule(Arc::clone(&state.platform));
     start_sync(Arc::clone(&state.platform));
     let application = with_commands(

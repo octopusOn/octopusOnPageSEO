@@ -109,10 +109,14 @@ struct Entry {
     cancel: Arc<AtomicBool>,
 }
 
+/// Called with every job that ended.
+type FinishHook = Arc<dyn Fn(&Job) + Send + Sync>;
+
 struct Inner {
     jobs: Mutex<VecDeque<Entry>>,
     sink: Arc<dyn EventSink>,
     next: AtomicU64,
+    finished: Mutex<Option<FinishHook>>,
 }
 
 /// The jobs of one workspace.
@@ -145,8 +149,19 @@ impl JobManager {
                 jobs: Mutex::new(VecDeque::new()),
                 sink,
                 next: AtomicU64::new(1),
+                finished: Mutex::new(None),
             }),
         }
+    }
+
+    /// Calls `hook` on the job's own thread with every job that ends (alerts are looked for
+    /// after the work that may raise them).
+    pub fn on_finish(&self, hook: impl Fn(&Job) + Send + Sync + 'static) {
+        *self
+            .inner
+            .finished
+            .lock()
+            .unwrap_or_else(PoisonError::into_inner) = Some(Arc::new(hook));
     }
 
     fn jobs(&self) -> std::sync::MutexGuard<'_, VecDeque<Entry>> {
@@ -329,6 +344,16 @@ impl JobManager {
                         }
                     }
                 });
+                let hook = control
+                    .manager
+                    .inner
+                    .finished
+                    .lock()
+                    .unwrap_or_else(PoisonError::into_inner)
+                    .clone();
+                if let (Some(hook), Some(job)) = (hook, control.manager.get(&control.id)) {
+                    hook(&job);
+                }
             })
             .map_err(|error| AppError::Internal(format!("cannot start a job: {error}")))?;
         Ok(id)

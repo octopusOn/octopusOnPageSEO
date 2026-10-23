@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import type { AiCell, AiPromptRow, Brand } from "../../api/types";
-import { cellState, csvRows, filterPrompts, highlight, parsePrompts, platformName, tagsOf, toneOf } from "./ai";
+import { cellState, csvRows, filterPrompts, highlight, parsePrompts, platformName, tagsOf, toneOf, voiceSeries } from "./ai";
 
 const cell = (extra: Partial<AiCell> = {}): AiCell => ({
   mentioned: false,
@@ -60,6 +60,22 @@ describe("ai visibility", () => {
     expect(csvRows(rows, ["chatgpt", "claude"], (state) => state)).toEqual([
       ["En iyi spor ayakkabı?", "ayakkabı", "absent", "mentioned (2)"],
       ["Örnek Mağaza güvenilir mi?", "marka", "missing", "missing"],
+    ]);
+  });
+});
+
+describe("share of voice history", () => {
+  it("draws the own brand first, then the rivals named most, run by run", () => {
+    const point = (brands: Record<string, number>) => ({ run_id: 1, date: "2026-10-01", mention_rate: 0, citation_rate: 0, share_of_voice: 0, engines: {}, brands });
+    const history = [point({ "rakip.com": 60, "ornek.com": 40 }), point({ "ornek.com": 50, "rakip.com": 30, "yeni.com": 20 })];
+    const brands = [
+      { key: "rakip.com", own: false, mentions: 9, citations: 2, share: 30, average_position: 1.5 },
+      { key: "ornek.com", own: true, mentions: 7, citations: 3, share: 50, average_position: 2 },
+    ];
+    expect(voiceSeries(history, brands)).toEqual([
+      { key: "ornek.com", own: true, values: [40, 50] },
+      { key: "rakip.com", own: false, values: [60, 30] },
+      { key: "yeni.com", own: false, values: [null, 20] },
     ]);
   });
 });

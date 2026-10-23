@@ -1,0 +1,100 @@
+{
+  "version": "0.1.20260701",
+  "status_code": 20000,
+  "status_message": "Ok.",
+  "time": "0.2 sec.",
+  "cost": 0.1224,
+  "tasks_count": 1,
+  "tasks_error": 0,
+  "tasks": [
+    {
+      "id": "10231400-1535-0387-0000-6f9e1a2c6b11",
+      "status_code": 20000,
+      "status_message": "Ok.",
+      "time": "0.1 sec.",
+      "cost": 0.1224,
+      "result_count": 1,
+      "path": [
+        "v3",
+        "dataforseo_labs",
+        "google",
+        "historical_bulk_traffic_estimation",
+        "live"
+      ],
+      "data": {
+        "api": "dataforseo_labs",
+        "function": "historical_bulk_traffic_estimation",
+        "se_type": "google"
+      },
+      "result": [
+        {
+          "se_type": "google",
+          "location_code": 2792,
+          "language_code": "tr",
+          "total_count": 2,
+          "items_count": 2,
+          "items": [
+            {
+              "se_type": "google",
+              "target": "example.com",
+              "metrics": {
+                "organic": [
+                  {
+                    "year": 2026,
+                    "month": 9,
+                    "etv": 5800.0,
+                    "count": 1333
+                  },
+                  {
+                    "year": 2026,
+                    "month": 7,
+                    "etv": 5400.0,
+                    "count": 1333
+                  },
+                  {
+                    "year": 2026,
+                    "month": 8,
+                    "etv": 5600.0,
+                    "count": 1333
+                  }
+                ],
+                "paid": null,
+                "featured_snippet": null,
+                "local_pack": null
+              }
+            },
+            {
+              "se_type": "google",
+              "target": "rival.com",
+              "metrics": {
+                "organic": [
+                  {
+                    "year": 2026,
+                    "month": 9,
+                    "etv": 13050.0,
+                    "count": 3000
+                  },
+                  {
+                    "year": 2026,
+                    "month": 7,
+                    "etv": 12150.0,
+                    "count": 3000
+                  },
+                  {
+                    "year": 2026,
+                    "month": 8,
+                    "etv": 12600.0,
+                    "count": 3000
+                  }
+                ],
+                "paid": null,
+                "featured_snippet": null,
+                "local_pack": null
+              }
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

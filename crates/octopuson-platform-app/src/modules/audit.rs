@@ -148,7 +148,7 @@ fn due_at(settings: &AuditSettings) -> Option<i64> {
     )
 }
 
-fn store_error(error: &CrawlStoreError) -> AppError {
+pub(crate) fn store_error(error: &CrawlStoreError) -> AppError {
     AppError::Internal(error.to_string())
 }
 
@@ -219,6 +219,9 @@ struct SettingsAsk {
     project_id: i64,
     schedule: Schedule,
     max_pages: u32,
+    /// Check links to other sites (each counts as a page).
+    #[serde(default)]
+    check_outbound: bool,
 }
 
 fn save_audit_settings(context: &Context<'_>, ask: SettingsAsk) -> Result<AuditSetup, AppError> {
@@ -229,6 +232,7 @@ fn save_audit_settings(context: &Context<'_>, ask: SettingsAsk) -> Result<AuditS
             schedule: ask.schedule.as_str().to_owned(),
             max_pages: ask.max_pages.clamp(MIN_PAGES, limit),
             last_run_at: None,
+            check_outbound: ask.check_outbound,
         },
     )?;
     setup(context.workspace, ask.project_id)
@@ -236,9 +240,15 @@ fn save_audit_settings(context: &Context<'_>, ask: SettingsAsk) -> Result<AuditS
 
 // ----- Running -----------------------------------------------------------------------------
 
-/// The crawl of a project's site: its home page, the pages and images it links to (not other
-/// sites), as the OctopusOn crawler that obeys robots.txt.
-fn crawl_config(project: &ProjectRow, max_pages: u32, host: Host) -> CrawlConfig {
+/// The crawl of a project's site: its home page, the pages and images it links to (other
+/// sites only checked once each when asked, never crawled), as the OctopusOn crawler that obeys
+/// robots.txt.
+fn crawl_config(
+    project: &ProjectRow,
+    max_pages: u32,
+    host: Host,
+    check_outbound: bool,
+) -> CrawlConfig {
     let speed = match host {
         Host::Web => Speed {
             threads: 3,
@@ -249,7 +259,7 @@ fn crawl_config(project: &ProjectRow, max_pages: u32, host: Host) -> CrawlConfig
     CrawlConfig {
         start_urls: vec![format!("https://{}/", project.domain)],
         follow: Follow {
-            check_external: false,
+            check_external: check_outbound,
             stylesheets: false,
             scripts: false,
             ..Follow::default()
@@ -406,7 +416,7 @@ fn run_audit(
         )?;
         Err(AppError::Invalid(message.to_owned()))
     };
-    let mut config = crawl_config(&project, max_pages, host);
+    let mut config = crawl_config(&project, max_pages, host, settings.check_outbound);
     if workspace.test_fetcher().is_some() {
         // A site in memory needs no politeness.
         config.speed = Speed::default();
@@ -597,7 +607,7 @@ pub fn next_due(workspace: &Workspace) -> Result<Option<i64>, AppError> {
 
 // ----- Reports -----------------------------------------------------------------------------
 
-fn lang_of(text: Option<&str>) -> Lang {
+pub(crate) fn lang_of(text: Option<&str>) -> Lang {
     if text == Some("tr") {
         Lang::Tr
     } else {
@@ -839,6 +849,96 @@ fn audit_issue(context: &Context<'_>, ask: IssueAsk) -> Result<IssueDetail, AppE
 }
 
 #[derive(Debug, Deserialize)]
+struct OutboundAsk {
+    project_id: i64,
+    /// The latest audit with a crawl when absent.
+    #[serde(default)]
+    audit_id: Option<i64>,
+    #[serde(default)]
+    offset: u64,
+    /// Only links answering with this status class (4 or 5); every link with 0.
+    #[serde(default)]
+    status_class: u16,
+}
+
+/// Links from the site to other sites in an audit's crawl, most linked first.
+#[derive(Debug, Serialize)]
+struct Outbound {
+    audit_id: i64,
+    /// Whether the audit checked them (otherwise they have no status).
+    checked: bool,
+    total: u64,
+    offset: u64,
+    columns: Vec<String>,
+    rows: Vec<Vec<String>>,
+}
+
+/// Rows of outbound links shown at a time.
+const OUTBOUND_ROWS: u32 = 200;
+
+fn audit_outbound(context: &Context<'_>, ask: OutboundAsk) -> Result<Option<Outbound>, AppError> {
+    let store = context.workspace.store()?;
+    let audit = match ask.audit_id {
+        Some(id) => store.audit(ask.project_id, id)?,
+        None => match store
+            .audits(ask.project_id, AUDITS_SHOWN)?
+            .into_iter()
+            .find(|audit| audit.status != "running" && audit.crawl_id.is_some())
+        {
+            Some(audit) => audit,
+            None => return Ok(None),
+        },
+    };
+    drop(store);
+    let Some(reader) = open(context.workspace, &audit) else {
+        return Ok(None);
+    };
+    let page = reader
+        .page(&PageRequest {
+            tab: "external".to_owned(),
+            status_class: if matches!(ask.status_class, 4 | 5) {
+                ask.status_class
+            } else {
+                0
+            },
+            offset: ask.offset,
+            limit: OUTBOUND_ROWS,
+            sort: "inlinks".to_owned(),
+            descending: true,
+            ..PageRequest::default()
+        })
+        .map_err(|error| store_error(&error))?;
+    let status = page
+        .columns
+        .iter()
+        .position(|column| column.name == "status_code");
+    // Unchecked links have no status.
+    let checked = status.is_some_and(|index| {
+        page.rows.iter().any(|row| {
+            row.get(index)
+                .map(ToString::to_string)
+                .is_some_and(|cell| !cell.is_empty() && cell != "null")
+        })
+    });
+    Ok(Some(Outbound {
+        audit_id: audit.id,
+        checked,
+        total: page.total,
+        offset: ask.offset,
+        columns: page
+            .columns
+            .iter()
+            .map(|column| column.name.clone())
+            .collect(),
+        rows: page
+            .rows
+            .iter()
+            .map(|row| row.iter().map(ToString::to_string).collect())
+            .collect(),
+    }))
+}
+
+#[derive(Debug, Deserialize)]
 struct DeleteAsk {
     project_id: i64,
     audit_id: i64,
@@ -886,5 +986,6 @@ pub fn register(router: &mut Router) {
     router.add("start_audit", start_audit);
     router.add("audit_report", audit_report);
     router.add("audit_issue", audit_issue);
+    router.add("audit_outbound", audit_outbound);
     router.add("delete_audit", delete_audit);
 }

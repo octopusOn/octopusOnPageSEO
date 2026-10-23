@@ -306,3 +306,244 @@ pub fn link_gap_from_result(competitors: &[String], result: &[Value]) -> Vec<Lin
         })
         .collect()
 }
+
+// ------------------------------------------------------------------------- All domains at once
+
+/// Semrush's keyword gap groups, over the keywords any of the domains ranks for:
+/// - `shared`: every domain ranks;
+/// - `missing`: every competitor ranks and the site does not;
+/// - `weak`: every domain ranks and the site is below each competitor;
+/// - `strong`: the site ranks above every competitor that ranks (at least one);
+/// - `untapped`: some competitors rank (not all) and the site does not;
+/// - `unique`: only the site ranks.
+pub const GAP_GROUPS: &[&str] = &["shared", "missing", "weak", "strong", "untapped", "unique"];
+
+/// A keyword with where each domain ranks for it, and the gap groups it falls in.
+#[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
+pub struct MatrixKeyword {
+    /// The keyword.
+    pub keyword: String,
+    /// Monthly searches.
+    pub volume: Option<u64>,
+    /// Keyword difficulty, 0–100.
+    pub difficulty: Option<u32>,
+    /// Cost per click, US dollars.
+    pub cpc: Option<f64>,
+    /// Main search intent.
+    pub intent: Option<String>,
+    /// Where each domain ranks, the site first then the competitors in order; `None` where it
+    /// does not rank (among the keywords read).
+    pub rankings: Vec<Option<Ranking>>,
+    /// The groups it falls in ([`GAP_GROUPS`]).
+    pub groups: Vec<String>,
+}
+
+/// The keywords of a site and its competitors side by side.
+#[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
+pub struct GapMatrix {
+    /// The site.
+    pub own: String,
+    /// The competitors, in the order of the rankings.
+    pub competitors: Vec<String>,
+    /// Keywords read for each domain (its first by traffic).
+    pub rows_per_domain: u32,
+    /// Keywords read for each domain, the site first.
+    pub keywords_per_domain: Vec<usize>,
+    /// Keywords in each group.
+    pub counts: BTreeMap<String, usize>,
+    /// The keywords, most searched first.
+    pub keywords: Vec<MatrixKeyword>,
+}
+
+/// The groups of a keyword from where the site and each competitor rank.
+pub fn gap_groups(own: Option<u32>, competitors: &[Option<u32>]) -> Vec<String> {
+    let ranked: Vec<u32> = competitors.iter().flatten().copied().collect();
+    let all = !competitors.is_empty() && ranked.len() == competitors.len();
+    let mut groups = Vec::new();
+    match own {
+        Some(mine) => {
+            if all {
+                groups.push("shared");
+                if ranked.iter().all(|&theirs| mine > theirs) {
+                    groups.push("weak");
+                }
+            }
+            if ranked.is_empty() {
+                groups.push("unique");
+            } else if ranked.iter().all(|&theirs| mine < theirs) {
+                groups.push("strong");
+            }
+        }
+        None if all => groups.push("missing"),
+        None if !ranked.is_empty() => groups.push("untapped"),
+        None => {}
+    }
+    groups.into_iter().map(str::to_owned).collect()
+}
+
+/// The gap of `own` and `competitors` from each domain's `ranked_keywords` answer, the site's
+/// first: every keyword any of them ranks for among the keywords read, with its groups.
+pub fn matrix(
+    own: &str,
+    competitors: &[String],
+    answers: &[Vec<Value>],
+    rows_per_domain: u32,
+) -> GapMatrix {
+    let domains: Vec<String> = std::iter::once(target_domain(own))
+        .chain(
+            competitors
+                .iter()
+                .map(|competitor| target_domain(competitor)),
+        )
+        .collect();
+    let mut merged: BTreeMap<String, MatrixKeyword> = BTreeMap::new();
+    let mut keywords_per_domain = Vec::with_capacity(domains.len());
+    for (index, domain) in domains.iter().enumerate() {
+        let ranked = answers
+            .get(index)
+            .map(|result| crate::site::ranked_keywords_from_result(result))
+            .unwrap_or_default();
+        keywords_per_domain.push(ranked.keywords.len());
+        for row in ranked.keywords {
+            let entry = merged
+                .entry(row.keyword.clone())
+                .or_insert_with(|| MatrixKeyword {
+                    keyword: row.keyword.clone(),
+                    volume: row.volume,
+                    difficulty: row.difficulty,
+                    cpc: row.cpc,
+                    intent: row.intent.clone(),
+                    rankings: vec![None; domains.len()],
+                    groups: Vec::new(),
+                });
+            let better = entry.rankings[index]
+                .as_ref()
+                .is_none_or(|kept| row.position < kept.position);
+            if better {
+                entry.rankings[index] = Some(Ranking {
+                    domain: domain.clone(),
+                    position: row.position,
+                    url: row.url,
+                    traffic: row.traffic,
+                });
+            }
+        }
+    }
+    let mut counts: BTreeMap<String, usize> = GAP_GROUPS
+        .iter()
+        .map(|group| ((*group).to_owned(), 0))
+        .collect();
+    let mut keywords: Vec<MatrixKeyword> = merged
+        .into_values()
+        .map(|mut keyword| {
+            let position = |ranking: &Option<Ranking>| {
+                ranking
+                    .as_ref()
+                    .map(|ranking| ranking.position.unwrap_or(101))
+            };
+            let own = keyword.rankings.first().and_then(position);
+            let theirs: Vec<Option<u32>> = keyword.rankings.iter().skip(1).map(position).collect();
+            keyword.groups = gap_groups(own, &theirs);
+            for group in &keyword.groups {
+                *counts.entry(group.clone()).or_default() += 1;
+            }
+            keyword
+        })
+        .collect();
+    keywords.sort_by(|left, right| {
+        right
+            .volume
+            .cmp(&left.volume)
+            .then(left.keyword.cmp(&right.keyword))
+    });
+    GapMatrix {
+        own: domains[0].clone(),
+        competitors: domains[1..].to_vec(),
+        rows_per_domain,
+        keywords_per_domain,
+        counts,
+        keywords,
+    }
+}
+
+// -------------------------------------------------------------------------------- Page gap
+
+/// Endpoint of the keywords pages rank for together or apart.
+pub const PAGE_INTERSECTION: &str = "dataforseo_labs/google/page_intersection/live";
+
+/// A keyword a competitor's page ranks for and the site's page does not.
+#[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
+pub struct PageGapRow {
+    /// The keyword.
+    pub keyword: String,
+    /// Monthly searches.
+    pub volume: Option<u64>,
+    /// Keyword difficulty, 0–100.
+    pub difficulty: Option<u32>,
+    /// Cost per click, US dollars.
+    pub cpc: Option<f64>,
+    /// Main search intent.
+    pub intent: Option<String>,
+    /// Where the competitor's page ranks.
+    pub position: Option<u32>,
+    /// Its estimated monthly traffic from the keyword.
+    pub traffic: f64,
+}
+
+fn page(url: &str) -> Result<String, DfsError> {
+    let url = url.trim();
+    if url.starts_with("https://") || url.starts_with("http://") {
+        Ok(url.to_owned())
+    } else {
+        Err(DfsError::Config(format!(
+            "`{url}` is not a web page address"
+        )))
+    }
+}
+
+/// The task of the keywords `competitor_page` ranks for and `own_page` does not, most searched
+/// first.
+///
+/// # Errors
+/// [`DfsError::Config`] for an address that is not a web page or an unknown country.
+pub fn page_gap_task(
+    competitor_page: &str,
+    own_page: &str,
+    market: &Market,
+    limit: u32,
+) -> Result<Value, DfsError> {
+    let mut task = market.fields()?;
+    task["pages"] = json!({ "1": page(competitor_page)? });
+    task["exclude_pages"] = json!([page(own_page)?]);
+    task["item_types"] = json!(["organic"]);
+    task["limit"] = json!(crate::site::rows(limit));
+    task["order_by"] = json!(["keyword_data.keyword_info.search_volume,desc"]);
+    Ok(task)
+}
+
+/// Reads a page gap answer.
+#[allow(clippy::cast_possible_truncation)]
+pub fn page_gap_from_result(result: &[Value]) -> Vec<PageGapRow> {
+    items_of(result)
+        .iter()
+        .filter_map(|item| {
+            let data = keyword_data(item.get("keyword_data")?)?;
+            let element = item.pointer("/intersection_result/1");
+            Some(PageGapRow {
+                keyword: data.keyword,
+                volume: data.volume,
+                difficulty: data.difficulty,
+                cpc: data.cpc,
+                intent: data.intent,
+                position: element
+                    .and_then(|element| element.get("rank_group"))
+                    .and_then(count)
+                    .map(|n| n.min(u64::from(u32::MAX)) as u32),
+                traffic: element
+                    .and_then(|element| element.get("etv"))
+                    .and_then(number)
+                    .unwrap_or_default(),
+            })
+        })
+        .collect()
+}

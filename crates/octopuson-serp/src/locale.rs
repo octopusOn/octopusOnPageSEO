@@ -131,6 +131,15 @@ pub fn location_code(country: &str) -> Option<u32> {
         .map(|(_, _, location)| *location)
 }
 
+/// The country (`tr`) of a DataForSEO location code (`2792`), for the countries the platform
+/// knows.
+pub fn country_of_location(location: u32) -> Option<&'static str> {
+    COUNTRIES
+        .iter()
+        .find(|(_, _, code)| *code == location)
+        .map(|(country, _, _)| *country)
+}
+
 /// Whether `name` is the country's English name, old or new (`Turkey`, `Türkiye`, `Turkiye`).
 pub fn is_country_name(country: &str, name: &str) -> bool {
     let name = name.trim();
@@ -275,6 +284,17 @@ const fn region(
 mod tests {
     use super::*;
     use crate::{Location, SerpQuery};
+
+    #[test]
+    fn location_codes_lead_back_to_their_country() {
+        let code = location_code("tr").unwrap();
+        assert_eq!(country_of_location(code), Some("tr"));
+        assert_eq!(
+            country_of_location(location_code("de").unwrap()),
+            Some("de")
+        );
+        assert_eq!(country_of_location(1), None);
+    }
 
     #[test]
     fn encodes_uule_like_google() {

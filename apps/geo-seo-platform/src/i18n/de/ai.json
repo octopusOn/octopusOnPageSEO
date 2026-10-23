@@ -22,7 +22,7 @@
   "byEngine": "Nach Assistent",
   "byEngineHint": "Die letzte Antwort jeder Frage bei jedem Assistenten",
   "engineLine": "{answers} Antworten, als Quelle in {cited}",
-  "history": "Nennungsrate von Messung zu Messung",
+  "history": "Von Messung zu Messung",
   "allEngines": "Alle",
   "oneRun": "Das Diagramm erscheint nach der zweiten Messung.",
   "shareTitle": "Share of Voice und Quellen",
@@ -134,5 +134,10 @@
   "selectShown": "Die {n} angezeigten auswählen",
   "cell_rival": "Stattdessen ein Wettbewerber",
   "cellRivalTitle": "Sie werden nicht genannt; {rival} steht auf Platz {n}.",
-  "cellPlaceTitle": "{state} · Platz {n}"
+  "cellPlaceTitle": "{state} · Platz {n}",
+  "metric": "Anzeige",
+  "metricMention": "Erwähnungen",
+  "metricCitation": "Zitate",
+  "metricVoice": "Sichtbarkeitsanteil",
+  "topPages": "Am häufigsten zitierte Seiten"
 }

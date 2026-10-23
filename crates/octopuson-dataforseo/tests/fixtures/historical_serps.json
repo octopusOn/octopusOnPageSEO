@@ -1,0 +1,173 @@
+{
+  "version": "0.1.20260701",
+  "status_code": 20000,
+  "status_message": "Ok.",
+  "time": "0.2 sec.",
+  "cost": 0.00024,
+  "tasks_count": 1,
+  "tasks_error": 0,
+  "tasks": [
+    {
+      "id": "10231300-1535-0387-0000-6f9e1a2c6b11",
+      "status_code": 20000,
+      "status_message": "Ok.",
+      "time": "0.1 sec.",
+      "cost": 0.00024,
+      "result_count": 2,
+      "path": [
+        "v3",
+        "dataforseo_labs",
+        "google",
+        "historical_serps",
+        "live"
+      ],
+      "data": {
+        "api": "dataforseo_labs",
+        "function": "historical_serps",
+        "se_type": "google",
+        "keyword": "spor ayakkabı",
+        "location_code": 2792,
+        "language_code": "tr",
+        "date_from": "2026-09-01"
+      },
+      "result": [
+        {
+          "se_type": "google",
+          "keyword": "spor ayakkabı",
+          "location_code": 2792,
+          "language_code": "tr",
+          "total_count": 1,
+          "items_count": 1,
+          "items": [
+            {
+              "se_type": "google",
+              "datetime": "2026-10-04 08:12:01 +00:00",
+              "check_url": "https://www.google.com.tr/search?q=spor+ayakkab%C4%B1",
+              "spell": null,
+              "item_types": [
+                "organic",
+                "people_also_ask",
+                "ai_overview"
+              ],
+              "se_results_count": 1200000,
+              "items_count": 4,
+              "items": [
+                {
+                  "type": "people_also_ask",
+                  "rank_group": 1,
+                  "rank_absolute": 1,
+                  "items": []
+                },
+                {
+                  "type": "organic",
+                  "rank_group": 2,
+                  "rank_absolute": 3,
+                  "domain": "www.rakip-magaza.com",
+                  "title": "Spor",
+                  "url": "https://www.rakip-magaza.com/spor",
+                  "breadcrumb": "www.rakip-magaza.com",
+                  "rank_changes": {
+                    "previous_rank_absolute": 4,
+                    "is_new": false,
+                    "is_up": true,
+                    "is_down": false
+                  }
+                },
+                {
+                  "type": "organic",
+                  "rank_group": 1,
+                  "rank_absolute": 2,
+                  "domain": "www.ornekmagaza.com",
+                  "title": "Spor Ayakkabı",
+                  "url": "https://www.ornekmagaza.com/spor-ayakkabi",
+                  "breadcrumb": "www.ornekmagaza.com",
+                  "rank_changes": {
+                    "previous_rank_absolute": 3,
+                    "is_new": false,
+                    "is_up": true,
+                    "is_down": false
+                  }
+                },
+                {
+                  "type": "organic",
+                  "rank_group": 3,
+                  "rank_absolute": 4,
+                  "domain": "www.digerdukkan.com.tr",
+                  "title": "A",
+                  "url": "https://www.digerdukkan.com.tr/a",
+                  "breadcrumb": "www.digerdukkan.com.tr",
+                  "rank_changes": {
+                    "previous_rank_absolute": 5,
+                    "is_new": false,
+                    "is_up": true,
+                    "is_down": false
+                  }
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "se_type": "google",
+          "keyword": "spor ayakkabı",
+          "location_code": 2792,
+          "language_code": "tr",
+          "total_count": 1,
+          "items_count": 1,
+          "items": [
+            {
+              "se_type": "google",
+              "datetime": "2026-09-03 08:12:01 +00:00",
+              "check_url": "https://www.google.com.tr/search?q=spor+ayakkab%C4%B1",
+              "spell": null,
+              "item_types": [
+                "organic",
+                "people_also_ask"
+              ],
+              "se_results_count": 1200000,
+              "items_count": 3,
+              "items": [
+                {
+                  "type": "people_also_ask",
+                  "rank_group": 1,
+                  "rank_absolute": 1,
+                  "items": []
+                },
+                {
+                  "type": "organic",
+                  "rank_group": 1,
+                  "rank_absolute": 2,
+                  "domain": "www.rakip-magaza.com",
+                  "title": "Spor",
+                  "url": "https://www.rakip-magaza.com/spor",
+                  "breadcrumb": "www.rakip-magaza.com",
+                  "rank_changes": {
+                    "previous_rank_absolute": 3,
+                    "is_new": false,
+                    "is_up": true,
+                    "is_down": false
+                  }
+                },
+                {
+                  "type": "organic",
+                  "rank_group": 2,
+                  "rank_absolute": 3,
+                  "domain": "www.ornekmagaza.com",
+                  "title": "Spor Ayakkabı",
+                  "url": "https://www.ornekmagaza.com/spor-ayakkabi",
+                  "breadcrumb": "www.ornekmagaza.com",
+                  "rank_changes": {
+                    "previous_rank_absolute": 4,
+                    "is_new": false,
+                    "is_up": true,
+                    "is_down": false
+                  }
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

@@ -8,18 +8,27 @@
 //! folder, which desktops signed in to the account keep in step with ([`sync`]). A lock file
 //! keeps a second program from writing at the same time.
 
+pub mod ads;
 pub mod ai;
+pub mod alerts;
 pub mod audits;
 pub mod cache;
+pub mod content;
 pub mod gsc;
+pub mod links;
 pub mod lists;
+pub mod local;
 mod lock;
+pub mod metrics;
+pub mod opportunities;
 pub mod projects;
 pub mod rank;
 pub mod reports;
 mod schema;
+pub mod snapshots;
 pub mod spend;
 pub mod sync;
+pub mod vitals;
 
 use std::fs;
 use std::path::{Path, PathBuf};
@@ -27,28 +36,44 @@ use std::time::{SystemTime, UNIX_EPOCH};
 
 use duckdb::Connection;
 
+pub use ads::{AdCopy, AdSeen, MAX_AD_KEYWORDS};
 pub use ai::{
     AI_ENGINES, AiAnswerRow, AiPrompt, AiRunRow, AiSettings, AnswerBrand, AnswerSource,
     DEFAULT_AI_ENGINES, MAX_PROMPTS, Rival,
 };
+pub use alerts::{
+    ALERT_EMAILS, ALERT_LANGUAGES, AlertRow, AlertRules, AlertSettings, MAX_ALERT_RECIPIENTS,
+    NewAlert,
+};
 pub use audits::{AuditEnd, AuditRow, AuditSettings};
 pub use cache::{CacheClass, CacheEntry, cache_key};
+pub use content::{ContentBriefRow, ContentScoreRow, MAX_DRAFT_CHARS, PageCandidate, ScoreToSave};
 pub use gsc::{
-    GSC_DAYS, GSC_SCHEDULES, GscData, GscSettings, GscSyncEnd, GscSyncRow, Period, QueryPage,
-    SearchKind, SearchRow, TrafficKind, TrafficRow,
+    GSC_COMPARE, GSC_DAYS, GSC_SCHEDULES, GSC_YEAR_DAYS, GscData, GscSettings, GscSyncEnd,
+    GscSyncRow, Period, QueryPage, SearchKind, SearchRow, TrafficKind, TrafficRow,
 };
+pub use links::{LINK_DECISIONS, LinkDecision, LinkProspect, PROSPECT_SOURCES, PROSPECT_STATES};
 pub use lists::{KeywordListRow, ListKeyword, MAX_LIST_KEYWORDS};
+pub use local::{
+    LocalPointRow, LocalProfileRow, LocalReviewRow, LocalRunRow, LocalSettings, LocalTaskRow,
+    MAX_LOCAL_KEYWORDS,
+};
+pub use metrics::{METRIC_KINDS, MetricPoint};
+pub use opportunities::{OPPORTUNITY_STATES, OpportunityState};
 pub use projects::{MAX_BRANDS, MAX_COMPETITORS, ProjectRow, ProjectSpec, normalize_domain};
 pub use rank::{
     CheckResult, MAX_TRACKED, MAX_TRACKERS, RankCheckRow, RankPlan, RankRunRow, RankSettings,
-    RunEnd, TrackedKeyword, TrackerRow, TrackerSpec,
+    RankTaskRow, RunEnd, TrackedKeyword, TrackerRow, TrackerSpec,
 };
 pub use reports::{
-    Branding, DeliveryRow, MAX_RECIPIENTS, REPORT_DAYS, REPORT_LANGUAGES, REPORT_SCHEDULES,
-    REPORT_WIDGETS, ReportRow, ReportSpec,
+    Branding, DEFAULT_DESIGN, DeliveryRow, MAX_RECIPIENTS, REPORT_DAYS, REPORT_DESIGNS,
+    REPORT_LANGUAGES, REPORT_SCHEDULES, REPORT_WIDGETS, ReportColors, ReportRow, ReportSpec,
 };
+pub use snapshots::{SNAPSHOT_SCHEDULES, SnapshotEnd, SnapshotRow, SnapshotSettings};
 pub use spend::{SpendRecord, UsageRow};
+pub use sync::kinds::{first_sync_kinds, sync_kind_versions};
 pub use sync::{AuditCrawl, SyncAck, SyncApplied, SyncBatch, SyncChange, SyncSide};
+pub use vitals::VitalCheck;
 
 use crate::lock::StoreLock;
 

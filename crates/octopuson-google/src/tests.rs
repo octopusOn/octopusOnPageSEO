@@ -244,3 +244,175 @@ fn organic_reports_filter_the_channel_and_read_metrics() {
         Err(GoogleError::Invalid(_))
     ));
 }
+
+#[test]
+#[allow(clippy::too_many_lines)] // a record, a history and a page without data
+fn field_data_and_history_come_from_the_chrome_ux_report_with_the_key_in_a_header() {
+    use crate::vitals::{self, FormFactor, Target};
+    let record = json!({ "record": {
+        "key": { "origin": "https://www.ornekmagaza.com", "formFactor": "PHONE" },
+        "metrics": {
+            "largest_contentful_paint": {
+                "histogram": [
+                    { "start": 0, "end": 2500, "density": 0.71 },
+                    { "start": 2500, "end": 4000, "density": 0.18 },
+                    { "start": 4000, "density": 0.11 }
+                ],
+                "percentiles": { "p75": 2830 }
+            },
+            "cumulative_layout_shift": {
+                "histogram": [
+                    { "start": "0.00", "end": "0.10", "density": 0.9 },
+                    { "start": "0.10", "end": "0.25", "density": 0.06 },
+                    { "start": "0.25", "density": 0.04 }
+                ],
+                "percentiles": { "p75": "0.04" }
+            },
+            "interaction_to_next_paint": { "histogram": [], "percentiles": { "p75": 180 } },
+            "experimental_time_to_first_byte": { "histogram": [], "percentiles": { "p75": 950 } }
+        },
+        "collectionPeriod": {
+            "firstDate": { "year": 2026, "month": 9, "day": 22 },
+            "lastDate": { "year": 2026, "month": 10, "day": 19 }
+        }
+    }});
+    let history = json!({ "record": {
+        "metrics": {
+            "largest_contentful_paint": { "percentilesTimeseries": { "p75s": [3100, null, 2830] } },
+            "cumulative_layout_shift": { "percentilesTimeseries": { "p75s": ["0.08", "0.05", "0.04"] } }
+        },
+        "collectionPeriods": [
+            { "firstDate": { "year": 2026, "month": 9, "day": 8 }, "lastDate": { "year": 2026, "month": 10, "day": 5 } },
+            { "firstDate": { "year": 2026, "month": 9, "day": 15 }, "lastDate": { "year": 2026, "month": 10, "day": 12 } },
+            { "firstDate": { "year": 2026, "month": 9, "day": 22 }, "lastDate": { "year": 2026, "month": 10, "day": 19 } }
+        ]
+    }});
+    let transport = FakeTransport::new()
+        .reply(200, record.to_string())
+        .reply(200, history.to_string())
+        .reply(
+            404,
+            json!({ "error": { "code": 404, "message": "chrome ux report data not found" } })
+                .to_string(),
+        );
+    let field = vitals::field(
+        &transport,
+        "AIza-test",
+        Target::Origin("https://www.ornekmagaza.com/"),
+        FormFactor::Phone,
+    )
+    .unwrap()
+    .unwrap();
+    let lcp = field.lcp.unwrap();
+    assert_eq!(
+        (lcp.p75, lcp.good, lcp.poor),
+        (Some(2830.0), Some(0.71), Some(0.11))
+    );
+    assert_eq!(field.cls.unwrap().p75, Some(0.04));
+    assert_eq!(field.ttfb.unwrap().p75, Some(950.0));
+    assert_eq!(field.first_date.as_deref(), Some("2026-09-22"));
+    assert_eq!(vitals::passes(&field), Some(false));
+    assert_eq!(vitals::rating("lcp", 2830.0), "needs");
+    let request = &transport.requests()[0];
+    assert_eq!(
+        request.url,
+        "https://chromeuxreport.googleapis.com/v1/records:queryRecord"
+    );
+    assert!(!request.url.contains("AIza"));
+    assert_eq!(
+        header(&transport, 0, "X-goog-api-key").as_deref(),
+        Some("AIza-test")
+    );
+    assert_eq!(
+        body(&transport, 0),
+        json!({ "origin": "https://www.ornekmagaza.com", "formFactor": "PHONE" })
+    );
+
+    let weeks = vitals::history(
+        &transport,
+        "AIza-test",
+        Target::Origin("https://www.ornekmagaza.com"),
+        FormFactor::Phone,
+    )
+    .unwrap()
+    .unwrap();
+    assert_eq!(weeks.dates, ["2026-10-05", "2026-10-12", "2026-10-19"]);
+    assert_eq!(weeks.lcp, [Some(3100.0), None, Some(2830.0)]);
+    assert_eq!(weeks.cls, [Some(0.08), Some(0.05), Some(0.04)]);
+    assert_eq!(weeks.inp.len(), 0);
+    assert_eq!(body(&transport, 1)["collectionPeriodCount"], 25);
+
+    assert_eq!(
+        vitals::field(
+            &transport,
+            "AIza-test",
+            Target::Url("https://www.ornekmagaza.com/az"),
+            FormFactor::Desktop
+        )
+        .unwrap(),
+        None
+    );
+    assert_eq!(body(&transport, 2)["url"], "https://www.ornekmagaza.com/az");
+}
+
+#[test]
+fn a_pagespeed_run_gives_the_score_metrics_and_the_biggest_savings() {
+    use crate::vitals::{self, FormFactor};
+    let answer = json!({
+        "id": "https://www.ornekmagaza.com/",
+        "loadingExperience": {
+            "metrics": {
+                "LARGEST_CONTENTFUL_PAINT_MS": { "percentile": 2900, "distributions": [
+                    { "min": 0, "max": 2500, "proportion": 0.7 }, { "min": 2500, "max": 4000, "proportion": 0.2 }, { "min": 4000, "proportion": 0.1 }
+                ], "category": "AVERAGE" },
+                "CUMULATIVE_LAYOUT_SHIFT_SCORE": { "percentile": 12, "distributions": [], "category": "AVERAGE" }
+            },
+            "origin_fallback": true
+        },
+        "lighthouseResult": {
+            "finalDisplayedUrl": "https://www.ornekmagaza.com/",
+            "categories": { "performance": { "score": 0.47 } },
+            "audits": {
+                "largest-contentful-paint": { "numericValue": 4321.6 },
+                "cumulative-layout-shift": { "numericValue": 0.1234 },
+                "total-blocking-time": { "numericValue": 612.2 },
+                "first-contentful-paint": { "numericValue": 1800.4 },
+                "speed-index": { "numericValue": 3900 },
+                "server-response-time": { "numericValue": 420 },
+                "render-blocking-resources": { "title": "Oluşturmayı engelleyen kaynakları ortadan kaldırın", "details": { "type": "opportunity", "overallSavingsMs": 1240 } },
+                "uses-optimized-images": { "title": "Görselleri verimli şekilde kodlayın", "details": { "type": "opportunity", "overallSavingsMs": 30 } },
+                "unused-javascript": { "title": "Kullanılmayan JavaScript'i azaltın", "details": { "type": "opportunity", "overallSavingsMs": 2100 } },
+                "dom-size": { "title": "DOM", "details": { "type": "table" } }
+            }
+        }
+    });
+    let transport = FakeTransport::new().reply(200, answer.to_string());
+    let report = vitals::lab(
+        &transport,
+        "AIza-test",
+        "https://www.ornekmagaza.com/",
+        FormFactor::Phone,
+        "tr",
+    )
+    .unwrap();
+    assert_eq!(report.score, Some(47.0));
+    assert_eq!(
+        (report.lcp_ms, report.cls, report.tbt_ms),
+        (Some(4322.0), Some(0.123), Some(612.0))
+    );
+    assert_eq!(
+        report
+            .opportunities
+            .iter()
+            .map(|o| o.id.as_str())
+            .collect::<Vec<_>>(),
+        ["unused-javascript", "render-blocking-resources"]
+    );
+    let field = report.field.unwrap();
+    assert!(field.origin_fallback);
+    assert_eq!(field.cls.unwrap().p75, Some(0.12));
+    assert_eq!(field.lcp.unwrap().needs, Some(0.2));
+    let url = &transport.requests()[0].url;
+    assert!(url.starts_with("https://www.googleapis.com/pagespeedonline/v5/runPagespeed?url=https%3A%2F%2Fwww.ornekmagaza.com%2F&strategy=mobile&category=performance&locale=tr"));
+    assert!(!url.contains("AIza"));
+}

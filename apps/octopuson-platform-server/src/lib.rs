@@ -119,7 +119,8 @@ pub(crate) fn random_token(bytes: usize) -> String {
     base64::engine::general_purpose::URL_SAFE_NO_PAD.encode(buffer)
 }
 
-const CONTENT_SECURITY: &str = "default-src 'self'; img-src 'self' data:; style-src 'self' 'unsafe-inline'; font-src 'self' data:; connect-src 'self'; frame-ancestors 'none'; base-uri 'none'; object-src 'none'";
+// The Local SEO map reads its tiles, fonts and sprites from OpenFreeMap.
+const CONTENT_SECURITY: &str = "default-src 'self'; img-src 'self' data: blob: https://tiles.openfreemap.org; style-src 'self' 'unsafe-inline'; font-src 'self' data:; connect-src 'self' https://tiles.openfreemap.org; worker-src 'self' blob:; frame-ancestors 'none'; base-uri 'none'; object-src 'none'";
 
 /// The whole application.
 pub fn app(state: Arc<AppState>) -> Router {

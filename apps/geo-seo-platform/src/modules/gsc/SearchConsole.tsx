@@ -3,8 +3,10 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { AlertTriangle, ArrowDown, ArrowUp, CheckCircle2, ChartLine, Download, ExternalLink, Link2Off, LogIn, LogOut, RefreshCw, Search, Sparkles, Target, TrendingUp } from "lucide-react";
 import { Button, DataTable, Empty, ErrorState, Field, Loading, Modal, Segmented, Stat, type Column } from "@octopusseo/ui";
 import { api } from "../../api/client";
-import type { GoogleStatus, GscPage, GscQuery, GscReport, GscSchedule, GscSetup, GscSync, Job, ProjectRow, SearchRow } from "../../api/types";
+import type { GoogleStatus, GscCompare, GscPage, GscQuery, GscReport, GscSchedule, GscSetup, GscSync, Job, ProjectRow, SearchRow } from "../../api/types";
 import { useI18n } from "../../i18n";
+import { Entity } from "../../lib/Entity";
+import { useGlossary } from "../../lib/glossary";
 import { axisStyle, EChart, useChartTokens, type ChartOption } from "../../lib/EChart";
 import { useShell } from "../../lib/context";
 import { useScheduleNote } from "../../lib/sync";
@@ -12,7 +14,24 @@ import { explain } from "../../lib/errors";
 import { formatCompact, formatNumber, formatPercent, relativeTime } from "../../lib/format";
 import { download, toCsv } from "../../lib/report";
 import { shortUrl, tableLabels } from "../../lib/tables";
-import { ALL_QUERIES, auditState, dailySeries, DAYS, filterQueries, pageCsv, percentChange, queryCsv, type QueryFilters } from "./gsc";
+import { ALL_QUERIES, auditState, dailySeries, DAYS, exportRows, filterQueries, pageCsv, percentChange, queryCsv, YEAR_DAYS, type BrandFilter, type QueryFilters } from "./gsc";
+
+/** Every row of the last sync as a CSV file. */
+function ExportAll({ project, kind }: { project: ProjectRow; kind: "queries" | "pages" | "query_pages" }) {
+  const { t } = useI18n();
+  const { fail } = useShell();
+  const exported = useMutation({
+    mutationFn: () => api.gscExport(project.id, kind),
+    onSuccess: (data) => download(`search-console-${kind.replace("_", "-")}-all-${project.domain}.csv`, toCsv(data.columns, exportRows(data.rows))),
+    onError: (thrown) => fail(thrown),
+  });
+  return (
+    <Button small className="ghost" busy={exported.isPending} onClick={() => exported.mutate()} title={t("gsc.exportAllHint")}>
+      <Download size={14} />
+      {t(`gsc.exportAll_${kind}`)}
+    </Button>
+  );
+}
 
 const GOOGLE_CLIENTS = "https://console.cloud.google.com/apis/credentials";
 
@@ -200,14 +219,18 @@ function PropertyBar({ project, setup, running }: { project: ProjectRow; setup: 
     if (!property && properties.data?.suggested) setProperty(properties.data.suggested);
   }, [properties.data, property]);
   const save = useMutation({
-    mutationFn: (patch: Partial<{ property: string; ga4: string; days: number; schedule: GscSchedule }>) => {
+    mutationFn: (patch: Partial<{ property: string; ga4: string; days: number; schedule: GscSchedule; compare: GscCompare }>) => {
       const chosen = patch.ga4 ?? ga4;
+      const days = patch.days ?? settings.days;
+      const compare = patch.compare ?? settings.compare;
       return api.saveGscSettings(project.id, {
         property: (patch.property ?? property) || null,
         ga4_property: chosen || null,
         ga4_name: properties.data?.analytics.find((entry) => entry.id === chosen)?.name ?? null,
-        days: patch.days ?? settings.days,
+        days,
         schedule: patch.schedule ?? settings.schedule,
+        // A year back only reaches so far within Search Console's 16 months.
+        compare: compare === "year" && days > YEAR_DAYS ? "previous" : compare,
       });
     },
     onSuccess: (next) => queryClient.setQueryData(["gsc", "setup", project.id], next),
@@ -271,6 +294,18 @@ function PropertyBar({ project, setup, running }: { project: ProjectRow; setup: 
             disabled={save.isPending}
             onChange={(value) => save.mutate({ days: Number(value) })}
             options={DAYS.map((days) => ({ value: String(days), label: t("gsc.daysOption", { n: days }) }))}
+          />
+        </Field>
+        <Field label={t("gsc.compare")} hint={settings.days > YEAR_DAYS ? t("gsc.compareYearLimit", { n: YEAR_DAYS }) : undefined}>
+          <Segmented<GscCompare>
+            label={t("gsc.compare")}
+            value={settings.compare}
+            disabled={save.isPending}
+            onChange={(compare) => save.mutate({ compare })}
+            options={[
+              { value: "previous", label: t("gsc.comparePrevious") },
+              { value: "year", label: t("gsc.compareYear"), disabled: settings.days > YEAR_DAYS },
+            ]}
           />
         </Field>
         <Field label={t("gsc.schedule")} hint={scheduleNote}>
@@ -427,6 +462,7 @@ function QueryTable({ project, rows, onOpen }: { project: ProjectRow; rows: GscQ
               <TrendingUp size={13} aria-hidden="true" />
             </span>
           )}
+          {row.brand && <span className="oc-badge">{t("gsc.brandBadge")}</span>}
           {row.near_top && <span className="oc-badge info">{t("gsc.nearTop")}</span>}
           {row.low_ctr && <span className="oc-badge warning">{t("gsc.lowCtr")}</span>}
           {row.pages > 1 && (
@@ -487,6 +523,16 @@ function QueryTable({ project, rows, onOpen }: { project: ProjectRow; rows: GscQ
             <input type="checkbox" checked={filters.untracked} onChange={(event) => setFilters({ ...filters, untracked: event.target.checked })} />
             <span>{t("gsc.onlyUntracked")}</span>
           </label>
+          <Segmented<BrandFilter>
+            label={t("gsc.brandFilter")}
+            value={filters.brand}
+            onChange={(brand) => setFilters({ ...filters, brand })}
+            options={[
+              { value: "all", label: t("gsc.brandAll") },
+              { value: "brand", label: t("gsc.brandOnly") },
+              { value: "other", label: t("gsc.brandOther") },
+            ]}
+          />
         </div>
         <div className="table-toolbar">
           <Button small disabled={chosen.length === 0} busy={track.isPending} onClick={() => track.mutate()} title={t("gsc.trackHint")}>
@@ -506,6 +552,8 @@ function QueryTable({ project, rows, onOpen }: { project: ProjectRow; rows: GscQ
             <Download size={14} />
             {t("overview.export")}
           </Button>
+          <ExportAll project={project} kind="queries" />
+          <ExportAll project={project} kind="query_pages" />
         </div>
         <DataTable rows={shown} columns={columns} rowKey={(row) => row.query} initialSort={{ key: "clicks", direction: "desc" }} empty={t("overview.emptyRows")} labels={tableLabels(t, locale)} />
       </div>
@@ -533,9 +581,9 @@ function PageTable({ project, report }: { project: ProjectRow; report: GscReport
       label: t("gsc.colPage"),
       render: (row) => (
         <span className="page-cell">
-          <a className="cell-url" href={row.page} target="_blank" rel="noreferrer noopener" title={row.page}>
-            {shortUrl(row.page)}
-          </a>
+          <Entity kind="url" value={row.page}>
+            <span className="cell-url">{shortUrl(row.page)}</span>
+          </Entity>
           {audited && <AuditBadge page={row} />}
         </span>
       ),
@@ -585,6 +633,7 @@ function PageTable({ project, report }: { project: ProjectRow; report: GscReport
             <Download size={14} />
             {t("overview.export")}
           </Button>
+          <ExportAll project={project} kind="pages" />
         </div>
       </header>
       <DataTable rows={report.pages} columns={columns} rowKey={(row) => row.page} initialSort={{ key: "clicks", direction: "desc" }} empty={t("overview.emptyRows")} labels={tableLabels(t, locale)} />
@@ -639,8 +688,38 @@ function Syncs({ syncs }: { syncs: GscSync[] }) {
   );
 }
 
+/** Clicks from searches naming the brand and the others, with their change. */
+function BrandPanel({ report }: { report: GscReport }) {
+  const { t, locale } = useI18n();
+  const { brand } = report;
+  const total = brand.brand.clicks + brand.other.clicks;
+  if (total === 0) return null;
+  const share = (brand.brand.clicks / total) * 100;
+  return (
+    <section className="oc-panel report">
+      <header className="report-head">
+        <div className="report-title">
+          <h3 className="oc-panel-title">{t("gsc.brandTitle")}</h3>
+          <span className="faint">{t("gsc.brandHint", { terms: brand.terms.join(", ") || "—" })}</span>
+        </div>
+      </header>
+      <div className="oc-stats">
+        <Stat label={t("gsc.brandClicks")} value={formatCompact(brand.brand.clicks, locale)} hint={<Change value={percentChange(brand.brand.clicks, brand.brand_before.clicks)} percent />} />
+        <Stat label={t("gsc.otherClicks")} value={formatCompact(brand.other.clicks, locale)} hint={<Change value={percentChange(brand.other.clicks, brand.other_before.clicks)} percent />} />
+        <Stat label={t("gsc.brandShare")} value={formatPercent(share, locale)} hint={t("gsc.brandShareHint")} />
+        <Stat label={t("gsc.otherPosition")} value={brand.other.position === null ? "—" : one(brand.other.position, locale)} hint={t("gsc.otherPositionHint")} />
+      </div>
+      <div className="brand-bar" role="img" aria-label={t("gsc.brandShareLabel", { share: formatPercent(share, locale) })}>
+        <span className="brand-part" style={{ width: `${share}%` }} />
+        <span className="other-part" style={{ width: `${100 - share}%` }} />
+      </div>
+    </section>
+  );
+}
+
 function ReportView({ project, report, onOpen }: { project: ProjectRow; report: GscReport; onOpen: (query: string) => void }) {
   const { t, locale } = useI18n();
+  const gloss = useGlossary();
   const { go } = useShell();
   const { now, before } = report;
   const deviceName = (key: string) => t(`gsc.device_${key}`);
@@ -649,14 +728,14 @@ function ReportView({ project, report, onOpen }: { project: ProjectRow; report: 
   return (
     <div className="page-stack">
       <p className="faint small">
-        {t("gsc.periodLine", { start: report.period[0], end: report.period[1], before: `${report.previous[0]} – ${report.previous[1]}` })}
+        {t(report.compare === "year" ? "gsc.periodLineYear" : "gsc.periodLine", { start: report.period[0], end: report.period[1], before: `${report.previous[0]} – ${report.previous[1]}` })}
         {report.sync.limited && <> · {t("gsc.limited")}</>}
       </p>
       <div className="oc-stats">
-        <Stat label={t("gsc.clicks")} value={formatCompact(now.clicks, locale)} hint={<Change value={percentChange(now.clicks, before.clicks)} percent />} />
-        <Stat label={t("gsc.impressions")} value={formatCompact(now.impressions, locale)} hint={<Change value={percentChange(now.impressions, before.impressions)} percent />} />
-        <Stat label={t("gsc.ctr")} value={formatPercent(now.ctr, locale)} hint={<Change value={Math.round((now.ctr - before.ctr) * 10) / 10} />} />
-        <Stat label={t("gsc.position")} value={now.position === null ? "—" : one(now.position, locale)} hint={<Change value={positionChange} invert />} />
+        <Stat label={t("gsc.clicks")} help={gloss("clicks")} value={formatCompact(now.clicks, locale)} hint={<Change value={percentChange(now.clicks, before.clicks)} percent />} />
+        <Stat label={t("gsc.impressions")} help={gloss("impressions")} value={formatCompact(now.impressions, locale)} hint={<Change value={percentChange(now.impressions, before.impressions)} percent />} />
+        <Stat label={t("gsc.ctr")} help={gloss("ctr")} value={formatPercent(now.ctr, locale)} hint={<Change value={Math.round((now.ctr - before.ctr) * 10) / 10} />} />
+        <Stat label={t("gsc.position")} help={gloss("position")} value={now.position === null ? "—" : one(now.position, locale)} hint={<Change value={positionChange} invert />} />
         {report.traffic_now && (
           <Stat
             label={t("gsc.organicSessions")}
@@ -670,6 +749,7 @@ function ReportView({ project, report, onOpen }: { project: ProjectRow; report: 
           />
         )}
       </div>
+      <BrandPanel report={report} />
       <section className="oc-panel report">
         <header className="report-head">
           <div className="report-title">

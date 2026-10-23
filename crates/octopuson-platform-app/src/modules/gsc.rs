@@ -2,8 +2,8 @@
 //! reading their numbers (free, as a job, on a schedule) and the report that puts them beside
 //! the rank tracker's keywords and the latest site audit.
 //!
-//! A sync reads the chosen period (ending three days ago, Google's final data) and as many
-//! days before it: clicks, impressions and positions by day, query, page, query on page,
+//! A sync reads the chosen period (ending three days ago, Google's final data) and the period
+//! it is compared with (as many days before it, or the same days a year before): clicks, impressions and positions by day, query, page, query on page,
 //! device and country from Search Console; organic search sessions, engaged sessions, key
 //! events and revenue by day and landing page from Analytics, when a property is chosen. It
 //! replaces the project's numbers; Google keeps the history.
@@ -39,7 +39,7 @@ const LOGIN_KIND: &str = "google-login";
 const LAG_DAYS: i32 = 3;
 
 /// Queries and pages read per period.
-const TOP_ROWS: u32 = 5_000;
+const TOP_ROWS: u32 = 10_000;
 
 /// Queries on pages read.
 const QUERY_PAGES: u32 = 25_000;
@@ -47,8 +47,8 @@ const QUERY_PAGES: u32 = 25_000;
 /// Countries read.
 const COUNTRIES: u32 = 250;
 
-/// Rows a report lists.
-const REPORT_ROWS: u32 = 500;
+/// Rows a report lists (every row is in `gsc_export`).
+const REPORT_ROWS: u32 = 5_000;
 
 /// Syncs listed.
 const SYNCS_SHOWN: u32 = 10;
@@ -94,12 +94,21 @@ fn day(back: i32) -> String {
     Date::from_days_since_epoch(today - back).map_or_else(String::new, |date| date.to_string())
 }
 
-/// The sync's days and the same number of days before them.
-fn periods(days: u32) -> ((String, String), (String, String)) {
+/// Days in a year, for comparing with the same days a year before.
+const YEAR_DAYS: i32 = 364;
+
+/// The sync's days and the days they are compared with: as many days before them, or (with
+/// `year`) the same weekdays a year before.
+fn periods(days: u32, compare: &str) -> ((String, String), (String, String)) {
     let days = i32::try_from(days).unwrap_or(28);
     let end = LAG_DAYS;
     let start = end + days - 1;
-    ((day(start), day(end)), (day(start + days), day(start + 1)))
+    let before = if compare == "year" {
+        (day(start + YEAR_DAYS), day(end + YEAR_DAYS))
+    } else {
+        (day(start + days), day(start + 1))
+    };
+    ((day(start), day(end)), before)
 }
 
 // ----- Google ------------------------------------------------------------------------------
@@ -290,6 +299,13 @@ struct SettingsAsk {
     ga4_name: Option<String>,
     days: u32,
     schedule: String,
+    /// `previous` or `year`.
+    #[serde(default = "previous_period")]
+    compare: String,
+}
+
+fn previous_period() -> String {
+    "previous".to_owned()
 }
 
 fn save_gsc_settings(context: &Context<'_>, ask: SettingsAsk) -> Result<GscSetup, AppError> {
@@ -302,6 +318,7 @@ fn save_gsc_settings(context: &Context<'_>, ask: SettingsAsk) -> Result<GscSetup
             days: ask.days,
             schedule: ask.schedule,
             last_sync_at: None,
+            compare: ask.compare,
         },
     )?;
     setup(context.workspace, ask.project_id)
@@ -408,7 +425,6 @@ fn read_search(
     data: &mut GscData,
     step: &mut dyn FnMut(&str) -> bool,
 ) -> Result<(), GoogleError> {
-    let span = (before.0.as_str(), now.1.as_str());
     let now = (now.0.as_str(), now.1.as_str());
     let before = (before.0.as_str(), before.1.as_str());
     let mut put = |kind: SearchKind, period: Period, rows: Vec<SearchRow>| {
@@ -416,7 +432,8 @@ fn read_search(
             .extend(rows.into_iter().map(|row| (kind, period, row)));
     };
     let questions = [
-        (Dimension::Date, Period::Days, span, 400),
+        (Dimension::Date, Period::Days, now, 400),
+        (Dimension::Date, Period::Days, before, 400),
         (Dimension::Query, Period::Now, now, TOP_ROWS),
         (Dimension::Query, Period::Before, before, TOP_ROWS),
         (Dimension::Page, Period::Now, now, TOP_ROWS),
@@ -475,7 +492,14 @@ fn read_traffic(
         (
             TrafficKind::Date,
             Period::Days,
-            (before.0.as_str(), now.1.as_str()),
+            (now.0.as_str(), now.1.as_str()),
+            Breakdown::Date,
+            400,
+        ),
+        (
+            TrafficKind::Date,
+            Period::Days,
+            (before.0.as_str(), before.1.as_str()),
             Breakdown::Date,
             400,
         ),
@@ -515,8 +539,8 @@ fn read_traffic(
 }
 
 /// Requests of a sync, for its progress.
-const STEPS: u64 = 8;
-const ANALYTICS_STEPS: u64 = 3;
+const STEPS: u64 = 9;
+const ANALYTICS_STEPS: u64 = 4;
 
 fn sync(
     workspace: &Workspace,
@@ -526,7 +550,7 @@ fn sync(
     control: &JobControl,
 ) -> Result<JobDone, AppError> {
     let property = settings.property.clone().unwrap_or_default();
-    let (now_days, before_days) = periods(settings.days);
+    let (now_days, before_days) = periods(settings.days, &settings.compare);
     let total = STEPS
         + if settings.ga4_property.is_some() {
             ANALYTICS_STEPS
@@ -721,6 +745,7 @@ struct DayPoint {
 }
 
 #[derive(Debug, Serialize)]
+#[allow(clippy::struct_excessive_bools)] // flags a page shows
 struct QueryRow {
     query: String,
     clicks: f64,
@@ -737,6 +762,8 @@ struct QueryRow {
     tracked: bool,
     /// Within reach of the first places: average position 4–20 with enough impressions.
     near_top: bool,
+    /// It names the brand (the project's brand names or its domain's name).
+    brand: bool,
     /// Its CTR is less than half of what its position usually gets.
     low_ctr: bool,
 }
@@ -787,12 +814,27 @@ struct AuditLink {
     problem_pages: u32,
 }
 
+/// Searches naming the brand and the others, in both periods (from the queries Search
+/// Console lists, so a little under the totals, which include anonymised queries).
+#[derive(Debug, Serialize)]
+struct BrandSplit {
+    /// What counts as the brand, folded.
+    terms: Vec<String>,
+    brand: Totals,
+    other: Totals,
+    brand_before: Totals,
+    other_before: Totals,
+}
+
 #[derive(Debug, Serialize)]
 struct GscReport {
     /// The sync the numbers come from.
     sync: GscSyncRow,
     period: (String, String),
     previous: (String, String),
+    /// `previous` (the days before) or `year` (the same days a year before).
+    compare: &'static str,
+    brand: BrandSplit,
     now: Totals,
     before: Totals,
     traffic_now: Option<Traffic>,
@@ -830,6 +872,48 @@ fn shift(date: &str, days: i32) -> String {
 
 fn fold(text: &str) -> String {
     text.trim().to_lowercase()
+}
+
+/// Text folded for brand matching: lowercase, Turkish and Latin accents dropped, without
+/// spaces or punctuation (`Örnek Mağaza` → `ornekmagaza`).
+fn compact(text: &str) -> String {
+    text.to_lowercase()
+        .chars()
+        .filter_map(|ch| match ch {
+            'ı' | 'î' | 'ì' | 'í' | 'ï' => Some('i'),
+            'ö' | 'ô' | 'ò' | 'ó' => Some('o'),
+            'ü' | 'û' | 'ù' | 'ú' => Some('u'),
+            'ş' => Some('s'),
+            'ç' => Some('c'),
+            'ğ' => Some('g'),
+            'â' | 'à' | 'á' | 'ä' => Some('a'),
+            'é' | 'è' | 'ê' | 'ë' => Some('e'),
+            ch if ch.is_alphanumeric() => Some(ch),
+            _ => None,
+        })
+        .collect()
+}
+
+/// What counts as the brand: the project's brand names and its domain's name.
+fn brand_terms(project: &ProjectRow) -> Vec<String> {
+    let domain = project.domain.trim_start_matches("www.");
+    let name = domain.split('.').next().unwrap_or(domain);
+    let mut terms: Vec<String> = project
+        .brands
+        .iter()
+        .map(String::as_str)
+        .chain(std::iter::once(name))
+        .map(compact)
+        .filter(|term| term.chars().count() >= 3)
+        .collect();
+    terms.sort();
+    terms.dedup();
+    terms
+}
+
+fn is_brand(query: &str, terms: &[String]) -> bool {
+    let query = compact(query);
+    terms.iter().any(|term| query.contains(term.as_str()))
 }
 
 /// The path of an address (`/shoes/`), for Analytics' landing pages.
@@ -902,7 +986,7 @@ fn audited(
 fn gsc_report(context: &Context<'_>, ask: ProjectAsk) -> Result<Option<GscReport>, AppError> {
     let workspace = context.workspace;
     let store = workspace.store()?;
-    store.project(ask.project_id)?;
+    let project = store.project(ask.project_id)?;
     let Some(sync) = store
         .gsc_syncs(ask.project_id, SYNCS_SHOWN)?
         .into_iter()
@@ -920,15 +1004,46 @@ fn gsc_report(context: &Context<'_>, ask: ProjectAsk) -> Result<Option<GscReport
         .map_or(28, |(end, start)| {
             end.days_since_epoch() - start.days_since_epoch() + 1
         });
-    let previous = (shift(&start, days), shift(&start, 1));
     let day_rows = store.gsc_rows(id, SearchKind::Date, Period::Days, 1_000)?;
+    // The compared days: as many days before the period, or the same days a year before,
+    // whichever holds the days read before it.
+    let before_days = (shift(&start, days), shift(&start, 1));
+    let year_days = (shift(&start, YEAR_DAYS), shift(&end, YEAR_DAYS));
+    let within = |(low, high): &(String, String)| {
+        day_rows
+            .iter()
+            .filter(|row| row.key.as_str() >= low.as_str() && row.key.as_str() <= high.as_str())
+            .count()
+    };
+    let (compare, previous) = if within(&year_days) > within(&before_days) {
+        ("year", year_days)
+    } else {
+        ("previous", before_days)
+    };
     let traffic_days = store.ga4_rows(id, TrafficKind::Date, Period::Days, 1_000)?;
-    let queries_now = store.gsc_rows(id, SearchKind::Query, Period::Now, REPORT_ROWS)?;
+    let mut queries_now = store.gsc_rows(id, SearchKind::Query, Period::Now, TOP_ROWS)?;
     let queries_before: HashMap<String, SearchRow> = store
         .gsc_rows(id, SearchKind::Query, Period::Before, 25_000)?
         .into_iter()
         .map(|row| (row.key.clone(), row))
         .collect();
+    let terms = brand_terms(&project);
+    let brand = BrandSplit {
+        brand: totals(queries_now.iter().filter(|row| is_brand(&row.key, &terms))),
+        other: totals(queries_now.iter().filter(|row| !is_brand(&row.key, &terms))),
+        brand_before: totals(
+            queries_before
+                .values()
+                .filter(|row| is_brand(&row.key, &terms)),
+        ),
+        other_before: totals(
+            queries_before
+                .values()
+                .filter(|row| !is_brand(&row.key, &terms)),
+        ),
+        terms: terms.clone(),
+    };
+    queries_now.truncate(REPORT_ROWS as usize);
     let pages_now = store.gsc_rows(id, SearchKind::Page, Period::Now, REPORT_ROWS)?;
     let pages_before: HashMap<String, SearchRow> = store
         .gsc_rows(id, SearchKind::Page, Period::Before, 25_000)?
@@ -999,6 +1114,7 @@ fn gsc_report(context: &Context<'_>, ask: ProjectAsk) -> Result<Option<GscReport
                     .map_or(0, |pages| u32::try_from(pages.len()).unwrap_or(u32::MAX)),
                 tracked: tracked.contains(&fold(&row.key)),
                 near_top: row.position >= 3.5 && row.position <= 20.0 && row.impressions >= enough,
+                brand: is_brand(&row.key, &terms),
                 low_ctr: row.impressions >= enough * 2.0
                     && place <= 10
                     && rate < ctr(place) * 100.0 * 0.5,
@@ -1099,6 +1215,8 @@ fn gsc_report(context: &Context<'_>, ask: ProjectAsk) -> Result<Option<GscReport
         currency: sync.currency.clone(),
         period: (start.clone(), end.clone()),
         previous,
+        compare,
+        brand,
         now: now_totals,
         before: before_totals,
         traffic_now,
@@ -1131,8 +1249,119 @@ fn gsc_query(context: &Context<'_>, ask: QueryAsk) -> Result<Vec<QueryPage>, App
     Ok(store.gsc_query_pages(ask.project_id, Some(ask.query.trim()), 100)?)
 }
 
+#[derive(Debug, Deserialize)]
+struct ExportAsk {
+    project_id: i64,
+    /// `queries`, `pages` or `query_pages`.
+    kind: String,
+}
+
+/// Every row a sync read, for a CSV file: a header and the rows.
+#[derive(Debug, Serialize)]
+struct Export {
+    columns: Vec<&'static str>,
+    rows: Vec<Vec<serde_json::Value>>,
+}
+
+fn gsc_export(context: &Context<'_>, ask: ExportAsk) -> Result<Export, AppError> {
+    let store = context.workspace.store()?;
+    let project = store.project(ask.project_id)?;
+    let id = ask.project_id;
+    let before_of = |kind: SearchKind| -> Result<HashMap<String, SearchRow>, AppError> {
+        Ok(store
+            .gsc_rows(id, kind, Period::Before, 50_000)?
+            .into_iter()
+            .map(|row| (row.key.clone(), row))
+            .collect())
+    };
+    Ok(match ask.kind.as_str() {
+        "queries" => {
+            let terms = brand_terms(&project);
+            let before = before_of(SearchKind::Query)?;
+            Export {
+                columns: vec![
+                    "query",
+                    "clicks",
+                    "impressions",
+                    "ctr",
+                    "position",
+                    "clicks_before",
+                    "position_before",
+                    "brand",
+                ],
+                rows: store
+                    .gsc_rows(id, SearchKind::Query, Period::Now, 50_000)?
+                    .iter()
+                    .map(|row| {
+                        let earlier = before.get(&row.key);
+                        vec![
+                            json!(row.key),
+                            json!(row.clicks),
+                            json!(row.impressions),
+                            json!(ctr_of(row.clicks, row.impressions)),
+                            json!(round(row.position)),
+                            json!(earlier.map(|before| before.clicks)),
+                            json!(earlier.map(|before| round(before.position))),
+                            json!(is_brand(&row.key, &terms)),
+                        ]
+                    })
+                    .collect(),
+            }
+        }
+        "pages" => {
+            let before = before_of(SearchKind::Page)?;
+            Export {
+                columns: vec![
+                    "page",
+                    "clicks",
+                    "impressions",
+                    "ctr",
+                    "position",
+                    "clicks_before",
+                ],
+                rows: store
+                    .gsc_rows(id, SearchKind::Page, Period::Now, 50_000)?
+                    .iter()
+                    .map(|row| {
+                        vec![
+                            json!(row.key),
+                            json!(row.clicks),
+                            json!(row.impressions),
+                            json!(ctr_of(row.clicks, row.impressions)),
+                            json!(round(row.position)),
+                            json!(before.get(&row.key).map(|before| before.clicks)),
+                        ]
+                    })
+                    .collect(),
+            }
+        }
+        "query_pages" => Export {
+            columns: vec!["query", "page", "clicks", "impressions", "position"],
+            rows: store
+                .gsc_query_pages(id, None, 100_000)?
+                .iter()
+                .map(|row| {
+                    vec![
+                        json!(row.query),
+                        json!(row.page),
+                        json!(row.clicks),
+                        json!(row.impressions),
+                        json!(round(row.position)),
+                    ]
+                })
+                .collect(),
+        },
+        other => {
+            return Err(AppError::Invalid(format!(
+                "kind: queries, pages or query_pages, not `{other}`"
+            )));
+        }
+    })
+}
+
 /// Adds the commands.
 pub fn register(router: &mut Router) {
+    router.add("gsc_export", gsc_export);
     router.add("google_status", google_status);
     router.add("set_google_client", set_google_client);
     router.add("start_google_login", start_google_login);

@@ -1,0 +1,17 @@
+{
+  "menu": "Opciones para {value}",
+  "keywordOverview": "Analizar palabra clave",
+  "keywordSerp": "Ver la página de resultados",
+  "keywordIdeas": "Ideas de palabras clave",
+  "track": "Añadir al seguimiento",
+  "domainOverview": "Resumen del dominio",
+  "domainBacklinks": "Ver backlinks",
+  "pageBacklinks": "Backlinks de esta página",
+  "addCompetitor": "Añadir como competidor",
+  "visit": "Abrir el sitio",
+  "copy": "Copiar",
+  "copied": "Copiado",
+  "copyFailed": "No se pudo copiar",
+  "pageKeywords": "Palabras de la página",
+  "contentBrief": "Crear brief de contenido"
+}

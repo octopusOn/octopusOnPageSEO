@@ -4,7 +4,10 @@
 import type { GscDay, GscPage, GscQuery, PageAudit } from "../../api/types";
 import { fold } from "../../lib/report";
 
-export const DAYS = [7, 28, 90, 180] as const;
+export const DAYS = [7, 14, 28, 90, 180, 240] as const;
+
+/** Longest period compared with the same days a year before (Search Console keeps 16 months). */
+export const YEAR_DAYS = 90;
 
 /** Change from `before` to `now` in percent; `null` without a base. */
 export function percentChange(now: number, before: number): number | null {
@@ -41,22 +44,35 @@ export function dailySeries(days: readonly GscDay[], periodStart: string, previo
   };
 }
 
+export type BrandFilter = "all" | "brand" | "other";
+
 export interface QueryFilters {
   query: string;
   /** Only queries within reach of the first places. */
   nearTop: boolean;
   /** Only queries the rank tracker does not follow. */
   untracked: boolean;
+  /** Queries naming the brand, the others, or all. */
+  brand: BrandFilter;
 }
 
-export const ALL_QUERIES: QueryFilters = { query: "", nearTop: false, untracked: false };
+export const ALL_QUERIES: QueryFilters = { query: "", nearTop: false, untracked: false, brand: "all" };
 
 /** The queries a filter keeps; text is folded. */
 export function filterQueries(rows: readonly GscQuery[], filters: QueryFilters): GscQuery[] {
   const wanted = fold(filters.query.trim());
   return rows.filter(
-    (row) => (!wanted || fold(row.query).includes(wanted)) && (!filters.nearTop || row.near_top) && (!filters.untracked || !row.tracked),
+    (row) =>
+      (!wanted || fold(row.query).includes(wanted)) &&
+      (!filters.nearTop || row.near_top) &&
+      (!filters.untracked || !row.tracked) &&
+      (filters.brand === "all" || row.brand === (filters.brand === "brand")),
   );
+}
+
+/** A full export as CSV text: values written plainly, booleans as 1 and 0. */
+export function exportRows(rows: readonly (string | number | boolean | null)[][]): string[][] {
+  return rows.map((row) => row.map((value) => (value === null ? "" : typeof value === "boolean" ? (value ? "1" : "0") : String(value))));
 }
 
 export type AuditState = "ok" | "findings" | "noindex" | "redirect" | "error";

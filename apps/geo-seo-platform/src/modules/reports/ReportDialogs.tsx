@@ -1,19 +1,165 @@
-import { useState, type ChangeEvent } from "react";
-import { useMutation, useQueryClient } from "@tanstack/react-query";
-import { ArrowDown, ArrowUp, ImagePlus, Trash2 } from "lucide-react";
+import { useEffect, useState, type ChangeEvent, type CSSProperties } from "react";
+import { keepPreviousData, useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { ArrowDown, ArrowUp, ChevronDown, ImagePlus, RotateCcw, SlidersHorizontal, Trash2 } from "lucide-react";
 import { Button, Field, Modal, Segmented } from "@octopusseo/ui";
 import { api } from "../../api/client";
-import type { Branding, ProjectRow, ReportLanguage, ReportRow, ReportSchedule, ReportSpec, ReportWidget, ReportsSetup } from "../../api/types";
+import type { Branding, ProjectRow, ReportColors, ReportDesign, ReportLanguage, ReportRow, ReportSchedule, ReportSpec, ReportWidget, ReportsSetup } from "../../api/types";
 import { LANGUAGES as UI_LANGUAGES, useI18n } from "../../i18n";
 import { useShell } from "../../lib/context";
-import { blankReport, DAYS, LANGUAGES, logoProblem, MAX_RECIPIENTS, moveWidget, orderedChoices, parseRecipients, validEmail } from "./report";
+import { explain } from "../../lib/errors";
+import { blankReport, COLOR_KEYS, DAYS, LANGUAGES, logoProblem, MAX_RECIPIENTS, moveWidget, NO_COLORS, orderedChoices, ownColors, parseRecipients, shownColors, validEmail } from "./report";
+import { ScaledPage } from "./ScaledPage";
+
+/** Milliseconds the live preview waits after the last change before drawing. */
+const PREVIEW_WAIT = 350;
+
+/** Optional colours of the report's own: each shows the design's until changed. */
+function CustomizePanel({ design, colors, brandAccent, onChange }: { design: ReportDesign; colors: ReportColors; brandAccent: string | null; onChange: (colors: ReportColors) => void }) {
+  const { t } = useI18n();
+  const own = ownColors(colors);
+  const [open, setOpen] = useState(own > 0);
+  const shown = shownColors(design, colors, brandAccent);
+  return (
+    <section className={`customize ${open ? "open" : ""}`}>
+      <button type="button" className="customize-head" aria-expanded={open} onClick={() => setOpen(!open)}>
+        <SlidersHorizontal size={15} aria-hidden="true" />
+        <strong>{t("reports.customize")}</strong>
+        <span className="faint small">{own > 0 ? t("reports.customized", { n: own }) : t("reports.customizeOptional")}</span>
+        <ChevronDown size={15} className="customize-chevron" aria-hidden="true" />
+      </button>
+      {open && (
+        <div className="customize-body">
+          <p className="faint small">{t("reports.customizeHint")}</p>
+          <ul className="color-list">
+            {COLOR_KEYS.map((key) => {
+              const mine = colors[key] !== null;
+              return (
+                <li key={key} className={mine ? "mine" : undefined}>
+                  <label className="color-swatch" title={t(`reports.color_${key}`)}>
+                    <input type="color" value={shown[key]} onChange={(event) => onChange({ ...colors, [key]: event.target.value })} aria-label={t(`reports.color_${key}`)} />
+                    <span style={{ background: shown[key] }} aria-hidden="true" />
+                  </label>
+                  <span className="color-text">
+                    <strong>{t(`reports.color_${key}`)}</strong>
+                    <small className="faint">{t(`reports.colorHint_${key}`)}</small>
+                  </span>
+                  <span className="color-state small">
+                    {mine ? (
+                      <>
+                        <code>{shown[key]}</code>
+                        <Button small className="icon ghost" title={t("reports.colorReset")} aria-label={t("reports.colorReset")} onClick={() => onChange({ ...colors, [key]: null })}>
+                          <RotateCcw size={13} />
+                        </Button>
+                      </>
+                    ) : (
+                      <span className="faint">{t("reports.colorDesign")}</span>
+                    )}
+                  </span>
+                </li>
+              );
+            })}
+          </ul>
+          {own > 0 && (
+            <Button small className="ghost" onClick={() => onChange({ ...NO_COLORS })}>
+              <RotateCcw size={14} />
+              {t("reports.customizeReset")}
+            </Button>
+          )}
+        </div>
+      )}
+    </section>
+  );
+}
+
+/** A value that follows `value` once it has stopped changing for `wait` milliseconds. */
+function useSettled<T>(value: T, wait: number): T {
+  const [settled, setSettled] = useState(value);
+  useEffect(() => {
+    const timer = setTimeout(() => setSettled(value), wait);
+    return () => clearTimeout(timer);
+  }, [value, wait]);
+  return settled;
+}
+
+/** The report as it will look with the dialog's settings, before saving. */
+function LivePreview({ project, reportId, spec }: { project: ProjectRow; reportId: number | null; spec: ReportSpec }) {
+  const { t } = useI18n();
+  const settled = useSettled(JSON.stringify({ ...spec, recipients: [] }), PREVIEW_WAIT);
+  const page = useQuery({
+    queryKey: ["reports", "preview", project.id, reportId, settled],
+    queryFn: () => api.reportPreview(project.id, reportId, JSON.parse(settled) as ReportSpec),
+    placeholderData: keepPreviousData,
+  });
+  return (
+    <aside className="report-editor-preview" aria-label={t("reports.previewLive")}>
+      <div className="report-editor-preview-head">
+        <strong>{t("reports.previewLive")}</strong>
+        <span className="faint small">{page.isFetching ? t("common.loading") : t("reports.previewLiveHint")}</span>
+      </div>
+      {page.data ? <ScaledPage title={t("reports.previewLive")} html={page.data.html} dim={page.isFetching} /> : page.error ? <p className="faint small">{explain(page.error, t).message}</p> : <div className="report-preview" />}
+    </aside>
+  );
+}
+
+/** The report's look: each design as a small cover. */
+function DesignPicker({ designs, value, accent, onChange }: { designs: ReportDesign[]; value: ReportDesign; accent: string | null; onChange: (design: ReportDesign) => void }) {
+  const { t } = useI18n();
+  return (
+    <div className="oc-field">
+      <span id="report-design">{t("reports.design")}</span>
+      <div className="design-picker" role="radiogroup" aria-labelledby="report-design">
+        {designs.map((design) => (
+          <button
+            key={design}
+            type="button"
+            role="radio"
+            aria-checked={value === design}
+            className={`design-choice ${value === design ? "on" : ""}`}
+            onClick={() => onChange(design)}
+          >
+            <span className={`design-thumb thumb-${design}`} style={accent ? ({ "--thumb-accent": accent } as CSSProperties) : undefined} aria-hidden="true">
+              <i className="thumb-kicker" />
+              <i className="thumb-title" />
+              <i className="thumb-line" />
+              <span className="thumb-tiles">
+                <i />
+                <i />
+                <i />
+              </span>
+            </span>
+            <strong>{t(`reports.design_${design}`)}</strong>
+            <small className="faint">{t(`reports.designHint_${design}`)}</small>
+          </button>
+        ))}
+      </div>
+      <small className="oc-field-hint">{t("reports.designHint")}</small>
+    </div>
+  );
+}
 
 /** A report's name, language, period, parts in order, and who gets it how often. */
-export function ReportDialog({ project, setup, report, onClose, onSaved }: { project: ProjectRow; setup: ReportsSetup; report: ReportRow | null; onClose: () => void; onSaved: (report: ReportRow) => void }) {
+export function ReportDialog({
+  project,
+  setup,
+  report,
+  preset,
+  onClose,
+  onSaved,
+}: {
+  project: ProjectRow;
+  setup: ReportsSetup;
+  report: ReportRow | null;
+  /** A new report's choices made elsewhere (the Snapshots page). */
+  preset?: Partial<ReportSpec>;
+  onClose: () => void;
+  onSaved: (report: ReportRow) => void;
+}) {
   const { t } = useI18n();
   const { notify, fail } = useShell();
   const queryClient = useQueryClient();
-  const [spec, setSpec] = useState<ReportSpec>(() => (report ? { ...report } : { ...blankReport(project.language, setup.widgets), name: t("reports.defaultName") }));
+  const [spec, setSpec] = useState<ReportSpec>(() =>
+    report ? { ...report, colors: { ...NO_COLORS, ...report.colors } } : { ...blankReport(project.language, setup.widgets), name: t("reports.defaultName"), ...preset },
+  );
   const [recipients, setRecipients] = useState((report?.recipients ?? []).join("\n"));
   const typed = parseRecipients(recipients);
   const wrong = typed.filter((address) => !validEmail(address));
@@ -48,7 +194,7 @@ export function ReportDialog({ project, setup, report, onClose, onSaved }: { pro
   return (
     <Modal
       title={report ? t("reports.editTitle") : t("reports.newTitle")}
-      className="wide"
+      className="wide report-editor"
       closeLabel={t("common.close")}
       onClose={onClose}
       footer={
@@ -61,6 +207,7 @@ export function ReportDialog({ project, setup, report, onClose, onSaved }: { pro
         </>
       }
     >
+      <div className="report-editor-grid">
       <div className="form-grid">
         <Field label={t("reports.name")}>
           <input className="oc-input" value={spec.name} maxLength={120} onChange={(event) => setSpec({ ...spec, name: event.target.value })} />
@@ -84,6 +231,8 @@ export function ReportDialog({ project, setup, report, onClose, onSaved }: { pro
             />
           </Field>
         </div>
+        <DesignPicker designs={setup.designs} value={spec.design} accent={spec.colors.accent ?? setup.branding.accent} onChange={(design) => setSpec({ ...spec, design })} />
+        <CustomizePanel design={spec.design} colors={spec.colors} brandAccent={setup.branding.accent} onChange={(colors) => setSpec({ ...spec, colors })} />
         <Field label={t("reports.parts")} hint={t("reports.partsHint")}>
           <ul className="part-list">
             {orderedChoices(setup.widgets, spec.widgets).map((widget) => {
@@ -125,6 +274,7 @@ export function ReportDialog({ project, setup, report, onClose, onSaved }: { pro
               { value: "manual", label: t("reports.scheduleManual") },
               { value: "weekly", label: t("reports.scheduleWeekly") },
               { value: "monthly", label: t("reports.scheduleMonthly") },
+              { value: "snapshot", label: t("reports.scheduleSnapshot") },
             ]}
           />
         </Field>
@@ -133,6 +283,8 @@ export function ReportDialog({ project, setup, report, onClose, onSaved }: { pro
             <textarea className="oc-input recipients-input" value={recipients} onChange={(event) => setRecipients(event.target.value)} placeholder="musteri@example.com" spellCheck={false} />
           </Field>
         )}
+      </div>
+      <LivePreview project={project} reportId={report?.id ?? null} spec={spec} />
       </div>
     </Modal>
   );

@@ -1,0 +1,17 @@
+{
+  "menu": "Optionen für {value}",
+  "keywordOverview": "Keyword analysieren",
+  "keywordSerp": "Ergebnisseite ansehen",
+  "keywordIdeas": "Keyword-Ideen",
+  "track": "Zum Ranking-Tracking hinzufügen",
+  "domainOverview": "Domain-Übersicht",
+  "domainBacklinks": "Backlinks ansehen",
+  "pageBacklinks": "Backlinks dieser Seite",
+  "addCompetitor": "Als Mitbewerber hinzufügen",
+  "visit": "Website öffnen",
+  "copy": "Kopieren",
+  "copied": "Kopiert",
+  "copyFailed": "Kopieren nicht möglich",
+  "pageKeywords": "Keywords der Seite",
+  "contentBrief": "Content-Briefing erstellen"
+}

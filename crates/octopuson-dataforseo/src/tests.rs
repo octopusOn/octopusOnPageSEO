@@ -114,6 +114,52 @@ fn task_status_codes_become_errors() {
 }
 
 #[test]
+fn many_tasks_go_in_one_request_and_queued_ones_say_when_they_are_not_ready() {
+    let posted = json!({
+        "status_code": 20_000,
+        "cost": 0.0018,
+        "tasks": [
+            { "id": "a-1", "status_code": 20_100, "status_message": "Task Created.", "cost": 0.0012, "data": { "tag": "k1|t1" } },
+            { "id": "a-2", "status_code": 40_501, "status_message": "Invalid Field.", "cost": 0, "data": { "tag": "k2|t1" } }
+        ]
+    });
+    let transport = FakeTransport::new().reply(200, posted.to_string());
+    let client = Client::new(&transport, "a:b").unwrap();
+    let answer = client
+        .post_tasks(
+            "serp/google/organic/task_post",
+            &[json!({ "tag": "k1|t1" }), json!({ "tag": "k2|t1" })],
+        )
+        .unwrap();
+    // One task refused does not fail the others.
+    assert_eq!(answer.result.len(), 2);
+    assert!((answer.cost_usd - 0.0018).abs() < 1e-12);
+    let request = &transport.requests()[0];
+    let body: Value = serde_json::from_slice(request.body.as_deref().unwrap()).unwrap();
+    assert_eq!(body.as_array().map(Vec::len), Some(2));
+
+    let refused =
+        json!({ "status_code": 40_200, "status_message": "Payment Required.", "tasks": [] });
+    let transport = FakeTransport::new().reply(200, refused.to_string());
+    let client = Client::new(&transport, "a:b").unwrap();
+    assert!(matches!(
+        client.post_tasks("serp/google/organic/task_post", &[json!({})]),
+        Err(DfsError::Quota(_))
+    ));
+
+    for code in [40_601, 40_602] {
+        let transport = FakeTransport::new().reply(200, task_error(code, "Task In Queue."));
+        let client = Client::new(&transport, "a:b").unwrap();
+        assert_eq!(
+            client
+                .get("serp/google/organic/task_get/advanced/a-1")
+                .unwrap_err(),
+            DfsError::NotReady
+        );
+    }
+}
+
+#[test]
 fn gateway_statuses_become_errors() {
     let reply = |status| FakeTransport::new().reply(status, r#"{"error":"insufficient credits"}"#);
     let transport = reply(402);
@@ -220,4 +266,56 @@ fn estimates_follow_the_list_prices() {
         (labs::domain_overview_estimate() - (prices::LABS_TASK + prices::LABS_ROW)).abs() < 1e-12
     );
     assert!((prices::backlinks(1_000) - (0.024 + 0.036)).abs() < 1e-9);
+}
+
+#[test]
+fn a_result_page_becomes_the_serp_checker_s_snapshot() {
+    let result: Vec<Value> = serde_json::from_value(json!([{
+        "keyword": "spor ayakkabı",
+        "se_results_count": 1_200_000,
+        "items": [
+            { "type": "featured_snippet", "rank_group": 1, "rank_absolute": 1, "url": "https://www.rival.com/spor", "title": "Spor ayakkabı" },
+            { "type": "organic", "rank_group": 2, "rank_absolute": 3, "url": "https://shop.example.com/a", "title": "B", "description": "ikinci" },
+            { "type": "organic", "rank_group": 1, "rank_absolute": 2, "url": "https://www.rival.com/spor", "title": "A", "breadcrumb": "rival.com › spor" },
+            { "type": "people_also_ask", "rank_group": 1, "rank_absolute": 4, "items": [
+                { "type": "people_also_ask_element", "title": "Spor ayakkabı nasıl seçilir?" },
+                { "type": "people_also_ask_element", "title": "En rahat spor ayakkabı hangisi?" }
+            ] },
+            { "type": "related_searches", "rank_group": 1, "rank_absolute": 9, "items": ["kadın spor ayakkabı", "spor ayakkabı indirim"] }
+        ]
+    }]))
+    .unwrap();
+    let snapshot = serp::snapshot_of(
+        &result,
+        "  spor  ayakkabı ",
+        &market(),
+        true,
+        "2026-10-23T08:00:00Z",
+    );
+    assert_eq!(snapshot.query.keyword, "spor ayakkabı");
+    assert_eq!(snapshot.query.language, "tr");
+    assert_eq!(snapshot.query.device, octopuson_serp::Device::Mobile);
+    assert_eq!(snapshot.total_results, Some(1_200_000));
+    assert_eq!(snapshot.organic.len(), 2);
+    assert_eq!(snapshot.organic[0].url, "https://www.rival.com/spor");
+    assert_eq!(snapshot.organic[0].domain, "rival.com");
+    assert_eq!(snapshot.organic[1].host, "shop.example.com");
+    assert_eq!(snapshot.organic[1].domain, "example.com");
+    let questions: Vec<&str> = snapshot
+        .features_of(octopuson_serp::FeatureKind::PeopleAlsoAsk)
+        .flat_map(|feature| feature.items.iter().filter_map(|item| item.text.as_deref()))
+        .collect();
+    assert_eq!(
+        questions,
+        [
+            "Spor ayakkabı nasıl seçilir?",
+            "En rahat spor ayakkabı hangisi?"
+        ]
+    );
+    let related: Vec<&str> = snapshot
+        .features_of(octopuson_serp::FeatureKind::RelatedSearches)
+        .flat_map(|feature| feature.items.iter().filter_map(|item| item.text.as_deref()))
+        .collect();
+    assert_eq!(related, ["kadın spor ayakkabı", "spor ayakkabı indirim"]);
+    assert!(snapshot.has_feature(octopuson_serp::FeatureKind::FeaturedSnippet));
 }

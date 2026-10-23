@@ -1,0 +1,67 @@
+{
+  "version": "0.1.20260801",
+  "status_code": 20000,
+  "status_message": "Ok.",
+  "cost": 0,
+  "tasks_count": 1,
+  "tasks": [
+    {
+      "id": "10231203-1535-0139-0000-2d2d4e0b6c1d",
+      "status_code": 20000,
+      "status_message": "Ok.",
+      "cost": 0.0015,
+      "data": { "api": "business_data", "function": "reviews", "se": "google", "cid": "222222222222222222", "language_code": "tr", "location_code": 2792, "depth": 20, "sort_by": "newest", "tag": "reviews|1" },
+      "result": [
+        {
+          "keyword": null,
+          "type": "reviews",
+          "se_domain": "google.com",
+          "location_code": 2792,
+          "language_code": "tr",
+          "check_url": "https://www.google.com/maps?cid=222222222222222222",
+          "datetime": "2026-10-23 09:00:00 +00:00",
+          "title": "Örnek Kahve Kadıköy",
+          "sub_title": "Bahariye Cd. 20",
+          "rating": { "rating_type": "Max5", "value": 4.5, "votes_count": 640, "rating_max": 5 },
+          "feature_id": "0x2:0x2",
+          "place_id": "ChIJornek",
+          "cid": "222222222222222222",
+          "reviews_count": 640,
+          "items_count": 3,
+          "items": [
+            {
+              "type": "google_review", "rank_group": 1, "rank_absolute": 1, "position": "right",
+              "review_text": "Kahveleri çok güzel, çalışanlar ilgili.", "original_review_text": null, "original_language": null,
+              "time_ago": "2 gün önce", "timestamp": "2026-10-21 12:30:00 +00:00",
+              "rating": { "rating_type": "Max5", "value": 5, "votes_count": null, "rating_max": 5 },
+              "reviews_count": 12, "photos_count": 3, "local_guide": true,
+              "profile_name": "Ayşe K.", "profile_url": "https://www.google.com/maps/contrib/1", "review_url": "https://www.google.com/maps/reviews/data=1", "profile_image_url": null,
+              "owner_answer": null, "original_owner_answer": null, "owner_time_ago": null, "owner_timestamp": null,
+              "review_id": "ChdDSUhNMG9nS0VJQ0FnSUN-review-1", "images": [{ "type": "image", "alt": "", "url": "https://lh5.googleusercontent.com/1", "image_url": "https://lh5.googleusercontent.com/1" }]
+            },
+            {
+              "type": "google_review", "rank_group": 2, "rank_absolute": 2, "position": "right",
+              "review_text": "Servis yavaştı, sipariş yanlış geldi.", "original_review_text": null, "original_language": null,
+              "time_ago": "1 hafta önce", "timestamp": "2026-10-15 18:05:00 +00:00",
+              "rating": { "rating_type": "Max5", "value": 2, "votes_count": null, "rating_max": 5 },
+              "reviews_count": 3, "photos_count": 0, "local_guide": false,
+              "profile_name": "Mehmet T.", "profile_url": "https://www.google.com/maps/contrib/2", "review_url": "https://www.google.com/maps/reviews/data=2", "profile_image_url": null,
+              "owner_answer": "Yaşadığınız sorun için özür dileriz.", "original_owner_answer": null, "owner_time_ago": "5 gün önce", "owner_timestamp": "2026-10-17 09:00:00 +00:00",
+              "review_id": "ChdDSUhNMG9nS0VJQ0FnSUN-review-2", "images": null
+            },
+            {
+              "type": "google_review", "rank_group": 3, "rank_absolute": 3, "position": "right",
+              "review_text": null, "original_review_text": null, "original_language": null,
+              "time_ago": "3 hafta önce", "timestamp": "2026-10-01 08:00:00 +00:00",
+              "rating": { "rating_type": "Max5", "value": 4, "votes_count": null, "rating_max": 5 },
+              "reviews_count": 1, "photos_count": 0, "local_guide": false,
+              "profile_name": "Zeynep", "profile_url": null, "review_url": null, "profile_image_url": null,
+              "owner_answer": null, "original_owner_answer": null, "owner_time_ago": null, "owner_timestamp": null,
+              "review_id": "ChdDSUhNMG9nS0VJQ0FnSUN-review-3", "images": null
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

@@ -293,11 +293,28 @@ pub fn related_task(
 /// # Errors
 /// [`DfsError::Config`] without a keyword or with an unknown country.
 pub fn suggestions_task(keyword: &str, market: &Market, limit: u32) -> Result<Value, DfsError> {
+    suggestions_match_task(keyword, market, limit, false)
+}
+
+/// The task of keywords containing `keyword`: anywhere (phrase match, the same task as
+/// [`suggestions_task`]) or, with `exact`, as the whole phrase in its order.
+///
+/// # Errors
+/// [`DfsError::Config`] without a keyword or with an unknown country.
+pub fn suggestions_match_task(
+    keyword: &str,
+    market: &Market,
+    limit: u32,
+    exact: bool,
+) -> Result<Value, DfsError> {
     let mut task = market.fields()?;
     task["keyword"] = json!(seed(keyword)?);
     task["include_seed_keyword"] = json!(true);
     task["limit"] = json!(crate::site::rows(limit));
     task["order_by"] = json!(["keyword_info.search_volume,desc"]);
+    if exact {
+        task["exact_match"] = json!(true);
+    }
     Ok(task)
 }
 

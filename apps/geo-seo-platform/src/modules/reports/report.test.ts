@@ -28,6 +28,33 @@ describe("reports", () => {
     const blank = blankReport("fr", ALL);
     expect(blank.language).toBe("en");
     expect(blank.widgets).not.toContain("backlinks");
+    expect(blank.design).toBe("clean");
     expect(blankReport("de", ALL).language).toBe("de");
+  });
+});
+
+describe("report colours", () => {
+  it("mixes, picks ink and shows the design's colours until the report sets its own", async () => {
+    const { inkOn, mix } = await import("../../lib/color");
+    const { NO_COLORS, ownColors, shownColors } = await import("./report");
+    expect(mix("#ffffff", "#000000", 0.5)).toBe("#808080");
+    expect(inkOn("#ffd84d")).toBe("#0f1726");
+    expect(inkOn("#14213d")).toBe("#ffffff");
+    const plain = shownColors("ocean", NO_COLORS, null);
+    expect(plain).toMatchObject({ accent: "#3354d1", accent2: "#19b5c8", cover: "#182559", table: "#12224a" });
+    expect(shownColors("clean", NO_COLORS, "#aa3300").accent).toBe("#aa3300");
+    const mine = { ...NO_COLORS, accent: "#123456", cover: "#fafafa" };
+    expect(shownColors("accent", mine, "#aa3300")).toMatchObject({ accent: "#123456", cover: "#fafafa", table: "#123456" });
+    expect(ownColors(mine)).toBe(2);
+  });
+
+  it("sets a report's own colours on the demo page the way the program does", async () => {
+    const { demoReportHtml } = await import("../../api/demoReports");
+    const plain = demoReportHtml("clean");
+    expect(plain).toContain('class="report design-clean" style="--accent:#1e6fd9;--on-accent:#ffffff;--cover-ink:#0f1726"');
+    const page = demoReportHtml("ocean", { cover: "#FAFAFA", table: "#102030", heading: "#222222", accent2: "nope" });
+    expect(page).toContain(
+      'class="report design-ocean custom-cover cover-light custom-table" style="--accent:#3354d1;--on-accent:#ffffff;--cover-ink:#0f1726;--cover-bg:#fafafa;--table-head:#102030;--table-ink:#ffffff;--heading:#222222"',
+    );
   });
 });

@@ -1,0 +1,166 @@
+{
+  "version": "0.1.20260701",
+  "status_code": 20000,
+  "status_message": "Ok.",
+  "time": "0.2 sec.",
+  "cost": 0.01212,
+  "tasks_count": 1,
+  "tasks_error": 0,
+  "tasks": [
+    {
+      "id": "10231300-1535-0387-0000-6f9e1a2c6b11",
+      "status_code": 20000,
+      "status_message": "Ok.",
+      "time": "0.1 sec.",
+      "cost": 0.01212,
+      "result_count": 1,
+      "path": [
+        "v3",
+        "dataforseo_labs",
+        "google",
+        "historical_keyword_data",
+        "live"
+      ],
+      "data": {
+        "api": "dataforseo_labs",
+        "function": "historical_keyword_data",
+        "se_type": "google",
+        "keywords": [
+          "spor ayakkabı"
+        ],
+        "location_code": 2792,
+        "language_code": "tr"
+      },
+      "result": [
+        {
+          "se_type": "google",
+          "location_code": 2792,
+          "language_code": "tr",
+          "items_count": 1,
+          "items": [
+            {
+              "se_type": "google",
+              "keyword": "spor ayakkabı",
+              "location_code": 2792,
+              "language_code": "tr",
+              "history": [
+                {
+                  "year": 2026,
+                  "month": 9,
+                  "keyword_info": {
+                    "se_type": "google",
+                    "last_updated_time": "2026-09-15 00:00:00 +00:00",
+                    "competition": 0.4,
+                    "competition_level": "MEDIUM",
+                    "cpc": 1.2,
+                    "search_volume": 40000,
+                    "low_top_of_page_bid": 0.3,
+                    "high_top_of_page_bid": 1.1,
+                    "categories": [
+                      10021
+                    ],
+                    "monthly_searches": [
+                      {
+                        "year": 2026,
+                        "month": 9,
+                        "search_volume": 41000
+                      },
+                      {
+                        "year": 2026,
+                        "month": 8,
+                        "search_volume": 39000
+                      },
+                      {
+                        "year": 2026,
+                        "month": 7,
+                        "search_volume": 40000
+                      }
+                    ],
+                    "search_volume_trend": {
+                      "monthly": 2,
+                      "quarterly": 5,
+                      "yearly": 10
+                    }
+                  }
+                },
+                {
+                  "year": 2026,
+                  "month": 8,
+                  "keyword_info": {
+                    "se_type": "google",
+                    "last_updated_time": "2026-08-15 00:00:00 +00:00",
+                    "competition": 0.4,
+                    "competition_level": "MEDIUM",
+                    "cpc": 1.2,
+                    "search_volume": 37666,
+                    "low_top_of_page_bid": 0.3,
+                    "high_top_of_page_bid": 1.1,
+                    "categories": [
+                      10021
+                    ],
+                    "monthly_searches": [
+                      {
+                        "year": 2026,
+                        "month": 8,
+                        "search_volume": 38000
+                      },
+                      {
+                        "year": 2026,
+                        "month": 7,
+                        "search_volume": 40000
+                      },
+                      {
+                        "year": 2026,
+                        "month": 6,
+                        "search_volume": 35000
+                      }
+                    ],
+                    "search_volume_trend": {
+                      "monthly": 2,
+                      "quarterly": 5,
+                      "yearly": 10
+                    }
+                  }
+                },
+                {
+                  "year": 2021,
+                  "month": 8,
+                  "keyword_info": {
+                    "se_type": "google",
+                    "last_updated_time": "2021-08-15 00:00:00 +00:00",
+                    "competition": 0.4,
+                    "competition_level": "MEDIUM",
+                    "cpc": 1.2,
+                    "search_volume": 21500,
+                    "low_top_of_page_bid": 0.3,
+                    "high_top_of_page_bid": 1.1,
+                    "categories": [
+                      10021
+                    ],
+                    "monthly_searches": [
+                      {
+                        "year": 2021,
+                        "month": 8,
+                        "search_volume": 22000
+                      },
+                      {
+                        "year": 2021,
+                        "month": 7,
+                        "search_volume": 21000
+                      }
+                    ],
+                    "search_volume_trend": {
+                      "monthly": 2,
+                      "quarterly": 5,
+                      "yearly": 10
+                    }
+                  }
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

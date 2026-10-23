@@ -22,7 +22,7 @@
   "byEngine": "Por asistente",
   "byEngineHint": "La última respuesta de cada pregunta en cada asistente",
   "engineLine": "{answers} respuestas, citado en {cited}",
-  "history": "Tasa de mención, medición a medición",
+  "history": "Medición a medición",
   "allEngines": "Todos",
   "oneRun": "El gráfico se dibuja tras la segunda medición.",
   "shareTitle": "Cuota de voz y fuentes",
@@ -134,5 +134,10 @@
   "selectShown": "Seleccionar las {n} mostradas",
   "cell_rival": "Un rival en su lugar",
   "cellRivalTitle": "No se le menciona; {rival} está en el puesto {n}.",
-  "cellPlaceTitle": "{state} · puesto {n}"
+  "cellPlaceTitle": "{state} · puesto {n}",
+  "metric": "Mostrando",
+  "metricMention": "Menciones",
+  "metricCitation": "Citas",
+  "metricVoice": "Cuota de voz",
+  "topPages": "Páginas más citadas"
 }

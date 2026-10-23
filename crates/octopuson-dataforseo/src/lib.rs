@@ -17,8 +17,14 @@ pub mod backlinks;
 pub mod gap;
 pub mod keywords;
 pub mod labs;
+pub mod link_audit;
+pub mod local;
+pub mod market;
 pub mod prices;
+pub mod query;
+pub mod queue;
 pub mod rank;
+pub mod research;
 pub mod serp;
 pub mod site;
 
@@ -67,6 +73,9 @@ pub enum DfsError {
     /// The answer could not be read.
     #[error("invalid answer: {0}")]
     Invalid(String),
+    /// A queued task is not finished yet; ask again later.
+    #[error("the task is not finished yet")]
+    NotReady,
     /// No answer arrived.
     #[error("cannot reach DataForSEO: {0}")]
     Transport(String),
@@ -166,7 +175,7 @@ pub fn items_of(result: &[Value]) -> &[Value] {
         .map_or(&[], Vec::as_slice)
 }
 
-/// Sends live tasks to DataForSEO.
+/// Sends tasks to DataForSEO and reads their answers.
 pub struct Client<'a> {
     transport: &'a dyn HttpTransport,
     credentials: String,
@@ -217,8 +226,57 @@ impl<'a> Client<'a> {
             format!("{ORIGIN}/v3/{}", path.trim_start_matches('/')),
             json!([task]).to_string().into_bytes(),
         )
-        .header("Authorization", self.authorization.clone())
         .header("Content-Type", "application/json");
+        self.send(request)
+    }
+
+    /// Sends up to 100 tasks to `/v3/{path}` in one request (the standard queue's `task_post`)
+    /// and returns every task as DataForSEO describes it (`id`, `status_code`, `cost`, `data`)
+    /// with the request's cost: each task is accepted or refused on its own.
+    ///
+    /// # Errors
+    /// [`DfsError`] when the request itself fails or is refused (key, balance, limits).
+    pub fn post_tasks(&self, path: &str, tasks: &[Value]) -> Result<Answer, DfsError> {
+        let request = HttpRequest::post(
+            format!("{ORIGIN}/v3/{}", path.trim_start_matches('/')),
+            Value::Array(tasks.to_vec()).to_string().into_bytes(),
+        )
+        .header("Content-Type", "application/json");
+        let (value, charged_usd) = self.send_value(request)?;
+        if let Some(status) = value.get("status_code").and_then(Value::as_u64)
+            && status != OK
+        {
+            let message = value
+                .get("status_message")
+                .and_then(Value::as_str)
+                .unwrap_or_default();
+            return Err(self.code_error(status, message));
+        }
+        Ok(Answer {
+            result: value
+                .get("tasks")
+                .and_then(Value::as_array)
+                .cloned()
+                .unwrap_or_default(),
+            cost_usd: value.get("cost").and_then(number).unwrap_or_default(),
+            charged_usd,
+        })
+    }
+
+    /// Reads `/v3/{path}` (lists such as the categories, which take no task).
+    ///
+    /// # Errors
+    /// [`DfsError`] when the request fails or DataForSEO refuses it.
+    pub fn get(&self, path: &str) -> Result<Answer, DfsError> {
+        self.send(HttpRequest::get(format!(
+            "{ORIGIN}/v3/{}",
+            path.trim_start_matches('/')
+        )))
+    }
+
+    /// Sends a request and reads its answer as JSON, with what the gateway charged.
+    fn send_value(&self, request: HttpRequest) -> Result<(Value, Option<f64>), DfsError> {
+        let request = request.header("Authorization", self.authorization.clone());
         let response = self
             .transport
             .send(&request)
@@ -229,6 +287,11 @@ impl<'a> Client<'a> {
         }
         let value: Value = serde_json::from_slice(&response.body)
             .map_err(|error| DfsError::Invalid(error.to_string()))?;
+        Ok((value, charged_usd))
+    }
+
+    fn send(&self, request: HttpRequest) -> Result<Answer, DfsError> {
+        let (value, charged_usd) = self.send_value(request)?;
         if let Some(error) = self.task_error(&value) {
             return Err(error);
         }
@@ -277,13 +340,20 @@ impl<'a> Client<'a> {
             .or_else(|| value.get("status_message"))
             .and_then(Value::as_str)
             .unwrap_or_default();
+        Some(self.code_error(status, message))
+    }
+
+    /// The error a DataForSEO status code stands for.
+    fn code_error(&self, status: u64, message: &str) -> DfsError {
         let message = self.hide(&format!("{status}: {message}"));
-        Some(match status {
+        match status {
             40_100..=40_104 => DfsError::Auth(message),
             40_200 | 40_210 => DfsError::Quota(message),
             40_202 => DfsError::RateLimited { retry_after: None },
+            // A queued task handed over or waiting in the queue.
+            40_601 | 40_602 => DfsError::NotReady,
             _ => DfsError::Rejected(message),
-        })
+        }
     }
 }
 
@@ -350,7 +420,19 @@ mod gap_tests;
 #[cfg(test)]
 mod keywords_tests;
 #[cfg(test)]
+mod link_audit_tests;
+#[cfg(test)]
+mod local_tests;
+#[cfg(test)]
+mod market_tests;
+#[cfg(test)]
+mod prices_tests;
+#[cfg(test)]
+mod query_tests;
+#[cfg(test)]
 mod rank_tests;
+#[cfg(test)]
+mod research_tests;
 #[cfg(test)]
 mod site_tests;
 #[cfg(test)]

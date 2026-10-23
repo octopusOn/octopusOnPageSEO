@@ -40,6 +40,8 @@ fn history_starts_a_fixed_number_of_months_back() {
         task,
         json!({ "target": "example.com", "location_code": 2792, "language_code": "tr", "date_from": "2024-10-01" })
     );
+    // The history costs ten times the default Labs price: $0.12 a task and $0.0012 a month.
+    assert!((history_estimate() - (0.12 + 0.0012 * 24.0)).abs() < 1e-9);
 }
 
 #[test]
@@ -158,4 +160,76 @@ fn several_domains_are_compared_once_each() {
     assert!((rows[0].paid_traffic - 120.5).abs() < 1e-9);
     // A domain without paid results reads as zero.
     assert_eq!(rows[1].paid_keywords, 0);
+}
+
+#[test]
+fn history_can_reach_back_to_its_start() {
+    assert_eq!(months_since_start(2020, 10), 1);
+    assert_eq!(months_since_start(2026, 10), 73);
+    assert_eq!(months_since_start(2019, 1), 1);
+    assert!((history_estimate_for(73) - (0.12 + 0.0012 * 73.0)).abs() < 1e-9);
+}
+
+#[test]
+fn keyword_sets_ask_organic_lost_or_paid_results() {
+    // Organic keywords keep the task they always had, so kept answers stay valid.
+    assert_eq!(
+        ranked_set_task("example.com", &market(), 100, KeywordSet::Organic).unwrap(),
+        ranked_keywords_task("example.com", &market(), 100).unwrap()
+    );
+    let lost = ranked_set_task("example.com", &market(), 100, KeywordSet::Lost).unwrap();
+    assert_eq!(lost["historical_serp_mode"], "lost");
+    assert_eq!(lost["item_types"], json!(["organic"]));
+    assert_eq!(
+        lost["order_by"],
+        json!(["keyword_data.keyword_info.search_volume,desc"])
+    );
+    let paid = ranked_set_task("example.com", &market(), 100, KeywordSet::Paid).unwrap();
+    assert_eq!(paid["item_types"], json!(["paid"]));
+    assert_eq!(paid.get("historical_serp_mode"), None);
+}
+
+#[test]
+fn paid_keywords_carry_the_ad_shown() {
+    let ranked = ranked_keywords_from_result(&result(include_str!(
+        "../tests/fixtures/ranked_keywords_paid.json"
+    )));
+    assert_eq!(ranked.total, 12);
+    let first = &ranked.keywords[0];
+    assert_eq!(first.keyword, "spor ayakkabı indirim");
+    assert_eq!(first.change, Change::New);
+    let ad = first.ad.as_ref().unwrap();
+    assert_eq!(ad.title, "Spor Ayakkabıda %40 İndirim");
+    assert_eq!(ad.breadcrumb.as_deref(), Some("www.example.com/kampanya"));
+    // Organic keywords have no ad, and say nothing of one.
+    let organic = ranked_keywords_from_result(&result(include_str!(
+        "../tests/fixtures/ranked_keywords.json"
+    )));
+    assert_eq!(organic.keywords[0].ad, None);
+    assert!(
+        serde_json::to_value(&organic.keywords[0])
+            .unwrap()
+            .get("ad")
+            .is_none()
+    );
+}
+
+#[test]
+fn countries_are_read_most_traffic_first() {
+    assert_eq!(
+        countries_task("https://www.example.com/").unwrap(),
+        json!({ "target": "example.com", "limit": 100 })
+    );
+    assert!(matches!(countries_task(" "), Err(DfsError::Config(_))));
+    let rows = countries_from_result(&result(include_str!(
+        "../tests/fixtures/domain_rank_overview_countries.json"
+    )));
+    assert_eq!(rows.len(), 3);
+    assert_eq!(rows[0].country.as_deref(), Some("tr"));
+    assert_eq!(rows[0].organic.keywords, 3052);
+    assert_eq!(rows[1].country.as_deref(), Some("de"));
+    assert_eq!(rows[1].language.as_deref(), Some("de"));
+    // A location the platform does not know keeps its code.
+    assert_eq!(rows[2].country, None);
+    assert_eq!(rows[2].location_code, 9_999_999);
 }

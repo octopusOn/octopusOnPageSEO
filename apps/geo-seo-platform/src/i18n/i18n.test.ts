@@ -32,7 +32,7 @@ describe("translations", () => {
     const asked = new Set<string>();
     for (const text of Object.values(SOURCES)) {
       for (const match of text.matchAll(/\bt\(\s*"([a-z]+\.[A-Za-z0-9]+)"/g)) asked.add(match[1]!);
-      for (const match of text.matchAll(/"((?:common|projects|overview|sources|settings|keywords|backlinks|gap|rank|audit|ai|gsc|reports)\.[A-Za-z0-9]+)"/g)) asked.add(match[1]!);
+      for (const match of text.matchAll(/"((?:common|projects|overview|sources|settings|keywords|backlinks|gap|rank|audit|ai|gsc|reports|snapshots|entity|glossary|query|local|content|project|opportunities|alerts)\.[A-Za-z0-9]+)"/g)) asked.add(match[1]!);
     }
     expect(asked.size).toBeGreaterThan(50);
     const missing = [...asked].filter((key) => !(key in (MESSAGES.tr ?? {})));

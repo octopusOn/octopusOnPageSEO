@@ -4,6 +4,7 @@
 import { useEffect, useRef, type ButtonHTMLAttributes, type ReactNode } from "react";
 import { createPortal } from "react-dom";
 import { AlertCircle, LoaderCircle, X } from "lucide-react";
+import { Tip } from "./hint";
 
 /** The three blocks of the OctopusOn SEO mark, in a 64-unit square (packages/design/brand). */
 const PIECES = [
@@ -184,11 +185,14 @@ export function ErrorState({
   );
 }
 
-/** One number with its label and an optional hint. */
-export function Stat({ label, value, hint, tone }: { label: string; value: ReactNode; hint?: ReactNode; tone?: "good" | "bad" }) {
+/** One number with its label, an optional hint and an optional explanation beside the label. */
+export function Stat({ label, value, hint, tone, help, helpLabel }: { label: string; value: ReactNode; hint?: ReactNode; tone?: "good" | "bad"; help?: string; helpLabel?: string }) {
   return (
     <div className={`oc-stat ${tone ?? ""}`.trim()}>
-      <span className="oc-stat-label">{label}</span>
+      <span className="oc-stat-label">
+        {label}
+        {help && <Tip text={help} label={helpLabel ?? label} />}
+      </span>
       <strong className="oc-stat-value">{value}</strong>
       {hint && <span className="oc-stat-hint">{hint}</span>}
     </div>
@@ -228,4 +232,5 @@ export function Segmented<T extends string>({
   );
 }
 
-export { DataTable, sortRows, type Column, type SortDirection } from "./table";
+export { DataTable, columnShown, sortRows, type Column, type SortDirection, type TableLabels } from "./table";
+export { Tip } from "./hint";

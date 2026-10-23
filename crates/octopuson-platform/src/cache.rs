@@ -163,6 +163,19 @@ impl PlatformStore {
         Ok(())
     }
 
+    /// Marks a kept answer as this copy's own: it does not sync (filtered or later pages of a
+    /// list, asked for one look).
+    ///
+    /// # Errors
+    /// Database errors.
+    pub fn keep_here_only(&self, key: &str) -> Result<(), PlatformStoreError> {
+        self.connection.execute(
+            "UPDATE cache SET travels = false WHERE key = ?",
+            params![key],
+        )?;
+        Ok(())
+    }
+
     /// Removes answers stale for more than `grace` seconds at `now` (Unix seconds); returns how
     /// many went.
     ///

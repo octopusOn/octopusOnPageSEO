@@ -27,6 +27,29 @@ The first release is built in milestones G1–G12:
 
 Version 0.1.1 adds sync: a desktop signed in to the account keeps its projects the same as the account's web workspace ([Sync](#sync), [ADR 0078](adr/0078-platform-sync.md)).
 
+Snapshots keep a project's whole state at a moment and compare two of them, with a written summary and a before/after report ([Snapshots](#snapshots), [ADR 0080](adr/0080-platform-snapshots.md)).
+
+Version 0.2.0 brings the research to Semrush and Ahrefs depth and adds the work around the data:
+- **Research depth** ([ADR 0081](adr/0081-platform-research-depth.md)):
+  - entity links and a global search;
+  - tables with column choice, server-side filters over every row, and other markets;
+  - metric history;
+  - Site Explorer 2.0, keyword research 2.0, backlinks 2.0 (history, toxic-link audit, prospects), and Semrush's gap groups with the market.
+- **Rank tracking and local SEO** ([ADR 0082](adr/0082-platform-rank-queue-and-local-seo.md)):
+  - scheduled checks on DataForSEO's standard queue;
+  - local SEO with a Google Maps grid and reviews.
+- **Content** ([ADR 0084](adr/0084-platform-content-optimisation.md)): content briefs from the top results, a content score, and optional AI writing.
+- **Doing the work** ([ADR 0083](adr/0083-platform-opportunities-and-alerts.md)):
+  - Core Web Vitals and more audit and Search Console views;
+  - opportunities ranked by value and effort;
+  - a project dashboard;
+  - alerts in the app, by e-mail and as desktop notifications.
+- **Reports, snapshots and assistants** (P12):
+  - report parts for organic search, link history, the keyword gap, keyword lists and opportunities;
+  - snapshots that also keep the map grid and the toxic-link audit;
+  - AI visibility by brand run by run, with the most cited pages;
+  - MCP tools for all of it, paid actions included.
+
 The other modules show "soon" in the sidebar until their milestone lands.
 
 ## Layout
@@ -95,15 +118,23 @@ The desktop window and the web call the same commands with the same JSON. A fail
 | Sources | `list_providers`, `set_key`, `remove_key`, `set_source_mode`, `set_budget`, `usage` |
 | Account | `account_status`, `start_account_login` (desktop), `account_logout` (desktop), `account_page` |
 | Jobs | `list_jobs`, `cancel_job`, `clear_jobs` |
-| Domain overview | `overview_estimate`, `get_overview`, `fetch_overview` (with `report`) |
+| Project | `project_dashboard`, `opportunities`, `set_opportunity` |
+| Alerts | `alert_setup`, `save_alert_settings`, `list_alerts`, `mark_alerts_read`, `check_alerts`, `start_link_watch` |
+| Domain overview | `overview_estimate`, `get_overview`, `fetch_overview` (with `report`), `list_ads`, `metric_history` |
+| Keyword research | `research_estimate`, `get_research`, `fetch_research` (with `report`), `serp_cluster_estimate`, `start_serp_clustering`, `serp_clusters` |
 | Keyword Explorer | `keywords_estimate`, `get_keywords`, `fetch_keywords` (with `report`), `keyword_autocomplete` |
 | Backlinks | `backlinks_estimate`, `get_backlinks`, `fetch_backlinks` (with `report`) |
-| Gap analysis | `gap_estimate`, `get_gap`, `fetch_gap` (with `report`) |
-| Rank tracking | `rank_setup`, `save_rank_settings`, `add_rank_tracker`, `remove_rank_tracker`, `track_keywords`, `untrack_keywords`, `set_keyword_tags`, `rank_estimate`, `start_rank_check`, `rank_runs`, `rank_report`, `rank_keyword`, `rank_volumes_estimate`, `fetch_rank_volumes` |
-| Site audit | `audit_setup`, `save_audit_settings`, `start_audit`, `audit_report`, `audit_issue`, `delete_audit` |
-| Search Console | `google_status`, `set_google_client` (desktop), `start_google_login`, `google_logout`, `google_properties`, `gsc_setup`, `save_gsc_settings`, `start_gsc_sync`, `gsc_report`, `gsc_query` |
+| Link work | `link_decisions`, `decide_links`, `disavow_file`, `link_prospects`, `save_link_prospect`, `remove_link_prospect` |
+| Gap analysis | `gap_estimate`, `get_gap`, `fetch_gap` (with `report`), `get_category_names`, `fetch_category_names` |
+| Rank tracking | `rank_setup`, `save_rank_settings`, `add_rank_tracker`, `remove_rank_tracker`, `track_keywords`, `untrack_keywords`, `set_keyword_tags`, `rank_estimate`, `start_rank_check`, `rank_runs`, `rank_report`, `rank_places`, `rank_keyword`, `rank_volumes_estimate`, `fetch_rank_volumes` |
+| Local SEO | `local_setup`, `save_local_settings`, `choose_business`, `local_estimate`, `get_local`, `fetch_local` (with `report`), `local_grid_estimate`, `start_local_grid`, `local_runs`, `local_grid`, `local_reviews_estimate`, `fetch_local_reviews`, `local_reviews` |
+| Content | `content_brief_estimate`, `start_content_brief`, `content_briefs`, `content_brief`, `delete_content_brief`, `score_content`, `content_pages`, `content_writing_estimate`, `start_content_writing`, `reply_estimate`, `draft_review_reply` |
+| Site audit | `audit_setup`, `save_audit_settings`, `start_audit`, `audit_report`, `audit_issue`, `audit_outbound`, `audit_links`, `audit_hreflang`, `audit_pages`, `audit_page`, `audit_findings_csv`, `delete_audit` |
+| Core Web Vitals | `vitals_setup`, `start_vitals`, `vitals_report` |
+| Search Console | `google_status`, `set_google_client` (desktop), `start_google_login`, `google_logout`, `google_properties`, `gsc_setup`, `save_gsc_settings`, `start_gsc_sync`, `gsc_report`, `gsc_query`, `gsc_export` |
 | Access tokens (web) | `list_access_tokens`, `create_access_token`, `revoke_access_token`; the server answers them itself |
-| Reports | `reports_setup`, `save_report_branding`, `save_report`, `delete_report`, `report_html`, `report_pdf`, `report_xlsx`, `share_report` (web), `unshare_report`, `report_deliveries`, `send_report` (web) |
+| Snapshots | `snapshot_setup`, `save_snapshot_settings`, `snapshot_estimate`, `start_snapshot`, `list_snapshots`, `get_snapshot`, `delete_snapshot`, `compare_snapshots`, `snapshot_xlsx`, `snapshot_progress` |
+| Reports | `reports_setup`, `save_report_branding`, `save_report`, `delete_report`, `report_html`, `report_preview`, `report_pdf`, `report_xlsx`, `share_report` (web), `unshare_report`, `report_deliveries`, `send_report` (web) |
 | AI visibility | `ai_setup`, `save_ai_settings`, `add_ai_prompts`, `remove_ai_prompts`, `suggest_ai_prompts`, `ai_estimate`, `start_ai_run`, `ai_runs`, `ai_report`, `ai_answer`, `ai_mentions_estimate`, `get_ai_mentions`, `fetch_ai_mentions` |
 | Keyword lists | `keyword_lists`, `create_keyword_list`, `rename_keyword_list`, `delete_keyword_list`, `list_keywords`, `add_to_keyword_list`, `remove_from_keyword_list`, `cluster_keyword_list` |
 | Sync (desktop) | `sync_status`, `set_sync`, `sync_now`, `sync_choose` |
@@ -112,20 +143,22 @@ A new module adds its commands in its own file, `crates/octopuson-platform-app/s
 
 ## Domain overview reports
 
-The three overview commands take `{ project_id, domain?, report, limit?, force? }`. `domain` looks at another domain (a competitor) in the project's market.
+The three overview commands take `{ project_id, domain?, report, limit?, market?, query?, months?, set?, targets?, force? }`. `domain` looks at another domain (a competitor); `market` (`country-language`) asks another market than the project's.
 
 | `report` | DataForSEO Labs endpoint | What it holds |
 |---|---|---|
 | `summary` (default) | `domain_rank_overview` | Organic and paid keywords, traffic, traffic value, positions, movement. |
-| `history` | `historical_rank_overview` | The last 24 months, oldest first. |
-| `keywords` | `ranked_keywords` | Keywords by traffic: position and change, volume, KD, CPC, intent, address, SERP elements. |
+| `history` | `historical_rank_overview` | The last 24 months (`months` 6 to all since October 2020), oldest first. |
+| `keywords` | `ranked_keywords` | Keywords by traffic: position and change, volume, KD, CPC, intent, address, SERP elements. `set`: `organic` (default), `lost` (by volume) or `paid` (with the ad's text, kept as the domain's ad history: `list_ads`). |
+| `countries` | `domain_rank_overview` without a location | The domain's organic numbers in every country. |
 | `pages` | `relevant_pages` | Pages by organic traffic. |
 | `competitors` | `competitors_domain` | Domains sharing keywords, without the giants (`exclude_top_domains`). |
 | `subdomains` | `subdomains` | Subdomains by organic traffic. |
 | `compare` | `bulk_traffic_estimation` | The domain and the project's competitors (needs competitors). |
 
 - **Row count.** Table reports take `limit`: 100, 500 or 1000 rows (10–1000). The cost grows with the rows, and every row count is kept separately.
-- **Where filtering happens.** Filtering, sorting and the CSV download happen in the interface, on the rows fetched. They cost nothing.
+- **Where filtering happens** ([ADR 0081](adr/0081-platform-research-depth.md)). When every row is already loaded, filters, sorting and the CSV download run in the interface for free. Otherwise `query` (`filters`, `order`, `offset`) is asked of DataForSEO over all its rows, with the price first. A filtered answer is kept under its own key and never syncs or goes to the shared cache.
+- **Metric history.** Every fetched summary leaves the day's numbers (`metric_history { project_id, kind: domain | backlinks, target?, market? }`).
 - **Search.** Text search ignores case, accents and the Turkish dotted/dotless i ("ayakkabi" finds "ayakkabı").
 
 ## Keyword Explorer reports
@@ -142,6 +175,18 @@ The keyword commands take `{ project_id, report, keywords?, seed?, limit?, depth
 | `wordstat` | Yandex Wordstat `topRequests` | Yandex's most frequent searches with `seed`, and similar searches. Uses the `yandex-cloud` keys (`api_key`, `folder_id`) or the `wordstat` credit connector. |
 
 Kept answers last as long as their kind of data: keyword numbers 30 days, result pages 1 day.
+
+**Keyword research reports** (`research_estimate`, `get_research`, `fetch_research { project_id, report, seed, mobile?, market?, markets? }`):
+
+| `report` | Source | What it holds |
+|---|---|---|
+| `history` (default) | Labs `historical_keyword_data` | Searches month by month since 2021. |
+| `serp_history` | Labs `historical_serps` | The top 10 month by month over a year. |
+| `serp_metrics` | Backlinks `bulk_ranks`, `bulk_referring_domains`, Labs `bulk_traffic_estimation` | Each result of the kept result page with authority, linking sites and traffic. |
+| `parent` | Labs `ranked_keywords` of the first result | The parent topic and the traffic potential. |
+| `countries` | Labs `keyword_overview` per market | Searches in other markets. |
+
+A list can be grouped by result-page overlap (`start_serp_clustering`, a `serp_clusters` job over `historical_serps`, about $0.60 for 1,000 keywords; `serp_clusters` reads the groups).
 
 Free, never paid:
 - **Autocomplete.** Google's or Yandex's suggestions for a seed (`keyword_autocomplete`).
@@ -162,6 +207,10 @@ The backlink commands take `{ project_id, report, target?, limit?, status?, dofo
 | `pages` | `domain_pages` | The target's pages linked from the most domains (status codes show linked pages that are gone). |
 | `new_lost` | `timeseries_new_lost_summary` | Backlinks and referring domains won and lost, month by month, 12 months. |
 | `bulk` | `bulk_ranks` | OA of `targets` (up to 1,000), or of the project's domain and competitors. |
+| `history` | `history` | The link profile month by month since 2019 (OA, backlinks, referring domains, won and lost). |
+| `audit` | `backlinks` (one per site, spam first, 1,000 rows) | Each linking site judged by the toxic-link rules (`link_audit.rs`): spam score, networks, risky TLDs, site-wide links, link farms, spam anchors; risk `high`, `medium` or `low`. |
+
+The user's link work is free and syncs: decisions on linking sites (`decide_links`: keep, watch, disavow) with the disavow file in Google's format (`disavow_file`), and link prospects with their outreach status (`save_link_prospect`).
 
 Kept answers last 3 days. On credits, the gateway's DataForSEO connector allows every live Backlinks report (`/v3/backlinks/*/live`); a connector already saved in the admin panel needs that route added there.
 
@@ -175,6 +224,11 @@ The gap commands take `{ project_id, report, competitors?, targets?, limit?, for
 | `shared` | Labs `domain_intersection`, the site first, `intersections: true` | Keywords both rank for, with the site's position and each competitor's; `weak` where a competitor ranks higher. |
 | `links` | Backlinks `domain_intersection` (`intersection_mode: all`, `exclude_targets`: the site) | Sites linking to every chosen competitor but not to the site, by OA, with the backlinks each competitor gets. |
 | `bulk` | Labs `bulk_traffic_estimation` + Backlinks `bulk_ranks` | Organic traffic, keywords, paid traffic and OA of `targets` (up to 100), or of the project's domain and competitors. The interface draws each site's share of the summed traffic (share of voice). |
+| `keywords` | Labs `ranked_keywords` of each domain | Every keyword in Semrush's groups: shared, missing, weak, strong, untapped, unique, with counts. Reuses the overview's kept keyword answers. |
+| `pages` | Labs `page_intersection` | Keywords a competitor's page ranks for and the site's page does not (`own_page`, `competitor_page`). |
+| `share` | Labs `historical_bulk_traffic_estimation` | Each site's organic traffic month by month (`months`, 12 by default). |
+| `categories` | Labs `categories_for_domain` | The categories the site ranks in. |
+| `players` | Labs `domain_metrics_by_categories` | The leading domains of up to 5 `categories`, with their 12-month change. |
 
 `limit` is the row count per competitor (100, 500 or 1000). A kept gap is fresh only while every part is; keyword gaps last 7 days, link gaps 3 days.
 
@@ -189,6 +243,8 @@ A project tracks keywords (up to 5,000, with tags and their monthly searches whe
 - **Report.** `rank_report { project_id, tracker_id?, days? }` (the first place, 90 days by default, 7–365): per keyword its position, change, best, page, history by day and the page's signals; a summary; visibility by day; the shares of the site and its competitors (listed ones, else the five most visible domains) now and by day. Visibility is the share of the clicks the keywords would get in first place, weighted by monthly searches; the measures (`octopuson-serp-score::rank`) are the SERP Checker's.
 - **Volumes.** Keywords added without monthly searches count as one search. `fetch_rank_volumes` asks Labs keyword numbers for them (700 a request, kept 30 days like the Keyword Explorer's).
 - **Keyword Explorer.** Selected keywords go to the Rank Tracker with their volumes ("Track rankings").
+- **The standard queue** ([ADR 0082](adr/0082-platform-rank-queue-and-local-seo.md)). Scheduled runs post their checks to DataForSEO's queue ($0.0006 a page) when it is open (own key; on credits once the gateway forwards the task routes) and end when `collect_queued` has read every answer. "Check now" stays live. Queue tasks stay on the copy that posted them (`rank_tasks`).
+- **More views.** `rank_places` (every keyword in every place), SERP elements the site holds, landing pages, competitors' positions per keyword, a comparison with a chosen day (`compare`), and estimated visits.
 
 ## Site audit
 
@@ -219,6 +275,13 @@ An audit crawls the project's site (`https://<domain>/`) with the SEO Crawler's 
   - **Limits.** At most 3 crawls run on the server at once (the others wait); each uses 3 threads at 4 requests a second.
   - **Metering.** Every URL fetched is metered on the account (`crawl.page`, see [cloud.md](cloud.md)), in batches of 100 while the crawl runs and the rest at the end. Each batch has the idempotency key `<crawl id>:<batch>`. When the credits run out the crawl stops; the audit is `stopped` and says why. The desktop crawls on the computer and is never metered.
 - **Schedule.** `manual` (the default), `weekly` (6.5 days) or `monthly` (29 days). These run through `Platform::run_due` with the rank checks. Deleting an audit or the project deletes its crawl folders.
+- **More views** (`modules/crawl_views.rs`, free):
+  - `audit_links`: link depth, orphans from the sitemap, weakly linked pages, internal PageRank (the last four crawls are kept in memory);
+  - `audit_hreflang`;
+  - `audit_pages` and `audit_page`: the page explorer, filtered and sorted on the server;
+  - `audit_findings_csv`: every finding;
+  - `audit_outbound`: links to other sites, when `check_outbound` is on;
+  - a trend across audits.
 
 ## Search Console and Google Analytics
 
@@ -244,6 +307,138 @@ A project reads its own Google data: one Search Console property and, optionally
   - how many pages with clicks the latest audit found broken, redirected or not indexable, and how many tracked keywords Search Console has numbers for.
 
   `gsc_query` lists the pages a query was shown on. Queries can go to the rank tracker from the page (`track_keywords`).
+- **0.2.0 additions.**
+  - Periods of 7, 14, 28, 90, 180 or 240 days, compared with the period before or (up to 90 days) the same weekdays a year before (`compare`).
+  - A brand split: the project's brands and its domain name, folded, mark brand queries.
+  - Lists of 5,000 rows, and `gsc_export` for every row of queries, pages and query-page pairs.
+
+## Opportunities and the project dashboard
+
+`opportunities { project_id, lang, all? }` turns the modules' own reports into what to do next ([ADR 0083](adr/0083-platform-opportunities-and-alerts.md)). Nothing is stored or paid: the list is computed on read.
+
+- **Rules and their sources:**
+
+  | Rule | From |
+  |---|---|
+  | `near_top`, `dropped` | `rank_report` (positions 4–20 by volume; dropped or lost), `gsc_report` (untracked non-brand queries) |
+  | `low_ctr`, `losing_page`, `cannibal` | `gsc_report` (non-brand; pages losing 20 % and 10 clicks; queries several pages share) |
+  | `audit_issue`, `orphans`, `weak_links`, `deep_pages` | `audit_report`, `audit_links` |
+  | `vitals`, `slow_page` | `vitals_report` (phones failing; PageSpeed under 50) |
+  | `ai_gap` | `ai_report` (a rival named, the site not) |
+  | `low_content` | `content_pages` (score under 50) |
+  | `local_weak` | `local_grid` (SoLV under 30 or ARP over 10) |
+  | `rival_growth` | the last two snapshots |
+  | `lost_links` | lost-link prospects |
+
+- **Ordering.** Gain is clicks a month from CTR curves; impact is a log scale (5,000 clicks = 100); priority is impact × effort (low 1, medium 0.75, high 0.5); at most 25 a rule.
+- **Decisions** (`set_opportunity { project_id, key, state, days? }`): `done` hides it for 30 days and shows it again if it is still true, `ignored` hides it, `snoozed` hides it until a day; `open` takes the decision back. Decisions sync (`opportunity_state`).
+- **The project dashboard** (`project_dashboard { project_id, lang }`, page `project`) shows:
+  - every module's headline numbers with sparklines and change;
+  - the first ten opportunities and the latest alerts;
+  - what the schedule runs next;
+  - this month's spending by module.
+
+## Alerts
+
+Alerts tell the user what changed without opening the program ([ADR 0083](adr/0083-platform-opportunities-and-alerts.md)). Code: `crates/octopuson-platform/src/alerts.rs` (store, migration 21) and `modules/alerts.rs`.
+
+- **Rules** (`alert_settings`, per project; all on but the link watch):
+
+  | Rule | Threshold (default) | Alert |
+  |---|---|---|
+  | `rank_drop`, `top10_exit` | 5 places; leaving the top 10 | tracked keywords that fell, per place and check |
+  | `visibility_drop` | 10 % | rank tracking visibility day over day |
+  | `gsc_drop` | 20 % | Search Console clicks against the period before |
+  | `health_drop`, `audit_issues` | 5 points; new high-priority findings | each finished audit against the one before |
+  | `ai_change` | 10 points, either way | the mention rate run over run |
+  | `local_drop`, `reviews` | 10 points; 1–2 stars | the map SoLV run over run; unanswered bad reviews of the last 14 days |
+  | `rivals` | on | a competitor's keywords growing much faster between snapshots |
+  | `links` | off (paid, about $0.05 a week) | the weekly link watch (`link-watch` job): linking sites won and lost; lost ones become prospects |
+
+- **When.** After each finished job (`JobManager::on_finish`, only the rule groups the job feeds), after a sync or queue collection, and every six hours. Only copies that run the schedule look; a desktop that syncs leaves it to the web.
+- **Once.** An alert's key comes from its source (`rank|<place>|<check time>`, `gsc|<period end>`, `review|<id>` …) and its sync uid from the project's uid and the key, so two copies keep one. `read_at` travels; mailing and notifying are recorded per copy.
+- **Delivery.**
+  - In the app: the bell in the title bar (in the sidebar on narrow screens) with the unread count, the alert centre, and the project's Alerts tab with the history and the settings.
+  - By e-mail on the web: `instant` or a `daily` digest after 06:00 UTC, to up to five recipients, in the chosen language (the project's by default), with a link to `/#/project?project=<id>&tab=alerts`.
+  - On the desktop: system notifications (`mail::Notifier`; osascript on macOS, notify-send on Linux, a PowerShell toast on Windows), two per project one by one, more grouped.
+- **Commands.** `alert_setup` (settings, whether e-mail and notifications work here, whether this copy evaluates, the link watch's price), `save_alert_settings`, `list_alerts { project_id?, unread?, limit? }`, `mark_alerts_read { project_id?, ids? }`, `check_alerts` (look now) and `start_link_watch`.
+
+## Local SEO
+
+A project's business on Google Maps ([ADR 0082](adr/0082-platform-rank-queue-and-local-seo.md)): `modules/local.rs`, `octopuson-dataforseo/src/local.rs`, migration 17.
+
+- **The business** is found by name and matched by cid, place id, website, then folded name. Its profile (`my_business_info`) and the businesses around it (`business_listings/search`, $0.01 + $0.0003 a row) are paid reports kept like domain data.
+- **The grid.** 3, 5, 7 or 9 points a side over 0.2–50 km. Each point asks `serp/google/maps` at its coordinates (depth 20):
+  - by hand live, at $0.002 a point;
+  - scheduled weekly or monthly through the queue, at $0.0006 a point.
+
+  `local_grid` gives each keyword's cells, ARP, ATRP, SoLV and points found, the rivals that beat the business, and the trend.
+- **Reviews** come through the queue ($0.00075 for ten, newest first). `local_reviews` gives them with the rating by day. Replies are drafted from templates, or by an assistant on the user's key (`draft_review_reply`).
+- **Credits.** These endpoints need the gateway's routes (P13); until then credits are refused with a message.
+
+## Content briefs
+
+Briefs and scores for writing pages that compete ([ADR 0084](adr/0084-platform-content-optimisation.md)): `src/content.rs`, `modules/content.rs`, migration 18.
+
+- **`start_content_brief { project_id, keyword, market?, mobile?, page? }`** runs a `content-brief` job:
+  1. It reads the keyword's result page: the Keyword Explorer's question, paid only when not kept fresh.
+  2. It reads the top ten pages, four at a time.
+  3. It builds the brief: terms, outline, questions, target length, intent and internal links from the latest audit crawl.
+
+  With `page`, that page is scored against the brief once made.
+- **`score_content`** scores a URL or a Markdown draft against a brief (free). `content_pages` lists tracked and Search Console pages to check.
+- **AI writing** (`start_content_writing`, `draft_review_reply`) uses the user's own Claude, ChatGPT or Gemini key, with the price first (`content_writing_estimate`, `reply_estimate`). Credits are refused until the gateway has an assistant connector.
+
+## Core Web Vitals
+
+`start_vitals` runs a `web-vitals` job on the user's Google API key (source `google-api`; the key goes in the `X-goog-api-key` header, never in addresses):
+- CrUX for the origin on phones and desktops (with the `www` variant when the bare one has no data), with 25 weeks of history;
+- PageSpeed Insights for up to 10 pages, three at a time.
+
+`vitals_report` shows the latest day per target and device with the LCP, INP and CLS thresholds. Rows sync (`vital_check`).
+
+## Snapshots
+
+A snapshot keeps a project's whole state at a moment, so two moments can be compared: where the site stood when the work began and where it stands now ([ADR 0080](adr/0080-platform-snapshots.md)). The code is in `crates/octopuson-platform/src/snapshots.rs` (the store), `crates/octopuson-platform-app/src/snapshot/` (taking, comparing, the summary) and `modules/snapshots.rs` (the commands).
+
+- **What it keeps** (`SnapshotData`, JSON, version 2; version 1 snapshots read with the new parts empty):
+
+  | Part | From | Paid |
+  |---|---|---|
+  | Organic numbers and position spread | `fetch_overview` `summary` | yes |
+  | Ranked keywords (first 1,000) | `fetch_overview` `keywords` | yes |
+  | Top pages (first 100) | `fetch_overview` `pages` | yes |
+  | Backlink summary (OA, backlinks, referring domains, broken) | `fetch_backlinks` `summary` | yes |
+  | Referring domains (first 1,000) | `fetch_backlinks` `referring_domains` | yes |
+  | Each chosen competitor's overview and backlink summary | `fetch_overview`, `fetch_backlinks` | yes |
+  | Rank tracking: visibility, average position, every tracked keyword, competitor shares | `rank_report` (30 days) | no |
+  | The latest site audit: health, GEO readiness, findings by check | `audit_report` | no |
+  | AI visibility: rates, each question × assistant, brand shares | `ai_report` (30 days) | no |
+  | Search Console and Analytics: totals, first 100 queries and pages | `gsc_report` | no |
+  | Local SEO: the latest grid's ARP, SoLV and points per keyword, the rating | `local_grid`, `local_reviews` | no |
+  | The toxic-link audit: sites judged, high and medium risk, disavowed, the risky sites | the kept `audit` backlink report, `link_decisions` | no |
+
+- **Paying.** The paid parts are the modules' own questions:
+  - an answer a page keeps fresh is reused for free, and what a snapshot buys shows on those pages;
+  - the shared cache's discount applies;
+  - budgets, sources and payment modes apply as on the pages.
+
+  `snapshot_estimate` gives the list price, credits with and without the shared-cache discount, the parts kept fresh and why buying is blocked. When a paid part cannot be bought, the rest of the paid parts are skipped and the free parts are still kept. The snapshot is then `partial` with the reasons, or `failed` when nothing could be kept.
+- **Taking.** `start_snapshot` (optional `label` and `competitors`, else the saved choice among the project's competitors) runs a `snapshot` job that reports each part as a step. The row is begun before the job runs.
+- **Schedule.** `save_snapshot_settings` takes `manual`, `weekly` (6.5 days) or `monthly` (29 days) and up to 10 competitors. Scheduled snapshots run through `Platform::run_due`; on the web while a desktop syncs. The page's first snapshot offers "take one every month", ticked by default.
+- **Comparing** (`compare_snapshots`, free): `from` and `to` ids, or by default the first finished snapshot (the baseline) against the latest; `previous: true` takes the one before the latest instead. The earlier is always "before". The answer has:
+  - every number before and after (`kpis`: change, percentage, whether higher is better);
+  - keywords won, lost, up and down (by traffic impact), entering and leaving the top 10;
+  - pages, referring domains, tracked keywords, audit checks (fixed, new, better, worse), AI cells and brand shares;
+  - map keywords with their SoLV and ARP before and after, and risky linking sites found since or cleared;
+  - the project and its competitors side by side;
+  - `summary`: sentences in the asked language (`tr`, `en`, `de`, `es`), chosen by rules, good news first.
+- **Elsewhere.**
+  - `snapshot_xlsx` gives the comparison as a workbook.
+  - `snapshot_progress` gives each project's change since its baseline, for the dashboard's cards.
+  - Reports have the `comparison` and `comparison_previous` parts and the `snapshot` e-mail schedule ([Reports](#reports)).
+  - Assistants have `list_snapshots`, `compare_snapshots` and `take_snapshot` ([AI assistants](#ai-assistants-mcp)).
+- **Sync.** Finished snapshots travel whole and the settings by project; running snapshots stay where they run ([Sync](#sync)).
 
 ## Reports
 
@@ -259,15 +454,54 @@ Agencies send their clients reports with their own brand. A report never asks a 
   | `competitors` | `rank_report`: visibility shares against competitors |
   | `search_console` | `gsc_report`: clicks, impressions, CTR and position against the period before, Analytics' organic sessions and key events, daily clicks beside the period before, top queries and pages |
   | `site_audit` | `audit_report` (latest audit): health and GEO readiness against the audit before, pages, findings, the main issues by priority |
-  | `ai_visibility` | `ai_report`: mention and citation rates, share of voice, mention rate by assistant, brands' shares |
+  | `ai_visibility` | `ai_report`: mention and citation rates, share of voice, mention rate by assistant, brands' shares, the three rates run by run, the most cited domains |
   | `backlinks` | the kept backlink summary and domain overview (`get_backlinks`, `get_overview`), never fetched for the report |
+  | `comparison` | the project's first snapshot against its latest ([Snapshots](#snapshots)): the written summary, headline numbers with their change, every number before and after, and tables of what moved |
+  | `comparison_previous` | the same for the snapshot before the latest against the latest |
+  | `local` | `local_setup`, `local_grid`, `local_reviews`: the grids as squares, ARP, SoLV, points found, the rating, who beats the business |
+  | `organic` | the kept domain overview, ranked keywords (the snapshot's 1,000 or the page's 100), lost keywords and history, else the metric points: traffic with its month-over-month change, keywords, value, top 3/10, keywords new, up, down and lost, the monthly trend, and tables of the best, rising, falling, new and lost keywords |
+  | `link_history` | the kept backlink summary, history, new/lost and audit, the metric points, link decisions and prospects: OA and referring domains with their change over 12 months, domains won and lost, risky sites, disavowed sites, link work, the referring-domain trend, links won and lost by period, the riskiest sites with their decisions |
+  | `gap` | the kept keyword gap matrix (`get_gap` `keywords`): counts of each group, and the missing and weak keywords by volume with the best competitor |
+  | `keyword_lists` | up to three of the project's lists, the largest first: counts, total searches, each list's most searched keywords with KD, CPC and intent |
+  | `opportunities` | `opportunities`: the open ones' count and gain, and the first ten with what, where, gain and effort |
 
-  A part whose module has nothing yet says so.
-- **The page** (`report_html`, `report/html.rs`): one self-contained HTML document, styles inline, charts as inline SVG, for the screen and A4 print. Its own Content-Security-Policy forbids every request and script, and every text is escaped. The app shows it in a sandboxed frame; links and e-mails show the same page.
+  A new report leaves out the parts that show data bought on other pages or need snapshots (`backlinks`, `comparison`, `comparison_previous`, `organic`, `link_history`, `gap`, `keyword_lists`); they can be added in the editor.
+
+  A part whose module has nothing yet says so; a comparison part needs two finished snapshots.
+- **The page** (`report_html`, `report/html.rs`): one self-contained HTML document, for the screen and A4 print.
+  - It opens with a cover: the agency's logo or name, the report's name, the project and period, four highlights and the contents. On paper the cover fills the first page edge to edge.
+  - Then come the numbered parts: summary lines, tiles with coloured change pills, area charts, bars and tables.
+  - Styles are inline, charts are inline SVG, and the program's font (Geist, OFL, `report/fonts/`) is embedded, so PDFs look the same on any server.
+  - Its own Content-Security-Policy forbids every request and script (fonts and images only as `data:`), and every text is escaped.
+  - The app shows it scaled down as a whole page in a sandboxed frame; links and e-mails show the same page.
+- **Designs** (`design` of a report, migration 10; it syncs):
+
+  | Design | Look |
+  |---|---|
+  | `clean` (default) | White cover with soft accent light and an accent bar |
+  | `ocean` | The program's own abyss indigo and aqua cover; dark table heads |
+  | `accent` | The cover in the agency's accent colour (ink chosen for contrast); tinted section heads |
+  | `elegant` | Ivory cover, serif headings, thin rules instead of boxes |
+
+  Each design has its own accent colour until the agency sets one under Branding. A report without a design, or with one this version does not know, reads as `clean`.
+- **Colours of its own** (`colors` of a report, migration 11, JSON; it syncs). Each one is optional, `#rrggbb`, and none keeps the design's:
+
+  | Colour | Where |
+  |---|---|
+  | `accent` | Section numbers, highlights, contents, charts and bars; over the agency's accent |
+  | `accent2` | The second colour of gradients and chart lines |
+  | `cover` | The cover's background; the cover's ink, highlights and mark turn light or dark to read on it |
+  | `heading` | Section, table and chart titles |
+  | `table` | Table heads' background, with ink that reads on it |
+
+  The page sets them as classes and CSS variables on the report (`custom-cover`, `cover-dark`/`cover-light`, `custom-table`).
+- **Live preview** (`report_preview`): the report drawn with the edit dialog's settings before they are saved (`report_id` for a report being edited). Nothing is stored or metered.
+- **Demo:** the interface's sample report is drawn by this renderer in every design (`report/demo.rs` writes `apps/geo-seo-platform/src/api/demo-reports/`; `UPDATE_DEMO_REPORTS=1 cargo test -p octopuson-platform-app demo_reports` refreshes them, and the test fails while they are out of date).
 - **PDF** (`report_pdf`): the page printed by an installed Chrome, Chromium or Edge (`octopuson-render::print_pdf`: a private headless browser, scripts off, `Page.printToPDF`). On the web each PDF is metered as `report.pdf` once the gateway prices it ([cloud.md](cloud.md)); a month's free PDFs come first.
 - **Excel** (`report_xlsx`): the headline numbers on the first sheet, then a sheet per table, numbers as numbers. Files come to the page as base64; the desktop window saves them where the person chooses (save dialog), a browser downloads them. CSV exports of the other pages save the same way.
 - **Read-only links** (web, `share_report`): a random token (32 bytes); `/r/{token}` shows the report, drawn from current data, to anyone with the link, without signing in, `no-store` and `noindex`. The server keeps only the token's SHA-256 and whose report it is; `unshare_report` (or a new link) takes the old one away, and opens are counted.
-- **E-mails** (web with SMTP): `weekly` (6.5 days) or `monthly` (29 days) to up to 5 recipients, through `Platform::run_due`; `send_report` sends now. Each e-mail carries the PDF (the page itself when no browser is installed), the link when the report has one, and the account's address as Reply-To. Deliveries are kept (`report_deliveries`); a failed one waits for the next turn of the schedule. The desktop program sends no e-mail.
+- **E-mails** (web with SMTP): `weekly` (6.5 days), `monthly` (29 days) or `snapshot` to up to 5 recipients, through `Platform::run_due`; `send_report` sends now. Each e-mail carries the PDF (the page itself when no browser is installed), the link when the report has one, and the account's address as Reply-To. Deliveries are kept (`report_deliveries`); a failed one waits for the next turn of the schedule. The desktop program sends no e-mail.
+  - `snapshot` sends after each snapshot of the project that finished since the report was last sent or saved, once there is one before it to compare with. While a snapshot is being taken, the schedule looks again every 10 minutes.
 
 ## AI visibility
 
@@ -297,9 +531,11 @@ A project asks AI assistants up to 200 **questions** (500 characters each, with 
 - **Report.** `ai_report { project_id, days? }` (90 days by default, 7–365) reads the latest answer of every question on every assistant:
   - mention rate, citation rate, share of voice (the brand's share of every brand mention), average place and tone, overall and by assistant;
   - every brand's mentions, citations and share;
-  - mention rate, citation rate and share of voice run by run, and each assistant's mention rate per run;
+  - mention rate, citation rate and share of voice run by run, each assistant's mention rate per run, and each brand's share of voice per run (the own one and the five most named rivals);
   - the questions × assistants matrix;
-  - the most cited domains, and the project's own cited pages.
+  - the most cited domains, the most cited pages of any site, and the project's own cited pages.
+
+  The page's history chart switches between mentions by assistant, citations, and brands' share of voice.
 
   `ai_answer` gives a question's last 10 answers on one assistant, with the brands to highlight.
 - **Suggestions.** `suggest_ai_prompts` offers free questions in the project's language: about its brand, and about its most searched tracked keywords.
@@ -328,6 +564,23 @@ Assistants that speak the Model Context Protocol read the workspace's data with 
 | `site_audit_issues` | no | The latest audit: scores, overview, AI crawler access, checks with findings sorted by priority (`lang` `en` or `tr`). |
 | `ai_visibility` | no | The AI visibility report over `days`. |
 | `search_console` | no | The latest Search Console and Analytics sync. |
+| `list_snapshots` | no | The project's snapshots with their headline numbers, the baseline and the schedule. |
+| `compare_snapshots` | no | Two snapshots compared, with the written summary in `lang`: the baseline against the latest by default, `previous` for the one before the latest, or `from`/`to` ids. |
+| `take_snapshot` | yes | Takes a snapshot in the background; `needs_approval` with the price until `allow_spend_usd` covers it (`blocked` when the paid parts cannot be bought; `allow_spend_usd: 0` then keeps the free parts). |
+| `keyword_insights` | yes | `get_research`/`fetch_research` for a `seed`: `history`, `serp_history`, `serp_metrics`, `parent`, `countries` (`markets`). |
+| `metric_history` | no | The program's own points of the domain (`kind: domain`) or link profile (`kind: backlinks`). |
+| `project_dashboard` | no | One project's headline numbers from every module, first opportunities, schedule and spending. |
+| `opportunities` | no | What to do next, with gain, effort and the page that acts (`all` adds decided ones). |
+| `alerts` | no | Alerts of a project or all, `unread` only on request. |
+| `keyword_lists` | no | The project's lists, or one list's keywords (`list_id`). |
+| `content_briefs` | no | The project's briefs, or one brief with its scores (`brief_id`). |
+| `link_work` | no | Link decisions, the disavow file and link prospects. |
+| `core_web_vitals` | no | The latest Core Web Vitals report. |
+| `track_keywords` | no | Adds `keywords` (and `tags`) to the rank tracker. |
+| `check_rankings` | yes | Checks every tracked keyword now; `needs_approval` with the price until `allow_spend_usd` covers it. |
+| `start_site_audit` | web | Crawls the site; free on the desktop, on the web `needs_approval` with the most the metered pages could cost. |
+| `run_ai_visibility` | yes | Asks the project's questions on its assistants now; `needs_approval` with the price first. |
+| `create_content_brief` | yes | Makes a brief for a `keyword`; `needs_approval` with the result page's price unless it is kept fresh. |
 | `estimate_cost` | no | What a paid tool call would cost now, and whether kept data is fresh. |
 | `spending` | no | Sources, how each is paid, budgets and spending by month. |
 

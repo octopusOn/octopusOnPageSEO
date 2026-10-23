@@ -13,6 +13,7 @@
 //! pause. While a desktop syncs, scheduled work runs on the web server only
 //! ([`Workspace::schedules_here`]), so nothing is paid twice.
 
+use std::collections::HashMap;
 use std::fmt::Write as _;
 use std::io::Read as _;
 use std::sync::atomic::{AtomicBool, AtomicU64, Ordering};
@@ -20,7 +21,9 @@ use std::sync::{Mutex, PoisonError};
 
 use octopuson_core::http::{HttpRequest, HttpTransport};
 use octopuson_crawl_store::CrawlLibrary;
-use octopuson_platform::{PlatformStore, SyncAck, SyncApplied, SyncChange, SyncSide};
+use octopuson_platform::{
+    PlatformStore, SyncAck, SyncApplied, SyncChange, SyncSide, first_sync_kinds, sync_kind_versions,
+};
 use serde::de::DeserializeOwned;
 use serde::{Deserialize, Serialize};
 
@@ -67,6 +70,7 @@ mod names {
     pub const REPLACE: &str = "replace";
     pub const LAST_AT: &str = "last_at";
     pub const LAST_ERROR: &str = "last_error";
+    pub const KINDS: &str = "kinds";
 }
 
 /// A copy's request.
@@ -94,6 +98,13 @@ pub struct SyncRequest {
     /// Delete the hub's data first: the copy's data replaces it.
     #[serde(default)]
     pub replace: bool,
+    /// Kinds to send again in full: the copy learnt them (or their new columns) after it took
+    /// their records.
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub resend: Vec<String>,
+    /// The hub's change after which to continue sending them.
+    #[serde(default)]
+    pub resend_after: i64,
 }
 
 /// The hub's answer.
@@ -124,6 +135,15 @@ pub struct SyncResponse {
     pub projects: u64,
     /// The hub's clock, Unix milliseconds.
     pub now_ms: i64,
+    /// Records of the kinds asked again.
+    #[serde(default)]
+    pub resent: Vec<SyncChange>,
+    /// The last change looked at among them.
+    #[serde(default)]
+    pub resend_last: i64,
+    /// More of them wait.
+    #[serde(default)]
+    pub resend_more: bool,
 }
 
 /// Why a sync waits for the person.
@@ -417,6 +437,12 @@ pub fn hub_answer(
         response.cursor = batch.last.max(request.cursor);
         response.more = batch.more;
     }
+    if !request.resend.is_empty() {
+        let batch = store.sync_kind_records(&request.resend, request.resend_after, BATCH_BYTES)?;
+        response.resent = batch.changes;
+        response.resend_last = batch.last.max(request.resend_after);
+        response.resend_more = batch.more;
+    }
     response.projects = store.project_count()?;
     drop(store);
     response.accepted = std::mem::take(&mut applied.accepted);
@@ -523,6 +549,8 @@ fn run_round(workspace: &Workspace) -> Result<RoundOutcome, AppError> {
                 .map_err(|error| AppError::Internal(error.to_string()))?;
             return Ok(RoundOutcome::Choose(choice));
         }
+        // Kinds that gained columns in an update: what they gained is not a change made here.
+        store.sync_rebaseline(&missing_kinds(&store, number(&store, names::CURSOR)?)?)?;
         store.sync_scan(started)?;
         (
             replica_id(&store)?,
@@ -543,6 +571,8 @@ fn run_round(workspace: &Workspace) -> Result<RoundOutcome, AppError> {
         last,
         pull,
         replace: false,
+        resend: Vec::new(),
+        resend_after: 0,
     };
     let hello = post(
         &transport,
@@ -592,6 +622,8 @@ fn run_round(workspace: &Workspace) -> Result<RoundOutcome, AppError> {
         last,
         pull,
         replace: false,
+        resend: Vec::new(),
+        resend_after: 0,
     };
     if replace {
         let mut wipe = request(Vec::new(), cursor, false, false);
@@ -670,6 +702,38 @@ fn run_round(workspace: &Workspace) -> Result<RoundOutcome, AppError> {
             break;
         }
     }
+    // Then the kinds this program learnt since it last synced, which it skipped before.
+    let missing = missing_kinds(&workspace.store()?, cursor)?;
+    if !missing.is_empty() {
+        let mut after = 0;
+        loop {
+            let mut ask = request(Vec::new(), cursor, false, false);
+            ask.resend.clone_from(&missing);
+            ask.resend_after = after;
+            let answer = post(&transport, &url, &token, &ask)?;
+            if answer.reset {
+                break;
+            }
+            let slices: Vec<&[SyncChange]> = answer.resent.chunks(APPLY_SLICE).collect();
+            let count = slices.len();
+            for (index, slice) in slices.into_iter().enumerate() {
+                let finish = !answer.resend_more && index + 1 == count;
+                let applied = workspace.store()?.sync_apply(
+                    SyncSide::Copy { pushed },
+                    slice,
+                    now_ms(),
+                    finish,
+                )?;
+                report.received += applied.applied;
+                crawls.extend(applied.removed_crawls);
+            }
+            after = answer.resend_last;
+            if !answer.resend_more {
+                break;
+            }
+        }
+    }
+    note_kinds(&workspace.store()?)?;
     remove_crawls(workspace, &crawls);
     // Crawls are large: a failure to move one does not fail the sync.
     if let Err(error) = crawls::move_crawls(workspace, &transport, &url, &token) {
@@ -681,6 +745,33 @@ fn run_round(workspace: &Workspace) -> Result<RoundOutcome, AppError> {
     store.set_sync_value(names::LAST_AT, Some(&now_ms().to_string()))?;
     store.set_sync_value(names::LAST_ERROR, None)?;
     Ok(RoundOutcome::Done(report))
+}
+
+/// The kinds a copy has not taken in full yet: those this program knows newer than what the
+/// copy noted at its last sync. A copy that never synced takes everything anyway.
+fn missing_kinds(store: &PlatformStore, cursor: i64) -> Result<Vec<String>, AppError> {
+    let known: HashMap<String, u32> = match store.sync_value(names::KINDS)? {
+        Some(text) => serde_json::from_str(&text).unwrap_or_default(),
+        None if cursor > 0 => first_sync_kinds()
+            .into_iter()
+            .map(|(name, version)| (name.to_owned(), version))
+            .collect(),
+        None => return Ok(Vec::new()),
+    };
+    Ok(sync_kind_versions()
+        .into_iter()
+        .filter(|(name, version)| known.get(*name).copied().unwrap_or(0) < *version)
+        .map(|(name, _)| name.to_owned())
+        .collect())
+}
+
+/// Notes that this copy now holds every kind this program knows, at its version.
+fn note_kinds(store: &PlatformStore) -> Result<(), AppError> {
+    let kinds: HashMap<&str, u32> = sync_kind_versions().into_iter().collect();
+    let text =
+        serde_json::to_string(&kinds).map_err(|error| AppError::Internal(error.to_string()))?;
+    store.set_sync_value(names::KINDS, Some(&text))?;
+    Ok(())
 }
 
 /// Notes the changes made here so far, with the time now (the program is closing: they keep

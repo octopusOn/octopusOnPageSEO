@@ -5,17 +5,23 @@ import { useI18n } from "../../i18n";
 import type { PageId } from "../../lib/route";
 import { useSync } from "../../lib/sync";
 import { GROUPS, MODULES } from "../registry";
+import { AlertBell } from "../alerts/AlertBell";
+import { ProjectSwitcher } from "./ProjectSwitcher";
 
 export function Sidebar({
   page,
   project,
+  projects,
   jobs,
   web,
   version,
   onPage,
+  onProject,
 }: {
   page: PageId;
   project: ProjectRow | null;
+  projects: ProjectRow[];
+  onProject: (id: number) => void;
   jobs: Job[];
   web: boolean;
   version?: string;
@@ -37,16 +43,10 @@ export function Sidebar({
             {t("common.product")} <span className="product-tag">{t("common.beta")}</span>
           </div>
         </div>
+        {/* The title bar holding the bell is hidden on narrow screens. */}
+        <AlertBell className="rail-bell" />
       </div>
-      {project && (
-        <button type="button" className="rail-project" onClick={() => onPage("dashboard")} title={t("common.switchProject")}>
-          <span className="faint">{t("common.project")}</span>
-          <strong>{project.name}</strong>
-          <small>
-            {project.domain} · {project.language}-{project.country}
-          </small>
-        </button>
-      )}
+      {project && <ProjectSwitcher project={project} projects={projects} onProject={onProject} onAll={() => onPage("dashboard")} />}
       <nav className="oc-nav" aria-label={t("common.product")}>
         {GROUPS.map((group) => (
           <div key={group.id} className="rail-group">
@@ -74,7 +74,7 @@ export function Sidebar({
             {running.map((job) => (
               <div key={job.id} className="rail-job">
                 <span className="loading-dot" aria-hidden="true" />
-                <span>{job.kind === "account-login" ? t("common.jobAccountLogin") : job.kind === "rank-check" ? t("common.jobRankCheck", { name: job.label }) : job.kind === "site-audit" ? t("common.jobSiteAudit", { name: job.label }) : job.kind === "ai-visibility" ? t("common.jobAiVisibility", { name: job.label }) : job.kind === "search-console" ? t("common.jobSearchConsole", { name: job.label }) : job.kind === "google-login" ? t("common.jobGoogleLogin") : job.kind === "report-email" ? t("common.jobReportEmail", { name: job.label }) : job.label}</span>
+                <span>{job.kind === "account-login" ? t("common.jobAccountLogin") : job.kind === "rank-check" ? t("common.jobRankCheck", { name: job.label }) : job.kind === "local-grid" ? t("common.jobLocalGrid", { name: job.label }) : job.kind === "content-brief" ? t("common.jobContentBrief", { name: job.label }) : job.kind === "content-writing" ? t("common.jobContentWriting", { name: job.label }) : job.kind === "site-audit" ? t("common.jobSiteAudit", { name: job.label }) : job.kind === "web-vitals" ? t("common.jobWebVitals", { name: job.label }) : job.kind === "ai-visibility" ? t("common.jobAiVisibility", { name: job.label }) : job.kind === "search-console" ? t("common.jobSearchConsole", { name: job.label }) : job.kind === "google-login" ? t("common.jobGoogleLogin") : job.kind === "report-email" ? t("common.jobReportEmail", { name: job.label }) : job.kind === "link-watch" ? t("common.jobLinkWatch", { name: job.label }) : job.label}</span>
                 {job.total > 0 && (
                   <small>
                     {job.done}/{job.total}

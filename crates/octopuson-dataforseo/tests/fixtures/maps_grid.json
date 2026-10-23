@@ -1,0 +1,68 @@
+{
+  "version": "0.1.20260801",
+  "status_code": 20000,
+  "status_message": "Ok.",
+  "cost": 0.002,
+  "tasks_count": 1,
+  "tasks": [
+    {
+      "id": "10231200-1535-0139-0000-2d2d4e0b6c1a",
+      "status_code": 20000,
+      "status_message": "Ok.",
+      "cost": 0.002,
+      "data": { "api": "serp", "function": "live", "se": "google", "se_type": "maps", "keyword": "kahve", "location_coordinate": "40.9901,29.0291,15z", "language_code": "tr", "depth": 20, "device": "desktop" },
+      "result": [
+        {
+          "keyword": "kahve",
+          "type": "maps",
+          "se_domain": "google.com",
+          "location_code": null,
+          "language_code": "tr",
+          "check_url": "https://www.google.com/maps/search/kahve/@40.9901,29.0291,15z?hl=tr",
+          "datetime": "2026-10-23 09:00:00 +00:00",
+          "item_types": ["maps_search"],
+          "se_results_count": 0,
+          "items_count": 4,
+          "items": [
+            {
+              "type": "maps_search", "rank_group": 1, "rank_absolute": 1,
+              "domain": "rakipkahve.com", "title": "Rakip Kahve", "url": "https://rakipkahve.com/",
+              "rating": { "rating_type": "Max5", "value": 4.7, "votes_count": 1820, "rating_max": 5 },
+              "category": "Kafe", "additional_categories": ["Kahve dükkanı"],
+              "cid": "111111111111111111", "place_id": "ChIJrakip", "feature_id": "0x1:0x1",
+              "address": "Moda Cd. 1, Kadıköy/İstanbul", "latitude": 40.9871, "longitude": 29.0262,
+              "phone": "+90 216 000 00 01", "is_claimed": true
+            },
+            {
+              "type": "maps_search", "rank_group": 2, "rank_absolute": 2,
+              "domain": "www.ornekkahve.com", "title": "Örnek Kahve Kadıköy", "url": "https://www.ornekkahve.com/kadikoy",
+              "rating": { "rating_type": "Max5", "value": 4.5, "votes_count": 640, "rating_max": 5 },
+              "category": "Kafe", "additional_categories": null,
+              "cid": "222222222222222222", "place_id": "ChIJornek", "feature_id": "0x2:0x2",
+              "address": "Bahariye Cd. 20, Kadıköy/İstanbul", "latitude": 40.9901, "longitude": 29.0291,
+              "phone": "+90 216 000 00 02", "is_claimed": true
+            },
+            {
+              "type": "maps_search", "rank_group": 3, "rank_absolute": 3,
+              "domain": null, "title": "Köşe Kahvecisi", "url": null,
+              "rating": { "rating_type": "Max5", "value": 4.2, "votes_count": 95, "rating_max": 5 },
+              "category": "Kahve dükkanı", "additional_categories": null,
+              "cid": "333333333333333333", "place_id": "ChIJkose", "feature_id": "0x3:0x3",
+              "address": "Söğütlüçeşme Cd. 5, Kadıköy/İstanbul", "latitude": 40.9922, "longitude": 29.0318,
+              "phone": null, "is_claimed": false
+            },
+            {
+              "type": "maps_search", "rank_group": 4, "rank_absolute": 4,
+              "domain": "zincir.com.tr", "title": "Zincir Coffee", "url": "https://zincir.com.tr/",
+              "rating": { "rating_type": "Max5", "value": 4.0, "votes_count": 3100, "rating_max": 5 },
+              "category": "Kafe", "additional_categories": null,
+              "cid": "444444444444444444", "place_id": "ChIJzincir", "feature_id": "0x4:0x4",
+              "address": "Rıhtım Cd. 9, Kadıköy/İstanbul", "latitude": 40.9933, "longitude": 29.0240,
+              "phone": null, "is_claimed": true
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

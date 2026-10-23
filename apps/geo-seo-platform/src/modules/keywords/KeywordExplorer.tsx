@@ -1,22 +1,58 @@
-import { useMemo, useState, type FormEvent } from "react";
+import { useEffect, useMemo, useState, type FormEvent } from "react";
 import { useQuery } from "@tanstack/react-query";
-import { ExternalLink, KeyRound, Search, Sparkles } from "lucide-react";
+import { ExternalLink, KeyRound, PenLine, Search, Sparkles } from "lucide-react";
 import { Button, Empty, Segmented, Stat } from "@octopusseo/ui";
 import { api } from "../../api/client";
 import { openExternal } from "../../api/transport";
 import type { KeywordData, KeywordList, ProjectRow, SerpPage } from "../../api/types";
 import { useI18n } from "../../i18n";
+import { useGlossary } from "../../lib/glossary";
+import { useShell } from "../../lib/context";
 import { axisStyle, EChart, useChartTokens, type ChartOption } from "../../lib/EChart";
 import { formatCompact, formatNumber, formatUsd } from "../../lib/format";
+import { FilterBar, type FilterPreset } from "../../lib/FilterBar";
+import { ListSeen } from "../../lib/ListSeen";
+import { marketOf } from "../../lib/market";
+import { MarketPicker } from "../../lib/MarketPicker";
 import { PaidFrame } from "../../lib/PaidFrame";
-import { isQuestion } from "../../lib/questions";
+import { KEYWORD_FILTERS, withFilter, type QueryFilter } from "../../lib/query";
+import { useListQuery } from "../../lib/useListQuery";
+import { isQuestion, questionPattern } from "../../lib/questions";
 import { featureName } from "../../lib/tables";
 import { Difficulty, KeywordTable } from "./KeywordTable";
 import { ListsTab } from "./ListsTab";
+import { CountryVolumes, ParentTopicReport, SerpHistory, SerpWeights, VolumeHistory } from "./Research";
+import { wordGroups, type WordGroup } from "./ideas";
 
 const TABS = ["overview", "ideas", "serp", "wordstat", "lists"] as const;
 type Tab = (typeof TABS)[number];
-type IdeaKind = "suggestions" | "questions" | "related" | "ideas";
+type IdeaKind = "suggestions" | "exact" | "questions" | "related" | "ideas";
+
+/** Match types and kinds of ideas, broadest last. */
+const IDEA_KINDS: IdeaKind[] = ["suggestions", "exact", "questions", "related", "ideas"];
+
+/** Ideas sharing a word, a click away from a filter (the Keyword Magic groups). */
+function WordGroups({ groups, active, onPick }: { groups: WordGroup[]; active: string | null; onPick: (word: string | null) => void }) {
+  const { t, locale } = useI18n();
+  if (groups.length === 0) return null;
+  return (
+    <aside className="word-groups" aria-label={t("keywords.groupsTitle")}>
+      <h4>{t("keywords.groupsTitle")}</h4>
+      <p className="faint small">{t("keywords.groupsHint")}</p>
+      <button type="button" className={`word-group${active === null ? " on" : ""}`} onClick={() => onPick(null)}>
+        <span>{t("keywords.groupsAll")}</span>
+      </button>
+      {groups.map((group) => (
+        <button key={group.word} type="button" className={`word-group${active === group.word ? " on" : ""}`} aria-pressed={active === group.word} onClick={() => onPick(active === group.word ? null : group.word)}>
+          <span>{group.word}</span>
+          <span className="faint small">
+            {formatNumber(group.keywords, locale)} · {formatCompact(group.volume, locale)}
+          </span>
+        </button>
+      ))}
+    </aside>
+  );
+}
 
 /** Countries Yandex Wordstat knows well. */
 const YANDEX_COUNTRIES = ["tr", "ru", "kz", "by", "uz", "az", "ge", "ua"];
@@ -61,11 +97,12 @@ function TrendChart({ keyword }: { keyword: KeywordData }) {
 
 function KeywordCard({ keyword }: { keyword: KeywordData }) {
   const { t, locale } = useI18n();
+  const gloss = useGlossary();
   const percent = (value: number | null) => (value === null ? "—" : `${value > 0 ? "+" : ""}${value}%`);
   return (
     <div className="page-stack">
       <div className="oc-stats">
-        <Stat label={t("overview.colVolume")} value={keyword.volume === null ? "—" : formatNumber(keyword.volume, locale)} hint={t("keywords.perMonth")} />
+        <Stat label={t("overview.colVolume")} help={gloss("volume")} value={keyword.volume === null ? "—" : formatNumber(keyword.volume, locale)} hint={t("keywords.perMonth")} />
         <Stat
           label={t("keywords.difficulty")}
           value={
@@ -75,7 +112,7 @@ function KeywordCard({ keyword }: { keyword: KeywordData }) {
           }
           hint={difficultyLabel(keyword.difficulty, t)}
         />
-        <Stat label={t("overview.colCpc")} value={keyword.cpc === null ? "—" : formatUsd(keyword.cpc, locale)} hint={keyword.competition_level ? t(`keywords.competition_${keyword.competition_level.toLowerCase()}`) : undefined} />
+        <Stat label={t("overview.colCpc")} help={gloss("cpc")} value={keyword.cpc === null ? "—" : formatUsd(keyword.cpc, locale)} hint={keyword.competition_level ? t(`keywords.competition_${keyword.competition_level.toLowerCase()}`) : undefined} />
         <Stat
           label={t("overview.colIntent")}
           value={keyword.intent ? t(`overview.intent_${keyword.intent}`) : "—"}
@@ -108,10 +145,21 @@ function KeywordCard({ keyword }: { keyword: KeywordData }) {
   );
 }
 
-function Autocomplete({ projectId, seed, onAnalyze }: { projectId: number; seed: string; onAnalyze: (keyword: string) => void }) {
+/** Ready filters of keyword ideas. */
+function ideaPresets(t: (key: string) => string): FilterPreset[] {
+  return [
+    { id: "easy", label: t("keywords.presetEasy"), filters: [{ field: "kd", op: "le", value: 29 }] },
+    { id: "searched", label: t("keywords.presetSearched"), filters: [{ field: "volume", op: "ge", value: 100 }] },
+    { id: "ai", label: t("query.presetAi"), filters: [{ field: "features", op: "has", value: "ai_overview" }] },
+    { id: "buying", label: t("query.presetBuying"), filters: [{ field: "intent", op: "in", value: ["commercial", "transactional"] }] },
+    { id: "info", label: t("overview.intent_informational"), filters: [{ field: "intent", op: "eq", value: "informational" }] },
+  ];
+}
+
+function Autocomplete({ projectId, seed, market, onAnalyze }: { projectId: number; seed: string; market?: string; onAnalyze: (keyword: string) => void }) {
   const { t } = useI18n();
   const [engine, setEngine] = useState<"google" | "yandex">("google");
-  const suggestions = useQuery({ queryKey: ["autocomplete", projectId, seed, engine], queryFn: () => api.keywordAutocomplete(projectId, seed, engine), staleTime: 3_600_000 });
+  const suggestions = useQuery({ queryKey: ["autocomplete", projectId, seed, engine, market], queryFn: () => api.keywordAutocomplete(projectId, seed, engine, market), staleTime: 3_600_000 });
   return (
     <section className="oc-panel report">
       <header className="report-head">
@@ -179,22 +227,48 @@ function SerpView({ page }: { page: SerpPage }) {
 
 export function KeywordExplorer({ project }: { project: ProjectRow }) {
   const { t } = useI18n();
-  const [input, setInput] = useState("");
-  const [asked, setAsked] = useState<string[]>([]);
-  const [tab, setTab] = useState<Tab>("overview");
+  const { params, go } = useShell();
+  // One keyword and the tab live in the address; a pasted list stays on the page.
+  const [input, setInput] = useState(params.keyword ?? "");
+  const [asked, setAsked] = useState<string[]>(() => (params.keyword ? [params.keyword] : []));
+  useEffect(() => {
+    if (!params.keyword) return;
+    setAsked([params.keyword]);
+    setInput(params.keyword);
+  }, [params.keyword]);
+  const market = params.market;
+  const visibleTabs = TABS.filter((entry) => entry !== "wordstat" || YANDEX_COUNTRIES.includes(marketOf(project, market).country));
+  const tab: Tab = (visibleTabs as readonly string[]).includes(params.tab ?? "") ? (params.tab as Tab) : "overview";
+  const setTab = (next: Tab) => go({ params: { ...params, tab: next } });
   const [ideaKind, setIdeaKind] = useState<IdeaKind>("suggestions");
   const [limit, setLimit] = useState(100);
   const [mobile, setMobile] = useState(false);
   const seed = asked[0] ?? "";
+  const ideas = useListQuery(JSON.stringify([project.id, ideaKind, asked, limit, market]));
+  const presets = useMemo(() => ideaPresets(t), [t]);
+  const inMarket = market ? { market } : {};
+  // Questions are asked of DataForSEO as a pattern, so they reach every row it holds.
+  const pattern = questionPattern(marketOf(project, market).language);
+  const base: QueryFilter[] = ideaKind === "questions" && pattern ? [{ field: "keyword", op: "regex", value: pattern }] : [];
+  const ideasAsked = base.length > 0 ? { ...ideas.asked, filters: [...base, ...ideas.asked.filters] } : ideas.asked;
+  const pickedGroup = ideas.applied.filters.find((filter) => filter.field === "keyword" && filter.op === "contains");
+  const pickGroup = (word: string | null) => {
+    const others = ideas.applied.filters.filter((filter) => !(filter.field === "keyword" && filter.op === "contains"));
+    ideas.change({ ...ideas.applied, filters: word ? withFilter(others, { field: "keyword", op: "contains", value: word }) : others });
+  };
   const analyze = (keyword: string) => {
     setInput(keyword);
     setAsked([keyword]);
-    setTab("overview");
+    go({ params: { ...params, keyword, tab: "overview" } });
+  };
+  const ask = (list: string[]) => {
+    if (list.length === 0) return;
+    setAsked(list);
+    go({ params: { ...params, keyword: list.length === 1 ? list[0] : undefined } });
   };
   const submit = (event: FormEvent) => {
     event.preventDefault();
-    const list = words(input);
-    if (list.length > 0) setAsked(list);
+    ask(words(input));
   };
   const tabLabels: Record<Tab, string> = {
     overview: t("keywords.tabOverview"),
@@ -203,7 +277,6 @@ export function KeywordExplorer({ project }: { project: ProjectRow }) {
     wordstat: "Yandex Wordstat",
     lists: t("keywords.tabLists"),
   };
-  const visibleTabs = TABS.filter((entry) => entry !== "wordstat" || YANDEX_COUNTRIES.includes(project.country));
   const questions = (row: KeywordData) => isQuestion(row.keyword, project.language);
   return (
     <div className="page-stack">
@@ -219,8 +292,7 @@ export function KeywordExplorer({ project }: { project: ProjectRow }) {
             onKeyDown={(event) => {
               if (event.key === "Enter" && !event.shiftKey) {
                 event.preventDefault();
-                const list = words(input);
-                if (list.length > 0) setAsked(list);
+                ask(words(input));
               }
             }}
             placeholder={t("keywords.seedPlaceholder")}
@@ -231,6 +303,7 @@ export function KeywordExplorer({ project }: { project: ProjectRow }) {
           {t("keywords.analyze")}
         </Button>
         <span className="faint small">{t("keywords.seedHint")}</span>
+        <MarketPicker project={project} />
       </form>
       <div className="oc-tabs" role="tablist" aria-label={t("keywords.seedLabel")}>
         {visibleTabs.map((entry) => (
@@ -251,19 +324,34 @@ export function KeywordExplorer({ project }: { project: ProjectRow }) {
           <div className="page-stack">
             <PaidFrame<KeywordList>
               module="keywords"
-              ask={{ project_id: project.id, report: "overview", keywords: asked }}
+              ask={{ project_id: project.id, report: "overview", keywords: asked, ...inMarket }}
               title={asked.length === 1 ? seed : t("keywords.bulkTitle", { n: asked.length })}
               hint={t("keywords.overviewHint")}
+              extra={
+                asked.length === 1 ? (
+                  <Button small onClick={() => go({ page: "content", params: { keyword: seed, market: params.market } })}>
+                    <PenLine size={14} />
+                    {t("keywords.createBrief")}
+                  </Button>
+                ) : undefined
+              }
             >
               {(data) =>
                 asked.length === 1 && data.keywords[0] ? (
                   <KeywordCard keyword={data.keywords[0]} />
                 ) : (
-                  <KeywordTable rows={data.keywords} projectId={project.id} fileName={`${project.domain}-keywords`} onAnalyze={analyze} />
+                  <KeywordTable rows={data.keywords} projectId={project.id} fileName={`${project.domain}-keywords`} />
                 )
               }
             </PaidFrame>
-            {asked.length === 1 && <Autocomplete projectId={project.id} seed={seed} onAnalyze={analyze} />}
+            {asked.length === 1 && (
+              <>
+                <VolumeHistory projectId={project.id} seed={seed} market={market} />
+                <ParentTopicReport projectId={project.id} seed={seed} market={market} />
+                <CountryVolumes projectId={project.id} seed={seed} />
+                <Autocomplete projectId={project.id} seed={seed} market={market} onAnalyze={analyze} />
+              </>
+            )}
           </div>
         )}
         {tab === "ideas" && asked.length > 0 && (
@@ -271,41 +359,55 @@ export function KeywordExplorer({ project }: { project: ProjectRow }) {
             module="keywords"
             ask={{
               project_id: project.id,
-              report: ideaKind === "questions" ? "suggestions" : ideaKind,
+              report: ideaKind === "questions" || ideaKind === "exact" ? "suggestions" : ideaKind,
               ...(ideaKind === "ideas" ? { keywords: asked } : { seed }),
               ...(ideaKind === "related" ? { depth: 2 } : {}),
+              ...(ideaKind === "exact" ? { exact: true } : {}),
+              ...inMarket,
             }}
             title={t(`keywords.ideas_${ideaKind}`)}
             hint={t(`keywords.ideasHint_${ideaKind}`)}
             limit={limit}
             onLimit={setLimit}
+            query={ideasAsked}
+            onOffset={ideas.setOffset}
+            toolbar={<FilterBar fields={KEYWORD_FILTERS} query={ideas.applied} onChange={ideas.change} scope={ideas.scope} presets={presets} />}
             extra={
               <Segmented<IdeaKind>
                 label={t("keywords.tabIdeas")}
                 value={ideaKind}
                 onChange={setIdeaKind}
-                options={(["suggestions", "questions", "related", "ideas"] as const).map((kind) => ({ value: kind, label: t(`keywords.ideas_${kind}`) }))}
+                options={IDEA_KINDS.map((kind) => ({ value: kind, label: t(`keywords.ideas_${kind}`) }))}
               />
             }
           >
-            {(data) => (
-              <div className="page-stack">
-                <p className="faint small">{t("keywords.ideasTotal", { shown: data.keywords.length, total: data.total })}</p>
-                <KeywordTable
-                  rows={data.keywords}
-                  projectId={project.id}
-                  fileName={`${seed}-${ideaKind}`}
-                  onAnalyze={analyze}
-                  extraFilter={ideaKind === "questions" ? questions : undefined}
-                />
-              </div>
-            )}
+            {(data) => {
+              const groups = wordGroups(data.keywords, seed, marketOf(project, market).language);
+              return (
+                <ListSeen seen={ideas.seen} rows={data.keywords.length} total={data.total}>
+                  <div className={groups.length > 0 ? "magic" : undefined}>
+                    <WordGroups groups={groups} active={typeof pickedGroup?.value === "string" ? pickedGroup.value : null} onPick={pickGroup} />
+                    <div className="page-stack">
+                      <p className="faint small">{t("keywords.ideasTotal", { shown: data.keywords.length, total: data.total })}</p>
+                      <KeywordTable
+                        rows={data.keywords}
+                        projectId={project.id}
+                        fileName={`${seed}-${ideaKind}`}
+                        extraFilter={ideaKind === "questions" && !pattern ? questions : undefined}
+                        query={{ filters: ideas.local, order: ideas.applied.order }}
+                      />
+                    </div>
+                  </div>
+                </ListSeen>
+              );
+            }}
           </PaidFrame>
         )}
         {tab === "serp" && asked.length > 0 && (
+          <div className="page-stack">
           <PaidFrame<SerpPage>
             module="keywords"
-            ask={{ project_id: project.id, report: "serp", seed, mobile }}
+            ask={{ project_id: project.id, report: "serp", seed, mobile, ...inMarket }}
             title={t("keywords.serpPageTitle", { keyword: seed })}
             hint={t("keywords.serpPageHint")}
             extra={
@@ -322,10 +424,13 @@ export function KeywordExplorer({ project }: { project: ProjectRow }) {
           >
             {(page) => <SerpView page={page} />}
           </PaidFrame>
+          <SerpWeights projectId={project.id} seed={seed} mobile={mobile} market={market} />
+          <SerpHistory projectId={project.id} seed={seed} market={market} />
+          </div>
         )}
         {tab === "wordstat" && asked.length > 0 && (
-          <PaidFrame<KeywordList> module="keywords" ask={{ project_id: project.id, report: "wordstat", seed }} title={`Wordstat: ${seed}`} hint={t("keywords.wordstatHint")}>
-            {(data) => <KeywordTable rows={data.keywords} projectId={project.id} fileName={`${seed}-wordstat`} onAnalyze={analyze} />}
+          <PaidFrame<KeywordList> module="keywords" ask={{ project_id: project.id, report: "wordstat", seed, ...inMarket }} title={`Wordstat: ${seed}`} hint={t("keywords.wordstatHint")}>
+            {(data) => <KeywordTable rows={data.keywords} projectId={project.id} fileName={`${seed}-wordstat`} />}
           </PaidFrame>
         )}
         {tab === "lists" && <ListsTab project={project} onAnalyze={analyze} />}

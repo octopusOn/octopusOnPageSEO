@@ -1,11 +1,15 @@
-//! Gap analysis: keywords competitors rank for and the site does not, keywords they share (and
-//! where the site is weaker), sites linking to competitors but not to the site, and many sites
-//! compared side by side (traffic and authority).
+//! Gap analysis and the market: every keyword of the site and its competitors side by side in
+//! Semrush's groups (shared, missing, weak, strong, untapped, unique), keywords a competitor's
+//! page ranks for and the site's page does not, sites linking to competitors but not to the
+//! site, many sites compared side by side (traffic and authority), each one's traffic month by
+//! month (their shares of the market), the categories the site ranks in and the domains
+//! leading a category.
 //!
 //! A gap asks DataForSEO once per competitor; the parts are estimated, kept and paid together
 //! through `gap_estimate`, `get_gap` and `fetch_gap`.
 
-use octopuson_dataforseo::{Client, Market, backlinks, gap, site};
+use octopuson_dataforseo::site::KeywordSet;
+use octopuson_dataforseo::{Client, backlinks, gap, market as markets, site};
 use octopuson_platform::{CacheClass, ProjectRow};
 use serde::{Deserialize, Serialize};
 use serde_json::Value;
@@ -36,6 +40,16 @@ enum Report {
     Links,
     /// Traffic and authority of many sites.
     Bulk,
+    /// Every keyword of the site and its competitors in Semrush's groups.
+    Keywords,
+    /// Keywords a competitor's page ranks for and the site's page does not.
+    Pages,
+    /// The organic traffic of the site and its competitors month by month.
+    Share,
+    /// The categories the site ranks in.
+    Categories,
+    /// The domains with the most traffic in categories.
+    Players,
 }
 
 #[derive(Debug, Deserialize)]
@@ -52,9 +66,27 @@ struct Ask {
     /// Rows per competitor (10–1000).
     #[serde(default)]
     limit: Option<u32>,
+    /// Another market than the project's: `country-language`.
+    #[serde(default)]
+    market: Option<String>,
+    /// The site's page (page gap).
+    #[serde(default)]
+    own_page: Option<String>,
+    /// The competitor's page (page gap).
+    #[serde(default)]
+    competitor_page: Option<String>,
+    /// Months of traffic history (share; 12 unless asked, back to October 2020).
+    #[serde(default)]
+    months: Option<u32>,
+    /// Category codes (players).
+    #[serde(default)]
+    categories: Vec<u32>,
     #[serde(default)]
     force: bool,
 }
+
+/// Months of traffic history unless asked otherwise.
+const SHARE_MONTHS: u32 = 12;
 
 /// A site in the side-by-side comparison.
 #[derive(Debug, Clone, Default, PartialEq, Serialize)]
@@ -81,6 +113,7 @@ fn paid(
     estimate_usd: f64,
 ) -> Paid<'static> {
     Paid {
+        travels: true,
         module: MODULE,
         provider: octopuson_dataforseo::ID,
         endpoint,
@@ -91,9 +124,10 @@ fn paid(
     }
 }
 
+#[allow(clippy::too_many_lines)] // one arm per report
 fn question(workspace: &Workspace, ask: &Ask) -> Result<Question, AppError> {
     let project = workspace.store()?.project(ask.project_id)?;
-    let market = Market::new(&project.country, &project.language);
+    let market = super::market_of(&project, ask.market.as_deref())?;
     let rows = site::rows(ask.limit.unwrap_or(DEFAULT_ROWS));
     let own = project.domain.clone();
     let chosen = if ask.competitors.is_empty() {
@@ -176,6 +210,104 @@ fn question(workspace: &Workspace, ask: &Ask) -> Result<Question, AppError> {
             ];
             (names, parts)
         }
+        Report::Keywords => {
+            let competitors = gap::competitors(&own, &chosen)?;
+            let mut names = vec![own.clone()];
+            names.extend(competitors);
+            // Each domain's own keywords: the same questions as the Site Explorer's lists, so
+            // their kept answers serve both.
+            let parts = names
+                .iter()
+                .map(|domain| {
+                    Ok(paid(
+                        &project,
+                        site::RANKED_KEYWORDS,
+                        CacheClass::Domain,
+                        site::ranked_set_task(domain, &market, rows, KeywordSet::Organic)?,
+                        site::estimate(rows),
+                    ))
+                })
+                .collect::<Result<Vec<_>, AppError>>()?;
+            (names, parts)
+        }
+        Report::Pages => {
+            let (Some(own_page), Some(competitor_page)) =
+                (ask.own_page.as_deref(), ask.competitor_page.as_deref())
+            else {
+                return Err(AppError::Invalid(
+                    "pages: enter your page and the competitor's page".to_owned(),
+                ));
+            };
+            let task = gap::page_gap_task(competitor_page, own_page, &market, rows)?;
+            let part = paid(
+                &project,
+                gap::PAGE_INTERSECTION,
+                CacheClass::Domain,
+                task,
+                site::estimate(rows),
+            );
+            (vec![competitor_page.to_owned()], vec![part])
+        }
+        Report::Share => {
+            let mut targets = vec![own.clone()];
+            if ask.targets.is_empty() {
+                targets.extend(chosen.iter().cloned());
+            } else {
+                targets.extend(ask.targets.iter().cloned());
+            }
+            let (year, month) = crate::this_month();
+            let months = ask.months.map_or(SHARE_MONTHS, |months| {
+                months.clamp(3, site::months_since_start(year, month))
+            });
+            let task = markets::traffic_history_task(
+                &targets,
+                &market,
+                &site::months_before(year, month, months),
+            )?;
+            let names: Vec<String> = task["targets"]
+                .as_array()
+                .map(|list| {
+                    list.iter()
+                        .filter_map(Value::as_str)
+                        .map(str::to_owned)
+                        .collect()
+                })
+                .unwrap_or_default();
+            let part = paid(
+                &project,
+                markets::TRAFFIC_HISTORY,
+                CacheClass::Domain,
+                task,
+                markets::traffic_history_estimate(names.len()),
+            );
+            (names, vec![part])
+        }
+        Report::Categories => {
+            let task = markets::categories_task(&own, &market)?;
+            let part = paid(
+                &project,
+                markets::CATEGORIES_FOR_DOMAIN,
+                CacheClass::Domain,
+                task,
+                markets::categories_estimate(),
+            );
+            (vec![own.clone()], vec![part])
+        }
+        Report::Players => {
+            let (year, month) = crate::this_month();
+            // The last full month against the same month a year before.
+            let later = site::months_before(year, month, 1);
+            let earlier = site::months_before(year, month, 13);
+            let task = markets::players_task(&ask.categories, &market, &earlier, &later)?;
+            let part = paid(
+                &project,
+                markets::CATEGORY_DOMAINS,
+                CacheClass::Domain,
+                task,
+                markets::players_estimate(),
+            );
+            (Vec::new(), vec![part])
+        }
     };
     Ok(Question {
         report: ask.report,
@@ -183,6 +315,10 @@ fn question(workspace: &Workspace, ask: &Ask) -> Result<Question, AppError> {
         names,
         parts,
     })
+}
+
+fn first(results: &[Vec<Value>]) -> &[Value] {
+    results.first().map_or(&[][..], Vec::as_slice)
 }
 
 /// The report read from the parts' result lists, as pages get it.
@@ -196,6 +332,23 @@ fn read(question: &Question, results: &[Vec<Value>]) -> Value {
     let value = match question.report {
         Report::Missing => serde_json::to_value(gap::missing(&question.own, &answers)),
         Report::Shared => serde_json::to_value(gap::shared(&question.own, &answers)),
+        Report::Keywords => {
+            let rows = question
+                .parts
+                .first()
+                .and_then(|part| part.task["limit"].as_u64())
+                .unwrap_or(0);
+            serde_json::to_value(gap::matrix(
+                &question.own,
+                &question.names[1..],
+                results,
+                u32::try_from(rows).unwrap_or(u32::MAX),
+            ))
+        }
+        Report::Pages => serde_json::to_value(gap::page_gap_from_result(first(results))),
+        Report::Share => serde_json::to_value(markets::traffic_history_from_result(first(results))),
+        Report::Categories => serde_json::to_value(markets::categories_from_result(first(results))),
+        Report::Players => serde_json::to_value(markets::players_from_result(first(results))),
         Report::Links => serde_json::to_value(gap::link_gap_from_result(
             &question.names,
             results.first().map_or(&[][..], Vec::as_slice),
@@ -237,6 +390,7 @@ fn regrouped(fetched: Fetched<Vec<Vec<Value>>>, question: &Question) -> Fetched<
         spent_usd: fetched.spent_usd,
         via: fetched.via,
         saved_usd: fetched.saved_usd,
+        total: None,
     }
 }
 
@@ -265,9 +419,65 @@ fn fetch_gap(context: &Context<'_>, ask: Ask) -> Result<Fetched<Value>, AppError
     Ok(regrouped(fetched, &question))
 }
 
+#[derive(Debug, Deserialize)]
+struct NamesAsk {
+    project_id: i64,
+}
+
+/// The category list DataForSEO gives free: one question for every project.
+fn names_paid(project_id: i64) -> Paid<'static> {
+    Paid {
+        travels: true,
+        module: MODULE,
+        provider: octopuson_dataforseo::ID,
+        endpoint: markets::CATEGORY_NAMES,
+        class: CacheClass::Keywords,
+        project_id: Some(project_id),
+        task: serde_json::json!({}),
+        estimate_usd: 0.0,
+    }
+}
+
+/// The category names, when the list is kept.
+fn get_category_names(
+    context: &Context<'_>,
+    ask: NamesAsk,
+) -> Result<Option<Vec<markets::CategoryName>>, AppError> {
+    Ok(context
+        .workspace
+        .kept(
+            &names_paid(ask.project_id),
+            markets::category_names_from_result,
+        )?
+        .map(|kept| kept.data))
+}
+
+/// Fetches the category names (free on DataForSEO).
+fn fetch_category_names(
+    context: &Context<'_>,
+    ask: NamesAsk,
+) -> Result<Vec<markets::CategoryName>, AppError> {
+    let paid = names_paid(ask.project_id);
+    Ok(context
+        .workspace
+        .fetch(
+            &paid,
+            false,
+            |route| {
+                let credentials = route.key(octopuson_dataforseo::SECRET)?;
+                let client = Client::new(route.transport, &credentials)?;
+                Ok(client.get(markets::CATEGORY_NAMES)?.into())
+            },
+            markets::category_names_from_result,
+        )?
+        .data)
+}
+
 /// Adds the commands.
 pub fn register(router: &mut Router) {
     router.add("gap_estimate", gap_estimate);
     router.add("get_gap", get_gap);
     router.add("fetch_gap", fetch_gap);
+    router.add("get_category_names", get_category_names);
+    router.add("fetch_category_names", fetch_category_names);
 }

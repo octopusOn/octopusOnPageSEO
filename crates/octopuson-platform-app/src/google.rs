@@ -131,6 +131,7 @@ pub(crate) fn google_error(error: GoogleError) -> AppError {
         )),
         GoogleError::RateLimited { retry_after } => AppError::RateLimited { retry_after },
         GoogleError::Unavailable(message) => AppError::Unavailable(format!("Google: {message}")),
+        GoogleError::NotFound(message) => AppError::NotFound(format!("Google: {message}")),
         GoogleError::Invalid(message) => AppError::Provider(format!("Google: {message}")),
     }
 }

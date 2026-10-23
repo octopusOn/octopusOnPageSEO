@@ -6,7 +6,7 @@
 use octopuson_core::http::{HttpRequest, HttpTransport};
 use serde_json::{Value, json};
 
-use crate::{Answer, LlmError, Question, count, exchange, token_cost};
+use crate::{Answer, LlmError, Question, Writing, count, exchange, token_cost};
 
 const URL: &str = "https://api.anthropic.com/v1/messages";
 const VERSION: &str = "2023-06-01";
@@ -38,8 +38,25 @@ const FALLBACK_MODELS: &[&str] = &[
     "claude-sonnet-5-5",
 ];
 
+/// Models that think adaptively and take an effort level (thinking is set by effort alone).
+const ADAPTIVE_MODELS: &[&str] = &[
+    "claude-fable",
+    "claude-mythos",
+    "claude-opus-5",
+    "claude-opus-4-8",
+    "claude-opus-4-7",
+    "claude-opus-4-6",
+    "claude-sonnet-5",
+    "claude-sonnet-4-6",
+    "claude-haiku-5",
+];
+
+/// Effort of a written answer: thorough enough for a brief, without the cost of the top
+/// levels.
+const WRITING_EFFORT: &str = "medium";
+
 /// Input and output prices per million tokens.
-fn prices(model: &str) -> (f64, f64) {
+pub(crate) fn prices(model: &str) -> (f64, f64) {
     if model.starts_with("claude-fable") || model.starts_with("claude-mythos") {
         (10.0, 50.0)
     } else if model.starts_with("claude-opus-5-5") {
@@ -167,5 +184,77 @@ pub(crate) fn ask(
         answer.output_tokens,
         prices(&answer.model),
     ) + searches_usd;
+    Ok(answer)
+}
+
+/// Writes from the material with the instructions as the system prompt, thinking adaptively
+/// on the models that do; no tools. A refusal is an error; the text blocks are the answer
+/// (thinking blocks are left out).
+pub(crate) fn write(
+    transport: &dyn HttpTransport,
+    key: &str,
+    writing: &Writing<'_>,
+) -> Result<Answer, LlmError> {
+    let model = writing.model;
+    let mut body = json!({
+        "model": model,
+        "max_tokens": writing.max_tokens,
+        "messages": [{ "role": "user", "content": writing.material }],
+    });
+    if !writing.instructions.trim().is_empty() {
+        body["system"] = json!(writing.instructions);
+    }
+    if ADAPTIVE_MODELS
+        .iter()
+        .any(|family| model.starts_with(family))
+    {
+        body["thinking"] = json!({ "type": "adaptive" });
+        body["output_config"] = json!({ "effort": WRITING_EFFORT });
+    }
+    let mut request = HttpRequest::post(URL, Vec::new())
+        .header("x-api-key", key)
+        .header("anthropic-version", VERSION);
+    if FALLBACK_MODELS.contains(&model) {
+        body["fallbacks"] = json!("default");
+        request = request.header("anthropic-beta", FALLBACK_BETA);
+    }
+    request.body = Some(body.to_string().into_bytes());
+    let response = exchange(transport, request)?;
+    if response.get("stop_reason").and_then(Value::as_str) == Some("refusal") {
+        let category = response
+            .get("stop_details")
+            .and_then(|details| details.get("category"))
+            .and_then(Value::as_str)
+            .unwrap_or("policy");
+        return Err(LlmError::Refused(category.to_owned()));
+    }
+    let mut answer = Answer {
+        model: response
+            .get("model")
+            .and_then(Value::as_str)
+            .unwrap_or(model)
+            .to_owned(),
+        ..Answer::default()
+    };
+    for block in response
+        .get("content")
+        .and_then(Value::as_array)
+        .into_iter()
+        .flatten()
+    {
+        if block.get("type").and_then(Value::as_str) == Some("text")
+            && let Some(text) = block.get("text").and_then(Value::as_str)
+        {
+            answer.text.push_str(text);
+        }
+    }
+    let usage = response.get("usage").unwrap_or(&Value::Null);
+    answer.input_tokens = count(usage, "input_tokens");
+    answer.output_tokens = count(usage, "output_tokens");
+    answer.cost_usd = token_cost(
+        answer.input_tokens,
+        answer.output_tokens,
+        prices(&answer.model),
+    );
     Ok(answer)
 }

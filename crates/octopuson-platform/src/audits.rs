@@ -19,6 +19,9 @@ pub struct AuditSettings {
     /// When the last audit started, RFC 3339.
     #[serde(default)]
     pub last_run_at: Option<String>,
+    /// Links to other sites are fetched once to find broken ones (each counts as a page).
+    #[serde(default)]
+    pub check_outbound: bool,
 }
 
 impl Default for AuditSettings {
@@ -28,6 +31,7 @@ impl Default for AuditSettings {
             schedule: "manual".to_owned(),
             max_pages: 500,
             last_run_at: None,
+            check_outbound: false,
         }
     }
 }
@@ -117,13 +121,14 @@ impl PlatformStore {
     /// Database errors.
     pub fn audit_settings(&self, project_id: i64) -> Result<AuditSettings, PlatformStoreError> {
         let mut statement = self.connection.prepare(
-            "SELECT schedule, max_pages, last_run_at FROM audit_settings WHERE project_id = ?",
+            "SELECT schedule, max_pages, last_run_at, coalesce(check_outbound, false) FROM audit_settings WHERE project_id = ?",
         )?;
         let mut rows = statement.query_map(params![project_id], |row| {
             Ok(AuditSettings {
                 schedule: row.get(0)?,
                 max_pages: row.get(1)?,
                 last_run_at: row.get(2)?,
+                check_outbound: row.get(3)?,
             })
         })?;
         Ok(rows.next().transpose()?.unwrap_or_default())
@@ -151,10 +156,10 @@ impl PlatformStore {
             ));
         }
         self.connection.execute(
-            "INSERT INTO audit_settings (project_id, schedule, max_pages) VALUES (?, ?, ?)
+            "INSERT INTO audit_settings (project_id, schedule, max_pages, check_outbound) VALUES (?, ?, ?, ?)
              ON CONFLICT (project_id) DO UPDATE SET schedule = excluded.schedule,
-             max_pages = excluded.max_pages",
-            params![project_id, settings.schedule, settings.max_pages],
+             max_pages = excluded.max_pages, check_outbound = excluded.check_outbound",
+            params![project_id, settings.schedule, settings.max_pages, settings.check_outbound],
         )?;
         self.audit_settings(project_id)
     }
@@ -165,7 +170,7 @@ impl PlatformStore {
     /// Database errors.
     pub fn audit_plans(&self) -> Result<Vec<(i64, AuditSettings)>, PlatformStoreError> {
         let mut statement = self.connection.prepare(
-            "SELECT s.project_id, s.schedule, s.max_pages, s.last_run_at
+            "SELECT s.project_id, s.schedule, s.max_pages, s.last_run_at, coalesce(s.check_outbound, false)
              FROM audit_settings s JOIN projects p ON p.id = s.project_id ORDER BY s.project_id",
         )?;
         let rows = statement.query_map([], |row| {
@@ -175,6 +180,7 @@ impl PlatformStore {
                     schedule: row.get(1)?,
                     max_pages: row.get(2)?,
                     last_run_at: row.get(3)?,
+                    check_outbound: row.get(4)?,
                 },
             ))
         })?;

@@ -1,12 +1,12 @@
 // ECharts wrapper with tree-shaken modules, resize handling and colors from the design tokens.
 
 import { useEffect, useRef, useState } from "react";
-import { BarChart, LineChart, PieChart, TreemapChart } from "echarts/charts";
+import { BarChart, LineChart, PieChart, ScatterChart, TreemapChart } from "echarts/charts";
 import { GridComponent, LegendComponent, TooltipComponent } from "echarts/components";
 import * as echarts from "echarts/core";
 import { CanvasRenderer } from "echarts/renderers";
 
-echarts.use([BarChart, LineChart, PieChart, TreemapChart, GridComponent, LegendComponent, TooltipComponent, CanvasRenderer]);
+echarts.use([BarChart, LineChart, PieChart, ScatterChart, TreemapChart, GridComponent, LegendComponent, TooltipComponent, CanvasRenderer]);
 
 export type ChartOption = echarts.EChartsCoreOption;
 

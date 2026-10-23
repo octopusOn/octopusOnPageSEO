@@ -1,0 +1,111 @@
+{
+  "version": "0.1.20260701",
+  "status_code": 20000,
+  "status_message": "Ok.",
+  "time": "0.2 sec.",
+  "cost": 0.0172,
+  "tasks_count": 1,
+  "tasks_error": 0,
+  "tasks": [
+    {
+      "id": "10231400-1535-0387-0000-6f9e1a2c6b11",
+      "status_code": 20000,
+      "status_message": "Ok.",
+      "time": "0.1 sec.",
+      "cost": 0.0172,
+      "result_count": 1,
+      "path": [
+        "v3",
+        "dataforseo_labs",
+        "google",
+        "categories_for_domain",
+        "live"
+      ],
+      "data": {
+        "api": "dataforseo_labs",
+        "function": "categories_for_domain",
+        "se_type": "google",
+        "target": "example.com"
+      },
+      "result": [
+        {
+          "se_type": "google",
+          "target": "example.com",
+          "location_code": 2792,
+          "language_code": "tr",
+          "total_count": 2,
+          "items_count": 2,
+          "items": [
+            {
+              "se_type": "google",
+              "categories": [
+                10021,
+                10178,
+                10885
+              ],
+              "metrics": {
+                "organic": {
+                  "pos_1": 1,
+                  "pos_2_3": 2,
+                  "pos_4_10": 5,
+                  "pos_11_20": 4,
+                  "pos_21_30": 0,
+                  "pos_31_40": 0,
+                  "pos_41_50": 0,
+                  "pos_51_60": 0,
+                  "pos_61_70": 0,
+                  "pos_71_80": 0,
+                  "pos_81_90": 0,
+                  "pos_91_100": 0,
+                  "etv": 2100.5,
+                  "count": 640,
+                  "estimated_paid_traffic_cost": 2520.6,
+                  "is_new": 0,
+                  "is_up": 0,
+                  "is_down": 0,
+                  "is_lost": 0
+                },
+                "paid": null,
+                "featured_snippet": null,
+                "local_pack": null
+              }
+            },
+            {
+              "se_type": "google",
+              "categories": [
+                10021,
+                10178
+              ],
+              "metrics": {
+                "organic": {
+                  "pos_1": 1,
+                  "pos_2_3": 2,
+                  "pos_4_10": 5,
+                  "pos_11_20": 4,
+                  "pos_21_30": 0,
+                  "pos_31_40": 0,
+                  "pos_41_50": 0,
+                  "pos_51_60": 0,
+                  "pos_61_70": 0,
+                  "pos_71_80": 0,
+                  "pos_81_90": 0,
+                  "pos_91_100": 0,
+                  "etv": 3100.0,
+                  "count": 920,
+                  "estimated_paid_traffic_cost": 3720.0,
+                  "is_new": 0,
+                  "is_up": 0,
+                  "is_down": 0,
+                  "is_lost": 0
+                },
+                "paid": null,
+                "featured_snippet": null,
+                "local_pack": null
+              }
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

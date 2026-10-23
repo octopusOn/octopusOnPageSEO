@@ -89,6 +89,26 @@ impl Engine {
         }
     }
 
+    /// Whether the assistant writes from material without searching the web ([`write`]):
+    /// Perplexity's models always search.
+    pub const fn writes(self) -> bool {
+        !matches!(self, Self::Perplexity)
+    }
+
+    /// A rough list price of writing from `material_chars` characters of material, US
+    /// dollars: the material at about four characters a token, and a few thousand tokens of
+    /// thinking and text.
+    pub fn writing_estimate_usd(self, model: &str, material_chars: usize) -> f64 {
+        let input = u64::try_from(material_chars / 4).unwrap_or(u64::MAX) + 1_000;
+        let output = 6_000;
+        match self {
+            Self::ChatGpt => token_cost(input, output, openai::PRICES),
+            Self::Claude => token_cost(input, output, anthropic::prices(model)),
+            Self::Gemini => token_cost(input, output, gemini::PRICES),
+            Self::Perplexity => 0.0,
+        }
+    }
+
     /// A rough list price of one answer with web search, US dollars, for estimates and
     /// budgets before the answer reports what it used.
     pub fn estimate_usd(self, model: &str) -> f64 {
@@ -187,6 +207,19 @@ pub struct Question<'a> {
     pub country: Option<&'a str>,
 }
 
+/// Something to write from material, without searching the web: a content brief, a reply.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub struct Writing<'a> {
+    /// How to write: the role, the format, the language.
+    pub instructions: &'a str,
+    /// What to write from.
+    pub material: &'a str,
+    /// The model; the engine's default when empty.
+    pub model: &'a str,
+    /// Longest answer, tokens.
+    pub max_tokens: u32,
+}
+
 /// Why there is no answer.
 #[derive(Debug, Clone, PartialEq, Eq, thiserror::Error)]
 pub enum LlmError {
@@ -241,6 +274,42 @@ pub fn ask(
         Engine::Claude => anthropic::ask(transport, key, &question),
         Engine::Gemini => gemini::ask(transport, key, &question),
         Engine::Perplexity => perplexity::ask(transport, key, &question),
+    }
+}
+
+/// Has `engine` write with `key`, without searching the web.
+///
+/// # Errors
+/// [`LlmError::Invalid`] for empty material or an engine that only answers with search
+/// (Perplexity); otherwise [`LlmError`] describing why there is no answer.
+pub fn write(
+    engine: Engine,
+    transport: &dyn HttpTransport,
+    key: &str,
+    writing: &Writing<'_>,
+) -> Result<Answer, LlmError> {
+    if writing.material.trim().is_empty() {
+        return Err(LlmError::Invalid(
+            "there is nothing to write from".to_owned(),
+        ));
+    }
+    let writing = Writing {
+        model: if writing.model.trim().is_empty() {
+            engine.default_model()
+        } else {
+            writing.model.trim()
+        },
+        max_tokens: writing.max_tokens.clamp(256, 32_000),
+        ..*writing
+    };
+    match engine {
+        Engine::ChatGpt => openai::write(transport, key, &writing),
+        Engine::Claude => anthropic::write(transport, key, &writing),
+        Engine::Gemini => gemini::write(transport, key, &writing),
+        Engine::Perplexity => Err(LlmError::Invalid(
+            "Perplexity always searches the web; choose Claude, ChatGPT or Gemini to write"
+                .to_owned(),
+        )),
     }
 }
 

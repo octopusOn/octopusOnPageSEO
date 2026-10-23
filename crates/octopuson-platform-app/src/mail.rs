@@ -28,6 +28,12 @@ pub struct Mail {
     pub attachment: Option<Attachment>,
 }
 
+/// Shows system notifications (the desktop program).
+pub trait Notifier: Send + Sync {
+    /// Shows one notification; failures are the host's to ignore.
+    fn notify(&self, title: &str, body: &str);
+}
+
 /// Sends messages.
 pub trait Mailer: Send + Sync {
     /// Sends one message to all its recipients.

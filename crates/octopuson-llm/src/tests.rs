@@ -2,7 +2,7 @@ use octopuson_core::http::testing::FakeTransport;
 use serde_json::{Value, json};
 
 use crate::analysis::{Brand, analyze, fold};
-use crate::{Citation, Engine, LlmError, Question, ask, domain_of};
+use crate::{Citation, Engine, LlmError, Question, Writing, ask, domain_of, write};
 
 fn question(model: &str) -> Question<'_> {
     Question {
@@ -372,4 +372,126 @@ fn a_ranked_list_gives_the_brands_their_numbers() {
     // Without a list, the place among the brands named stays.
     let prose = "Rakip Mağaza ve Örnek Mağaza öne çıkar.";
     assert_eq!(analyze(prose, &[], &brands()).position, Some(2));
+}
+
+fn writing(model: &str) -> Writing<'_> {
+    Writing {
+        instructions: "Write a content brief in Turkish.",
+        material: "Keyword: spor ayakkabı",
+        model,
+        max_tokens: 8_000,
+    }
+}
+
+#[test]
+fn claude_writes_without_search_thinking_adaptively() {
+    let transport = FakeTransport::new().reply(
+        200,
+        json!({
+            "model": "claude-opus-5-5",
+            "stop_reason": "end_turn",
+            "content": [
+                { "type": "thinking", "thinking": "", "signature": "x" },
+                { "type": "text", "text": "# Brief\n" },
+                { "type": "text", "text": "Hedef: 1.800 kelime" }
+            ],
+            "usage": { "input_tokens": 2_000, "output_tokens": 3_000 }
+        })
+        .to_string(),
+    );
+    let answer = write(Engine::Claude, &transport, "sk-ant", &writing("")).unwrap();
+    assert_eq!(answer.text, "# Brief\nHedef: 1.800 kelime");
+    assert_eq!(answer.searches, 0);
+    // $4 and $20 per million tokens.
+    assert!((answer.cost_usd - 0.068).abs() < 1e-9);
+    let (url, body, headers) = sent(&transport, 0);
+    assert_eq!(url, "https://api.anthropic.com/v1/messages");
+    assert_eq!(body["model"], "claude-opus-5-5");
+    assert_eq!(body["system"], "Write a content brief in Turkish.");
+    assert_eq!(body["messages"][0]["content"], "Keyword: spor ayakkabı");
+    assert_eq!(body["thinking"]["type"], "adaptive");
+    assert_eq!(body["output_config"]["effort"], "medium");
+    assert_eq!(body["max_tokens"], 8_000);
+    assert_eq!(body.get("tools"), None, "no web search");
+    assert_eq!(body["fallbacks"], "default");
+    assert_eq!(
+        header(&headers, "anthropic-beta"),
+        Some("server-side-fallback-2026-07-01")
+    );
+
+    // An older model gets neither thinking nor effort; a refusal is an error.
+    let transport = FakeTransport::new().reply(
+        200,
+        json!({ "stop_reason": "refusal", "stop_details": { "category": "cyber" }, "content": [] })
+            .to_string(),
+    );
+    assert_eq!(
+        write(
+            Engine::Claude,
+            &transport,
+            "k",
+            &writing("claude-haiku-4-5")
+        ),
+        Err(LlmError::Refused("cyber".to_owned()))
+    );
+    let (_, body, _) = sent(&transport, 0);
+    assert_eq!(body.get("thinking"), None);
+    assert_eq!(body.get("output_config"), None);
+}
+
+#[test]
+fn chatgpt_and_gemini_write_and_perplexity_does_not() {
+    let transport = FakeTransport::new().reply(
+        200,
+        json!({
+            "model": "gpt-5.5",
+            "output": [{ "type": "message", "content": [{ "type": "output_text", "text": "Taslak" }] }],
+            "usage": { "input_tokens": 100, "output_tokens": 200 }
+        })
+        .to_string(),
+    );
+    assert_eq!(
+        write(Engine::ChatGpt, &transport, "k", &writing(""))
+            .unwrap()
+            .text,
+        "Taslak"
+    );
+    let (_, body, _) = sent(&transport, 0);
+    assert_eq!(body["instructions"], "Write a content brief in Turkish.");
+    assert_eq!(body.get("tools"), None);
+
+    let transport = FakeTransport::new().reply(
+        200,
+        json!({
+            "modelVersion": "gemini-3.8-flash",
+            "candidates": [{ "finishReason": "STOP", "content": { "parts": [{ "text": "düşünce", "thought": true }, { "text": "Yanıt" }] } }],
+            "usageMetadata": { "promptTokenCount": 50, "candidatesTokenCount": 20 }
+        })
+        .to_string(),
+    );
+    assert_eq!(
+        write(Engine::Gemini, &transport, "k", &writing(""))
+            .unwrap()
+            .text,
+        "Yanıt"
+    );
+    let (url, body, _) = sent(&transport, 0);
+    assert!(url.ends_with("/gemini-3.8-flash:generateContent"));
+    assert_eq!(
+        body["systemInstruction"]["parts"][0]["text"],
+        "Write a content brief in Turkish."
+    );
+    assert_eq!(body.get("tools"), None);
+
+    assert!(!Engine::Perplexity.writes());
+    assert!(matches!(
+        write(Engine::Perplexity, &FakeTransport::new(), "k", &writing("")),
+        Err(LlmError::Invalid(_))
+    ));
+    let empty = Writing {
+        material: "  ",
+        ..writing("")
+    };
+    assert!(write(Engine::Claude, &FakeTransport::new(), "k", &empty).is_err());
+    assert!(Engine::Claude.writing_estimate_usd("claude-opus-5-5", 40_000) > 0.1);
 }

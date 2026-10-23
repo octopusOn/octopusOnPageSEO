@@ -3,7 +3,8 @@ import { CallError, toCallError } from "../api/transport";
 import type { Job } from "../api/types";
 import { creditsOf, formatCredits, formatUsd, relativeTime } from "./format";
 import { mergeJob } from "./jobs";
-import { hashOf, parseHash } from "./route";
+import { mainLanguage, marketOf, marketParam, parseMarket } from "./market";
+import { hashOf, nextRoute, parseHash } from "./route";
 
 const job = (id: string, revision: number, started = 1): Job => ({
   id,
@@ -37,11 +38,45 @@ describe("formats", () => {
 
 describe("routes", () => {
   it("reads and writes the address", () => {
-    expect(parseHash("#/overview?project=2")).toEqual({ page: "overview", project: 2 });
-    expect(parseHash("#/nowhere?project=x")).toEqual({ page: "dashboard", project: null });
-    expect(parseHash("")).toEqual({ page: "dashboard", project: null });
-    expect(hashOf({ page: "sources", project: null })).toBe("#/sources");
-    expect(hashOf({ page: "overview", project: 7 })).toBe("#/overview?project=7");
+    expect(parseHash("#/overview?project=2")).toEqual({ page: "overview", project: 2, params: {} });
+    expect(parseHash("#/nowhere?project=x")).toEqual({ page: "dashboard", project: null, params: {} });
+    expect(parseHash("")).toEqual({ page: "dashboard", project: null, params: {} });
+    expect(hashOf({ page: "sources", project: null, params: {} })).toBe("#/sources");
+    expect(hashOf({ page: "overview", project: 7, params: {} })).toBe("#/overview?project=7");
+  });
+
+  it("carries what a page looks at, and drops it on another page", () => {
+    const route = parseHash("#/keywords?project=3&keyword=spor%20ayakkab%C4%B1&tab=serp&unknown=x");
+    expect(route).toEqual({ page: "keywords", project: 3, params: { keyword: "spor ayakkabı", tab: "serp" } });
+    expect(hashOf(route)).toBe("#/keywords?project=3&keyword=spor+ayakkab%C4%B1&tab=serp");
+    expect(parseHash(hashOf(route))).toEqual(route);
+    expect(nextRoute(route, { params: { keyword: "bot" } }).params).toEqual({ keyword: "bot" });
+    expect(nextRoute(route, { page: "rank" }).params).toEqual({});
+    expect(nextRoute(route, { page: "keywords" }).params).toEqual(route.params);
+    expect(nextRoute(route, { page: "overview", params: { domain: "x.com" } })).toEqual({ page: "overview", project: 3, params: { domain: "x.com" } });
+  });
+
+  it("takes a chosen market along between market pages of a project", () => {
+    const route = parseHash("#/overview?project=3&domain=x.com&market=de-de");
+    expect(nextRoute(route, { page: "keywords", params: { keyword: "schuhe" } }).params).toEqual({ keyword: "schuhe", market: "de-de" });
+    expect(nextRoute(route, { page: "backlinks", params: { domain: "x.com" } }).params).toEqual({ domain: "x.com" });
+    expect(nextRoute(route, { page: "keywords", project: 4 }).params).toEqual({});
+    expect(nextRoute(route, { params: { domain: "x.com", market: undefined } }).params).toEqual({ domain: "x.com", market: undefined });
+    expect(hashOf(nextRoute(route, { params: { domain: "x.com", market: undefined } }))).toBe("#/overview?project=3&domain=x.com");
+  });
+});
+
+describe("markets", () => {
+  const project = { country: "tr", language: "tr" };
+  it("reads the address and leaves the project's own market out of it", () => {
+    expect(marketOf(project, undefined)).toEqual(project);
+    expect(marketOf(project, "de-de")).toEqual({ country: "de", language: "de" });
+    expect(marketOf(project, "germany")).toEqual(project);
+    expect(parseMarket("US-EN")).toEqual({ country: "us", language: "en" });
+    expect(marketParam(project, { country: "tr", language: "tr" })).toBeUndefined();
+    expect(marketParam(project, { country: "tr", language: "en" })).toBe("tr-en");
+    expect(mainLanguage("at")).toBe("de");
+    expect(mainLanguage("zz")).toBe("en");
   });
 });
 

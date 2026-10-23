@@ -37,6 +37,9 @@ pub struct Paid<'a> {
     pub task: Value,
     /// Provider list price, US dollars.
     pub estimate_usd: f64,
+    /// Whether the kept answer syncs with the account's other copies: not for filtered or later
+    /// pages of a list, which are many and asked for one look.
+    pub travels: bool,
 }
 
 impl Paid<'_> {
@@ -153,9 +156,13 @@ pub struct Fetched<T> {
     /// What the gateway's discount on answers it keeps for every account saved now, US dollars.
     #[serde(default)]
     pub saved_usd: f64,
+    /// Every row the source holds for a list question, of which `data` is one page.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub total: Option<u64>,
 }
 
-const fn via_name(via: Via) -> &'static str {
+/// How a payment way is written in records: `own` or `credit`.
+pub(crate) const fn via_name(via: Via) -> &'static str {
     match via {
         Via::Own => "own",
         Via::Credit => "credit",
@@ -165,6 +172,10 @@ const fn via_name(via: Via) -> &'static str {
 impl Workspace {
     /// Why a source cannot pay `usd` more this month, if it cannot.
     fn over_budget(&self, provider_id: &str, usd: f64) -> Result<Option<String>, AppError> {
+        // Nothing to pay never passes a budget.
+        if usd <= 0.0 {
+            return Ok(None);
+        }
         let settings = self.settings()?;
         let Some(budget) = settings.budgets.get(provider_id).copied() else {
             return Ok(None);
@@ -344,6 +355,9 @@ impl Workspace {
         let store = self.store()?;
         store.record_spend(&spend_of(paid, via, spent, fetched_at))?;
         store.keep(&key, paid.endpoint, paid.class, paid.project_id, &entry)?;
+        if !paid.travels {
+            store.keep_here_only(&key)?;
+        }
         let mut fetched = from_entry(&entry, parse);
         fetched.cached = false;
         fetched.spent_usd = spent;
@@ -366,13 +380,28 @@ impl Workspace {
             fresh: entry.is_fresh(unix_now()),
             fetched_at: entry.fetched_at,
         });
-        let usd: f64 = parts.iter().map(|part| part.estimate_usd).sum();
+        let store = self.store()?;
+        // Only parts not kept fresh are paid when asked: the price and the budget count them.
+        // When every part is fresh, the price is a refresh's (every part).
+        let mut due = 0.0;
+        for part in parts {
+            if !store
+                .cached(&part.key())?
+                .is_some_and(|entry| entry.is_fresh(unix_now()))
+            {
+                due += part.estimate_usd;
+            }
+        }
+        let usd: f64 = if due > 0.0 {
+            due
+        } else {
+            parts.iter().map(|part| part.estimate_usd).sum()
+        };
         estimate.usd = usd;
         estimate.credits = match estimate.via {
             Some(Via::Credit) => self.credits_per_usd(first.provider).map(|rate| usd * rate),
             _ => None,
         };
-        let store = self.store()?;
         let mut kept: Option<Kept> = estimate.kept.clone();
         for part in &parts[1..] {
             kept = match (kept, store.cached(&part.key())?) {
@@ -390,7 +419,7 @@ impl Workspace {
         estimate.kept = kept;
         if estimate.via.is_some() {
             estimate.blocked = self
-                .over_budget(first.provider, usd)?
+                .over_budget(first.provider, due)?
                 .map(|message| Blocked {
                     code: ErrorCode::Budget,
                     message,
@@ -430,7 +459,19 @@ impl Workspace {
         if parts.is_empty() {
             return Err(AppError::Invalid("nothing to ask".to_owned()));
         }
-        let total: f64 = parts.iter().map(|part| part.estimate_usd).sum();
+        // The budget is checked against what will be paid: parts kept fresh are free unless forced.
+        let mut total = 0.0;
+        {
+            let store = self.store()?;
+            for part in parts {
+                let fresh = store
+                    .cached(&part.key())?
+                    .is_some_and(|entry| entry.is_fresh(unix_now()));
+                if force || !fresh {
+                    total += part.estimate_usd;
+                }
+            }
+        }
         if let Some(reason) = self.over_budget(parts[0].provider, total)? {
             return Err(AppError::Budget(reason));
         }
@@ -492,6 +533,25 @@ impl PaidRun<'_> {
     /// How the run is paid.
     pub const fn via(&self) -> Via {
         self.via
+    }
+
+    /// Asks the source something free (a queued task's answer) the way the run pays: nothing
+    /// is checked against the budget or recorded.
+    ///
+    /// # Errors
+    /// What `ask` returns.
+    pub fn free<T>(
+        &self,
+        provider_id: &str,
+        ask: impl FnOnce(&Route<'_>) -> Result<T, AppError>,
+    ) -> Result<T, AppError> {
+        let workspace = self.workspace;
+        let credential = |name: &str| workspace.credential(self.via, provider_id, name);
+        ask(&Route {
+            transport: self.transport.as_ref(),
+            via: self.via,
+            credential: &credential,
+        })
     }
 
     /// Asks one question fresh with `ask`, within the month's budget, and records what it cost.
@@ -565,6 +625,7 @@ fn combine(answers: Vec<Fetched<Vec<Value>>>) -> Fetched<Vec<Vec<Value>>> {
         spent_usd,
         via,
         saved_usd,
+        total: None,
     }
 }
 
@@ -583,5 +644,9 @@ fn from_entry<T>(entry: &CacheEntry, parse: impl FnOnce(&[Value]) -> T) -> Fetch
         spent_usd: 0.0,
         via: entry.via.clone(),
         saved_usd: 0.0,
+        total: items
+            .first()
+            .and_then(|first| first.get("total_count"))
+            .and_then(Value::as_u64),
     }
 }

@@ -28,7 +28,7 @@ fn app_info(context: &Context<'_>, _: NoArgs) -> Result<AppInfo, AppError> {
     let workspace = context.workspace;
     Ok(AppInfo {
         name: APPLICATION.to_owned(),
-        version: env!("CARGO_PKG_VERSION").to_owned(),
+        version: env!("PLATFORM_VERSION").to_owned(),
         host: workspace.host(),
         data_dir: (workspace.host() == Host::Desktop)
             .then(|| workspace.data_dir().display().to_string()),

@@ -1,0 +1,110 @@
+{
+  "version": "0.1.20260701",
+  "status_code": 20000,
+  "status_message": "Ok.",
+  "time": "0.2 sec.",
+  "cost": 0.01224,
+  "tasks_count": 1,
+  "tasks_error": 0,
+  "tasks": [
+    {
+      "id": "10231400-1535-0387-0000-6f9e1a2c6b11",
+      "status_code": 20000,
+      "status_message": "Ok.",
+      "time": "0.1 sec.",
+      "cost": 0.01224,
+      "result_count": 1,
+      "path": [
+        "v3",
+        "dataforseo_labs",
+        "google",
+        "page_intersection",
+        "live"
+      ],
+      "data": {
+        "api": "dataforseo_labs",
+        "function": "page_intersection",
+        "se_type": "google"
+      },
+      "result": [
+        {
+          "se_type": "google",
+          "location_code": 2792,
+          "language_code": "tr",
+          "total_count": 2,
+          "items_count": 2,
+          "items": [
+            {
+              "se_type": "google",
+              "keyword_data": {
+                "se_type": "google",
+                "keyword": "kadın koşu ayakkabısı",
+                "location_code": 2792,
+                "language_code": "tr",
+                "keyword_info": {
+                  "se_type": "google",
+                  "competition": 0.5,
+                  "competition_level": "MEDIUM",
+                  "cpc": 1.1,
+                  "search_volume": 6600
+                },
+                "keyword_properties": {
+                  "se_type": "google",
+                  "keyword_difficulty": 38
+                },
+                "search_intent_info": {
+                  "se_type": "google",
+                  "main_intent": "commercial"
+                }
+              },
+              "intersection_result": {
+                "1": {
+                  "se_type": "google",
+                  "type": "organic",
+                  "rank_group": 3,
+                  "rank_absolute": 4,
+                  "url": "https://www.rival.com/kosu",
+                  "etv": 410.5
+                }
+              }
+            },
+            {
+              "se_type": "google",
+              "keyword_data": {
+                "se_type": "google",
+                "keyword": "koşu ayakkabısı nasıl seçilir",
+                "location_code": 2792,
+                "language_code": "tr",
+                "keyword_info": {
+                  "se_type": "google",
+                  "competition": 0.5,
+                  "competition_level": "MEDIUM",
+                  "cpc": 0.4,
+                  "search_volume": 1900
+                },
+                "keyword_properties": {
+                  "se_type": "google",
+                  "keyword_difficulty": 22
+                },
+                "search_intent_info": {
+                  "se_type": "google",
+                  "main_intent": "informational"
+                }
+              },
+              "intersection_result": {
+                "1": {
+                  "se_type": "google",
+                  "type": "organic",
+                  "rank_group": 7,
+                  "rank_absolute": 9,
+                  "url": "https://www.rival.com/kosu",
+                  "etv": 38.0
+                }
+              }
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

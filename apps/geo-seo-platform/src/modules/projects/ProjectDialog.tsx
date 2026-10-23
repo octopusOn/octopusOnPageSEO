@@ -6,14 +6,7 @@ import type { ProjectRow, ProjectSpec } from "../../api/types";
 import { useI18n } from "../../i18n";
 import { useShell } from "../../lib/context";
 import { explain } from "../../lib/errors";
-
-/** Countries agencies work with most; the platform knows their DataForSEO locations. */
-export const COUNTRIES = [
-  "tr", "us", "gb", "de", "at", "ch", "nl", "be", "fr", "es", "pt", "it", "gr", "bg", "ro", "pl", "se", "no", "dk", "fi",
-  "ie", "ca", "au", "az", "cy", "ru", "ua", "kz", "uz", "by", "ge", "ae", "sa", "qa", "eg", "il", "in", "br", "mx", "jp",
-] as const;
-
-export const LANGUAGE_CODES = ["tr", "en", "de", "es", "fr", "it", "pt", "nl", "ru", "ar", "pl", "sv", "no", "da", "fi", "el", "bg", "ro", "uk", "ja", "az", "kk", "uz"] as const;
+import { COUNTRIES, LANGUAGE_CODES } from "../../lib/market";
 
 function lines(text: string): string[] {
   return text

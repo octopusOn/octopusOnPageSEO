@@ -23,6 +23,7 @@ import type {
   SourceCount,
 } from "../../api/types";
 import { useI18n } from "../../i18n";
+import { useGlossary } from "../../lib/glossary";
 import { axisStyle, EChart, useChartTokens, type ChartOption } from "../../lib/EChart";
 import { useShell } from "../../lib/context";
 import { useScheduleNote } from "../../lib/sync";
@@ -31,7 +32,7 @@ import { formatCompact, formatCredits, formatNumber, formatPercent, formatUsd, r
 import { PaidFrame } from "../../lib/PaidFrame";
 import { download, toCsv } from "../../lib/report";
 import { shortUrl, tableLabels } from "../../lib/tables";
-import { cellState, csvRows, ENGINE_NAMES, ENGINES, filterPrompts, PERIODS, platformName, tagsOf, toneOf, type CellState } from "./ai";
+import { cellState, csvRows, ENGINE_NAMES, ENGINES, filterPrompts, PERIODS, platformName, tagsOf, toneOf, voiceSeries, type CellState, type HistoryMetric } from "./ai";
 import { AddPromptsDialog, AnswerDialog, BrandsDialog } from "./AiDialogs";
 
 type T = (key: string, values?: Record<string, string | number>) => string;
@@ -195,31 +196,61 @@ function EngineBars({ engines }: { engines: EngineVisibility[] }) {
   );
 }
 
-function HistoryChart({ history, engines }: { history: AiRunPoint[]; engines: AiEngine[] }) {
+function HistoryChart({ history, engines, brands, metric }: { history: AiRunPoint[]; engines: AiEngine[]; brands: BrandShare[]; metric: HistoryMetric }) {
   const { t, locale } = useI18n();
   const tokens = useChartTokens();
   const option = useMemo<ChartOption>(() => {
     const axis = axisStyle(tokens);
+    const line = (name: string, data: (number | null)[], strong: boolean) => ({
+      name,
+      type: "line",
+      symbol: strong ? "circle" : "none",
+      symbolSize: 6,
+      connectNulls: true,
+      lineStyle: strong ? { width: 3 } : { width: 1.25, type: "dashed", opacity: 0.8 },
+      ...(strong ? { areaStyle: { opacity: 0.1 } } : {}),
+      data,
+    });
+    const series =
+      metric === "citation"
+        ? [line(t("ai.citationRate"), history.map((point) => point.citation_rate), true)]
+        : metric === "voice"
+          ? (() => {
+              const lines = voiceSeries(history, brands);
+              return lines.length ? lines.map((entry) => line(entry.key, entry.values, entry.own)) : [line(t("ai.shareOfVoice"), history.map((point) => point.share_of_voice), true)];
+            })()
+          : [line(t("ai.allEngines"), history.map((point) => point.mention_rate), true), ...engines.map((engine) => line(ENGINE_NAMES[engine], history.map((point) => point.engines[engine] ?? null), false))];
     return {
       grid: { left: 44, right: 16, top: 36, bottom: 28 },
       legend: { top: 0, left: 0, type: "scroll" },
       tooltip: { trigger: "axis", valueFormatter: (value: unknown) => (typeof value === "number" ? formatPercent(value, locale) : "—") },
       xAxis: { type: "category", data: history.map((point) => new Date(point.date).toLocaleDateString(locale, { day: "numeric", month: "short" })), ...axis, splitLine: { show: false } },
       yAxis: { type: "value", min: 0, max: 100, ...axis, axisLabel: { ...axis.axisLabel, formatter: "{value}%" } },
-      series: [
-        { name: t("ai.allEngines"), type: "line", symbol: "circle", symbolSize: 6, lineStyle: { width: 3 }, areaStyle: { opacity: 0.1 }, data: history.map((point) => point.mention_rate) },
-        ...engines.map((engine) => ({
-          name: ENGINE_NAMES[engine],
-          type: "line",
-          symbol: "none",
-          connectNulls: true,
-          lineStyle: { width: 1.25, type: "dashed", opacity: 0.8 },
-          data: history.map((point) => point.engines[engine] ?? null),
-        })),
-      ],
+      series,
     };
-  }, [history, engines, tokens, t, locale]);
+  }, [history, engines, brands, metric, tokens, t, locale]);
   return <EChart option={option} height={260} />;
+}
+
+/** The history with what it draws chosen: mentions by assistant, citations, or each brand's share of voice. */
+function History({ history, engines, brands }: { history: AiRunPoint[]; engines: AiEngine[]; brands: BrandShare[] }) {
+  const { t } = useI18n();
+  const [metric, setMetric] = useState<HistoryMetric>("mention");
+  return (
+    <>
+      <Segmented<HistoryMetric>
+        label={t("ai.metric")}
+        value={metric}
+        onChange={setMetric}
+        options={[
+          { value: "mention", label: t("ai.metricMention") },
+          { value: "citation", label: t("ai.metricCitation") },
+          { value: "voice", label: t("ai.metricVoice") },
+        ]}
+      />
+      <HistoryChart history={history} engines={engines} brands={brands} metric={metric} />
+    </>
+  );
 }
 
 function BrandBars({ brands }: { brands: BrandShare[] }) {
@@ -508,6 +539,7 @@ function ReportView({
   onAdd: () => void;
 }) {
   const { t, locale } = useI18n();
+  const gloss = useGlossary();
   const { summary } = report;
   const shownEngines = ENGINES.filter((engine) => setup.settings.engines.includes(engine) || report.engines.some((entry) => entry.engine === engine && entry.answers > 0));
   const tone = toneOf(summary.sentiment);
@@ -530,10 +562,10 @@ function ReportView({
       ) : (
         <>
           <div className="oc-stats">
-            <Stat label={t("ai.mentionRate")} value={formatPercent(summary.mention_rate, locale)} hint={t("ai.mentionRateHint", { mentioned: formatNumber(summary.mentioned, locale), answers: formatNumber(summary.answers, locale) })} />
-            <Stat label={t("ai.citationRate")} value={formatPercent(summary.citation_rate, locale)} hint={t("ai.citationRateHint", { n: formatNumber(summary.cited, locale) })} />
-            <Stat label={t("ai.shareOfVoice")} value={formatPercent(summary.share_of_voice, locale)} hint={t("ai.shareOfVoiceHint")} />
-            <Stat label={t("ai.averagePosition")} value={summary.average_position === null ? "—" : one(summary.average_position, locale)} hint={t("ai.averagePositionHint")} />
+            <Stat label={t("ai.mentionRate")} help={gloss("mention_rate")} value={formatPercent(summary.mention_rate, locale)} hint={t("ai.mentionRateHint", { mentioned: formatNumber(summary.mentioned, locale), answers: formatNumber(summary.answers, locale) })} />
+            <Stat label={t("ai.citationRate")} help={gloss("citation_rate")} value={formatPercent(summary.citation_rate, locale)} hint={t("ai.citationRateHint", { n: formatNumber(summary.cited, locale) })} />
+            <Stat label={t("ai.shareOfVoice")} help={gloss("share_of_voice")} value={formatPercent(summary.share_of_voice, locale)} hint={t("ai.shareOfVoiceHint")} />
+            <Stat label={t("ai.averagePosition")} help={gloss("average_position")} value={summary.average_position === null ? "—" : one(summary.average_position, locale)} hint={t("ai.averagePositionHint")} />
             <Stat
               label={t("ai.tone")}
               value={tone ? t(`ai.tone_${tone}`) : "—"}
@@ -556,7 +588,7 @@ function ReportView({
               </section>
               <section className="sub-panel">
                 <h4>{t("ai.history")}</h4>
-                {report.history.length > 1 ? <HistoryChart history={report.history} engines={shownEngines} /> : <p className="faint">{t("ai.oneRun")}</p>}
+                {report.history.length > 1 ? <History history={report.history} engines={shownEngines} brands={report.brands} /> : <p className="faint">{t("ai.oneRun")}</p>}
               </section>
             </div>
           </section>
@@ -575,6 +607,12 @@ function ReportView({
               <section className="sub-panel">
                 <h4>{t("ai.topDomains")}</h4>
                 {report.top_domains.length ? <SourceBars sources={report.top_domains} label={t("ai.topDomains")} /> : <p className="faint">{t("ai.noSources")}</p>}
+                {report.top_pages.length > 0 && (
+                  <>
+                    <h4>{t("ai.topPages")}</h4>
+                    <SourceBars sources={report.top_pages} label={t("ai.topPages")} />
+                  </>
+                )}
                 <h4>{t("ai.ownPages")}</h4>
                 {report.own_pages.length ? <SourceBars sources={report.own_pages} label={t("ai.ownPages")} /> : <p className="faint small">{t("ai.noOwnPages", { domain: project.domain })}</p>}
               </section>

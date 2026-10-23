@@ -13,7 +13,10 @@ Work from the platform's stored data first; it is free. Answer in the user's lan
 2. Call `site_audit_issues` with the `project_id` (pass `lang: "tr"` for a Turkish-speaking user).
    - If there is no audit yet, tell the user to start one on the Site audit page and stop; do not guess.
 3. Call `search_console` and `rank_report` (both free) to see which problems cost traffic:
-   pages losing clicks or positions matter more than pages nobody visits.
+   pages losing clicks or positions matter more than pages nobody visits. Call `core_web_vitals` (free)
+   for real-user speed (LCP, INP, CLS) and `opportunities` (free) for the platform's own ranked list.
+   - If the audit is old and the user wants a fresh one, `start_site_audit` crawls again (free on the
+     desktop; on the web it gives the price first, see below).
 4. Rank the findings by impact × effort:
    - **Critical:** pages that cannot be indexed (noindex, blocked by robots.txt, 4xx/5xx, redirect loops,
      canonical to another page), broken internal links on important pages.

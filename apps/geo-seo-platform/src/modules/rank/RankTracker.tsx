@@ -8,6 +8,8 @@ import {
   ArrowUpRight,
   Award,
   Download,
+  Flag,
+  Globe,
   MapPin,
   Play,
   Plus,
@@ -16,21 +18,24 @@ import {
   Tag,
   Trash2,
   TrendingUp,
+  X,
 } from "lucide-react";
 import { Button, DataTable, Empty, ErrorState, Field, Loading, Segmented, Stat, type Column } from "@octopusseo/ui";
 import { api } from "../../api/client";
-import type { CompetitorShare, Estimate, Job, KeywordRank, ProjectRow, RankReport, RankRun, RankSetup, Schedule, SharePoint, TrackerRow, VisibilityPoint } from "../../api/types";
+import type { CompetitorShare, Estimate, FeatureCount, Job, KeywordPlaces, KeywordRank, LandingPage, PlaceRank, ProjectRow, RankReport, RankRun, RankSetup, Schedule, SharePoint, TrackerRow, VisibilityPoint } from "../../api/types";
 import { useI18n } from "../../i18n";
+import { Entity } from "../../lib/Entity";
+import { useGlossary } from "../../lib/glossary";
 import { axisStyle, EChart, useChartTokens, type ChartOption } from "../../lib/EChart";
 import { useShell } from "../../lib/context";
 import { useScheduleNote } from "../../lib/sync";
 import { explain } from "../../lib/errors";
 import { formatCredits, formatNumber, formatPercent, formatUsd, relativeTime } from "../../lib/format";
 import { blockedText, CostLabel, refreshSpending } from "../../lib/PaidFrame";
-import { download, toCsv } from "../../lib/report";
+import { download, fold, toCsv } from "../../lib/report";
 import { featureName, shortUrl, tableLabels } from "../../lib/tables";
 import { Sparkline } from "../keywords/KeywordTable";
-import { ALL_RANKS, BANDS, csvRows, DEPTHS, filterRanks, heights, PERIODS, placeLabel, tagsOf, type Band, type RankFilters } from "./rank";
+import { ALL_RANKS, BANDS, comparedChange, csvRows, DEPTHS, filterRanks, heights, PERIODS, placeLabel, placesCsvRows, tagsOf, type Band, type RankFilters } from "./rank";
 import { AddKeywordsDialog, KeywordDialog, PlacesDialog } from "./RankDialogs";
 
 type T = (key: string, values?: Record<string, string | number>) => string;
@@ -49,16 +54,20 @@ function SetupBar({
   project,
   setup,
   tracker,
+  allPlaces,
   running,
   onTracker,
+  onAll,
   onPlaces,
   onAdd,
 }: {
   project: ProjectRow;
   setup: RankSetup;
   tracker: TrackerRow | null;
+  allPlaces: boolean;
   running: Job | undefined;
   onTracker: (id: number) => void;
+  onAll: () => void;
   onPlaces: () => void;
   onAdd: () => void;
 }) {
@@ -95,12 +104,18 @@ function SetupBar({
   return (
     <section className="oc-panel rank-setup">
       <div className="rank-places" role="group" aria-label={t("rank.places")}>
+        {setup.trackers.length > 1 && (
+          <button type="button" className={`oc-chip chip-button ${allPlaces ? "accent" : ""}`} aria-pressed={allPlaces} onClick={onAll}>
+            <Globe size={13} aria-hidden="true" />
+            {t("rank.allPlaces")}
+          </button>
+        )}
         {setup.trackers.map((entry) => (
           <button
             key={entry.id}
             type="button"
-            className={`oc-chip chip-button ${entry.id === tracker?.id ? "accent" : ""}`}
-            aria-pressed={entry.id === tracker?.id}
+            className={`oc-chip chip-button ${!allPlaces && entry.id === tracker?.id ? "accent" : ""}`}
+            aria-pressed={!allPlaces && entry.id === tracker?.id}
             onClick={() => onTracker(entry.id)}
           >
             <MapPin size={13} aria-hidden="true" />
@@ -146,7 +161,12 @@ function SetupBar({
           {estimate.data && run && !blocked && setup.keywords > 0 && (
             <span className="faint small">
               {t("rank.runCost", { n: formatNumber(estimate.data.checks, locale) })} <CostLabel estimate={run} />
-              {estimate.data.runs_per_month > 0 && <> · {t("rank.monthCost", { cost: money(estimate.data.month_usd, estimate.data.month_credits, run, t, locale) })}</>}
+              {estimate.data.runs_per_month > 0 && (
+                <span title={estimate.data.queued ? t("rank.queueHint") : t("rank.queueOwnKeyHint")}>
+                  {" · "}
+                  {t(estimate.data.queued ? "rank.monthCostQueued" : "rank.monthCost", { cost: money(estimate.data.month_usd, estimate.data.month_credits, run, t, locale) })}
+                </span>
+              )}
             </span>
           )}
         </div>
@@ -235,7 +255,7 @@ function VisibilityChart({ points }: { points: VisibilityPoint[] }) {
   return <EChart option={option} height={260} />;
 }
 
-function ShareBars({ shares }: { shares: CompetitorShare[] }) {
+function ShareBars({ shares, traffic }: { shares: CompetitorShare[]; traffic: Record<string, number> }) {
   const { t, locale } = useI18n();
   const most = Math.max(1, ...shares.map((share) => share.visibility));
   return (
@@ -245,6 +265,7 @@ function ShareBars({ shares }: { shares: CompetitorShare[] }) {
           <span className="bar-label" title={share.domain}>
             <span className="bar-domain">{share.domain}</span>
             <small className="faint">{t("rank.shareCounts", { top10: share.top10, top3: share.top3 })}</small>
+            {traffic[share.domain] !== undefined && <small className="faint">{t("rank.visits", { n: formatNumber(traffic[share.domain]!, locale) })}</small>}
           </span>
           <span className="bar-track" aria-hidden="true">
             <span className="bar-fill" style={{ width: `${(share.visibility / most) * 100}%` }} />
@@ -306,13 +327,15 @@ function Position({ row }: { row: KeywordRank }) {
   );
 }
 
-/** What else the result page shows for the site: AI Overview, snippet, competing pages. */
+/** What else the result page shows for the site: AI Overview, snippet, other elements that
+ * show it (local pack, images, videos …), competing pages. */
 function Signals({ row }: { row: KeywordRank }) {
   const { t } = useI18n();
   const features = row.features
     .filter((feature) => feature !== "organic")
     .map((feature) => featureName(feature, t))
     .join(", ");
+  const others = row.owned.filter((feature) => feature !== "ai_overview" && feature !== "featured_snippet");
   return (
     <span className="rank-signals" title={features}>
       {row.ai_overview && (
@@ -326,6 +349,12 @@ function Signals({ row }: { row: KeywordRank }) {
           <Award size={13} aria-hidden="true" />
         </span>
       )}
+      {others.length > 0 && (
+        <span className="signal good" title={t("rank.ownedSignal", { features: others.map((feature) => featureName(feature, t)).join(", ") })}>
+          <Flag size={13} aria-hidden="true" />
+          {others.length}
+        </span>
+      )}
       {row.cannibalised && (
         <span className="signal warning" title={`${t("rank.cannibalised")}: ${row.pages.map(([position, url]) => `${position}. ${shortUrl(url)}`).join(", ")}`}>
           <AlertTriangle size={13} aria-hidden="true" />
@@ -336,8 +365,45 @@ function Signals({ row }: { row: KeywordRank }) {
   );
 }
 
-function KeywordRanks({ project, rows, onOpen }: { project: ProjectRow; rows: KeywordRank[]; onOpen: (row: KeywordRank) => void }) {
+/** The position on the compared day and the change since. */
+function ComparedCell({ row }: { row: KeywordRank }) {
+  const { t } = useI18n();
+  if (!row.compared) return <span className="faint">—</span>;
+  const then = row.compared.position;
+  const change = comparedChange(row);
+  return (
+    <span className="rank-position">
+      <span>{then ?? <span className="faint">{t("rank.notRanked")}</span>}</span>
+      {change !== null && change !== 0 && (
+        <span className={`rank-change ${change > 0 ? "up" : "down"}`}>
+          {change > 0 ? <ArrowUp size={12} aria-hidden="true" /> : <ArrowDown size={12} aria-hidden="true" />}
+          {Math.abs(change)}
+        </span>
+      )}
+      {then === null && row.position !== null && <span className="oc-chip small good">{t("rank.comparedNew")}</span>}
+      {then !== null && row.position === null && <span className="oc-chip small critical">{t("rank.comparedLost")}</span>}
+    </span>
+  );
+}
+
+/** Today's date, `YYYY-MM-DD`. */
+const today = () => new Date().toISOString().slice(0, 10);
+
+function KeywordRanks({
+  project,
+  rows,
+  compare,
+  onCompare,
+  onOpen,
+}: {
+  project: ProjectRow;
+  rows: KeywordRank[];
+  compare: string | null;
+  onCompare: (day: string | null) => void;
+  onOpen: (row: KeywordRank) => void;
+}) {
   const { t, locale } = useI18n();
+  const gloss = useGlossary();
   const { notify, fail } = useShell();
   const queryClient = useQueryClient();
   const [filters, setFilters] = useState<RankFilters>(ALL_RANKS);
@@ -396,15 +462,43 @@ function KeywordRanks({ project, rows, onOpen }: { project: ProjectRow; rows: Ke
     },
     { key: "position", label: t("rank.colPosition"), render: (row) => <Position row={row} />, sort: (row) => row.position ?? 1000, numeric: true },
     { key: "best", label: t("rank.colBest"), render: (row) => row.best ?? "—", sort: (row) => row.best ?? 1000, numeric: true },
+    ...(compare
+      ? [
+          {
+            key: "compared",
+            label: t("rank.colCompared", { date: new Date(`${compare}T12:00:00Z`).toLocaleDateString(locale, { day: "numeric", month: "short", year: "numeric" }) }),
+            render: (row: KeywordRank) => <ComparedCell row={row} />,
+            sort: (row: KeywordRank) => comparedChange(row),
+            numeric: true,
+          } satisfies Column<KeywordRank>,
+        ]
+      : []),
     { key: "volume", label: t("overview.colVolume"), render: (row) => (row.volume === null ? "—" : formatNumber(row.volume, locale)), sort: (row) => row.volume, numeric: true },
+    { key: "traffic", label: t("rank.colTraffic"), help: gloss("traffic"), optional: true, render: (row) => (row.traffic === null ? "—" : formatNumber(row.traffic, locale)), sort: (row) => row.traffic, numeric: true },
+    ...project.competitors.map(
+      (domain) =>
+        ({
+          key: `rival-${domain}`,
+          label: domain,
+          optional: true,
+          render: (row: KeywordRank) => {
+            const position = row.rivals[domain] ?? null;
+            if (position === null) return <span className="faint">—</span>;
+            const ahead = row.position === null || position < row.position;
+            return <span className={ahead ? "rival-ahead" : undefined} title={ahead ? t("rank.rivalAhead") : undefined}>{position}</span>;
+          },
+          sort: (row: KeywordRank) => row.rivals[domain] ?? 1000,
+          numeric: true,
+        }) satisfies Column<KeywordRank>,
+    ),
     {
       key: "url",
       label: t("rank.colUrl"),
       render: (row) =>
         row.url ? (
-          <a className="faint small" href={row.url} target="_blank" rel="noreferrer noopener" title={row.url}>
-            {shortUrl(row.url)}
-          </a>
+          <Entity kind="url" value={row.url}>
+            <span className="faint small">{shortUrl(row.url)}</span>
+          </Entity>
         ) : (
           ""
         ),
@@ -454,6 +548,16 @@ function KeywordRanks({ project, rows, onOpen }: { project: ProjectRow; rows: Ke
             <input type="checkbox" checked={filters.aiOnly} onChange={(event) => setFilters({ ...filters, aiOnly: event.target.checked })} />
             <span>{t("rank.aiOnly")}</span>
           </label>
+          <Field label={t("rank.compareWith")}>
+            <span className="compare-field">
+              <input className="oc-input" type="date" value={compare ?? ""} max={today()} aria-label={t("rank.compareWith")} onChange={(event) => onCompare(event.target.value || null)} />
+              {compare && (
+                <Button small className="icon ghost" aria-label={t("rank.compareClear")} onClick={() => onCompare(null)}>
+                  <X size={14} />
+                </Button>
+              )}
+            </span>
+          </Field>
         </div>
         <div className="table-toolbar">
           <label className="oc-check">
@@ -510,12 +614,16 @@ function KeywordRanks({ project, rows, onOpen }: { project: ProjectRow; rows: Ke
                     t("rank.colChange"),
                     t("rank.colBest"),
                     t("overview.colVolume"),
+                    t("rank.colTraffic"),
                     t("rank.colUrl"),
                     "AI Overview",
                     t("rank.aiCitedColumn"),
+                    t("rank.ownedColumn"),
                     t("rank.colChecked"),
+                    ...project.competitors,
+                    ...(compare ? [t("rank.colCompared", { date: compare })] : []),
                   ],
-                  csvRows(shown),
+                  csvRows(shown, project.competitors, Boolean(compare)),
                 ),
               )
             }
@@ -532,9 +640,11 @@ function KeywordRanks({ project, rows, onOpen }: { project: ProjectRow; rows: Ke
 
 function Runs({ project }: { project: ProjectRow }) {
   const { t, locale } = useI18n();
-  const runs = useQuery({ queryKey: ["rank", "runs", project.id], queryFn: () => api.rankRuns(project.id) });
+  // While checks wait in the queue, the list is read again now and then.
+  const runs = useQuery({ queryKey: ["rank", "runs", project.id], queryFn: () => api.rankRuns(project.id), refetchInterval: (query) => (query.state.data?.some((run) => run.waiting > 0) ? 60_000 : false) });
   if (!runs.data?.length) return null;
   const tone = (run: RankRun) => (run.status === "done" ? "good" : run.status === "running" ? "accent" : run.status === "partial" ? "warning" : "critical");
+  const queued = (run: RankRun) => run.status === "running" && run.waiting > 0;
   return (
     <section className="oc-panel report">
       <header className="report-head">
@@ -545,10 +655,16 @@ function Runs({ project }: { project: ProjectRow }) {
       <ul className="run-list">
         {runs.data.map((run) => (
           <li key={run.id}>
-            <span className={`oc-badge ${tone(run)}`}>{t(`rank.run_${run.status}`)}</span>
+            <span className={`oc-badge ${tone(run)}`} title={queued(run) ? t("rank.queueHint") : undefined}>
+              {queued(run) ? t("rank.run_queued") : t(`rank.run_${run.status}`)}
+            </span>
             <span>{relativeTime(run.started_at, locale)}</span>
             <span className="faint small">{run.scheduled ? t("rank.runScheduled") : t("rank.runManual")}</span>
-            <span className="small">{t("rank.runLine", { checked: formatNumber(run.checked, locale), failed: formatNumber(run.failed, locale), cost: formatUsd(run.cost_usd, locale) })}</span>
+            <span className="small">
+              {queued(run)
+                ? t("rank.runWaiting", { answered: formatNumber(Math.max(0, run.total - run.waiting - run.failed), locale), total: formatNumber(run.total, locale), cost: formatUsd(run.cost_usd, locale) })
+                : t("rank.runLine", { checked: formatNumber(run.checked, locale), failed: formatNumber(run.failed, locale), cost: formatUsd(run.cost_usd, locale) })}
+            </span>
             {run.error && <span className="faint small run-error">{run.error}</span>}
           </li>
         ))}
@@ -557,8 +673,74 @@ function Runs({ project }: { project: ProjectRow }) {
   );
 }
 
-function ReportView({ project, report, days, onDays, onOpen }: { project: ProjectRow; report: RankReport; days: number; onDays: (days: number) => void; onOpen: (row: KeywordRank) => void }) {
+/** The elements of the latest result pages and how often they show the site. */
+function FeatureBars({ features }: { features: FeatureCount[] }) {
   const { t, locale } = useI18n();
+  if (features.length === 0) return <p className="faint">{t("rank.noFeatures")}</p>;
+  const most = Math.max(1, ...features.map((feature) => feature.shown));
+  return (
+    <ol className="bars feature-bars" aria-label={t("rank.featuresTitle")}>
+      {features.map((feature) => (
+        <li key={feature.feature}>
+          <span className="bar-label">
+            <span className="bar-domain">{featureName(feature.feature, t)}</span>
+            <small className="faint">{t("rank.featureLine", { owned: formatNumber(feature.owned, locale), shown: formatNumber(feature.shown, locale) })}</small>
+          </span>
+          <span className="bar-track" aria-hidden="true">
+            <span className="bar-fill" style={{ width: `${(feature.shown / most) * 100}%` }} />
+            {feature.owned > 0 && <span className="bar-fill owned" style={{ width: `${(feature.owned / most) * 100}%` }} />}
+          </span>
+          <span className="bar-value">{formatNumber(feature.shown, locale)}</span>
+        </li>
+      ))}
+    </ol>
+  );
+}
+
+function LandingPages({ pages }: { pages: LandingPage[] }) {
+  const { t, locale } = useI18n();
+  const gloss = useGlossary();
+  const columns: Column<LandingPage>[] = [
+    {
+      key: "url",
+      label: t("rank.colUrl"),
+      render: (row) => (
+        <Entity kind="url" value={row.url}>
+          <span className="cell-url">{shortUrl(row.url)}</span>
+        </Entity>
+      ),
+      sort: (row) => row.url,
+    },
+    { key: "keywords", label: t("rank.colKeywords"), render: (row) => formatNumber(row.keywords, locale), sort: (row) => row.keywords, numeric: true },
+    { key: "best", label: t("rank.colBest"), render: (row) => row.best_position, sort: (row) => row.best_position, numeric: true },
+    { key: "traffic", label: t("rank.colVisits"), help: gloss("traffic"), render: (row) => formatNumber(row.traffic, locale), sort: (row) => row.traffic, numeric: true },
+  ];
+  return (
+    <div className="landing-pages">
+      <DataTable rows={pages} columns={columns} rowKey={(row) => row.url} initialSort={{ key: "traffic", direction: "desc" }} empty={t("rank.noLandingPages")} labels={tableLabels(t, locale)} />
+    </div>
+  );
+}
+
+function ReportView({
+  project,
+  report,
+  days,
+  compare,
+  onDays,
+  onCompare,
+  onOpen,
+}: {
+  project: ProjectRow;
+  report: RankReport;
+  days: number;
+  compare: string | null;
+  onDays: (days: number) => void;
+  onCompare: (day: string | null) => void;
+  onOpen: (row: KeywordRank) => void;
+}) {
+  const { t, locale } = useI18n();
+  const gloss = useGlossary();
   const { summary } = report;
   const period = (
     <Segmented<string>
@@ -580,7 +762,7 @@ function ReportView({ project, report, days, onDays, onOpen }: { project: Projec
   const change = summary.visibility_change;
   return (
     <div className="page-stack">
-      <div className="oc-stats">
+      <div className="oc-stats rank-stats">
         <Stat
           label={t("rank.visibility")}
           value={summary.visibility === null ? "—" : formatPercent(summary.visibility, locale)}
@@ -592,8 +774,9 @@ function ReportView({ project, report, days, onDays, onOpen }: { project: Projec
           value={summary.average_position === null ? "—" : one(summary.average_position, locale)}
           hint={t("rank.rankedOf", { ranked: formatNumber(summary.ranked, locale), total: formatNumber(summary.checked, locale) })}
         />
-        <Stat label={t("rank.topCounts")} value={`${formatNumber(summary.top3, locale)} / ${formatNumber(summary.top10, locale)}`} hint={t("rank.topCountsHint")} />
-        <Stat label={t("rank.aiTitle")} value={formatNumber(summary.ai_overviews, locale)} hint={t("rank.aiCitedCount", { n: formatNumber(summary.ai_cited, locale) })} />
+        <Stat label={t("rank.topCounts")} help={gloss("top3_top10")} value={`${formatNumber(summary.top3, locale)} / ${formatNumber(summary.top10, locale)}`} hint={t("rank.topCountsHint")} />
+        <Stat label={t("rank.aiTitle")} help={gloss("ai_overview")} value={formatNumber(summary.ai_overviews, locale)} hint={t("rank.aiCitedCount", { n: formatNumber(summary.ai_cited, locale) })} />
+        <Stat label={t("rank.trafficStat")} help={gloss("traffic")} value={formatNumber(summary.traffic, locale)} hint={t("rank.trafficHint")} />
       </div>
       <section className="oc-panel report">
         <header className="report-head">
@@ -640,7 +823,7 @@ function ReportView({ project, report, days, onDays, onOpen }: { project: Projec
         <div className="two-columns">
           <section className="sub-panel">
             <h4>{t("rank.sharesNow")}</h4>
-            <ShareBars shares={report.competitors} />
+            <ShareBars shares={report.competitors} traffic={report.traffic} />
           </section>
           <section className="sub-panel">
             <h4>{t("rank.shareHistory")}</h4>
@@ -648,7 +831,143 @@ function ReportView({ project, report, days, onDays, onOpen }: { project: Projec
           </section>
         </div>
       </section>
-      <KeywordRanks project={project} rows={report.rows} onOpen={onOpen} />
+      <section className="oc-panel report">
+        <header className="report-head">
+          <div className="report-title">
+            <h3 className="oc-panel-title">{t("rank.pagesAndFeatures")}</h3>
+            <span className="faint">{t("rank.pagesAndFeaturesHint")}</span>
+          </div>
+        </header>
+        <div className="two-columns">
+          <section className="sub-panel">
+            <h4>
+              {t("rank.featuresTitle")} <span className="faint small">{t("rank.featuresLegend")}</span>
+            </h4>
+            <FeatureBars features={summary.features} />
+          </section>
+          <section className="sub-panel">
+            <h4>{t("rank.landingTitle")}</h4>
+            <LandingPages pages={report.landing_pages} />
+          </section>
+        </div>
+      </section>
+      <KeywordRanks project={project} rows={report.rows} compare={compare} onCompare={onCompare} onOpen={onOpen} />
+    </div>
+  );
+}
+
+/** A keyword's position on one place with its change. */
+function PlaceCell({ place }: { place: PlaceRank | undefined }) {
+  const { t } = useI18n();
+  if (!place) return <span className="faint">—</span>;
+  if (place.position === null && place.error) {
+    return (
+      <span className="rank-failed" title={t("rank.checkFailed", { error: place.error })}>
+        <AlertTriangle size={14} aria-hidden="true" />
+      </span>
+    );
+  }
+  return (
+    <span className="rank-position" title={place.url ?? undefined}>
+      <strong>{place.position ?? <span className="faint">{t("rank.notRanked")}</span>}</strong>
+      {place.change !== null && place.change !== 0 && (
+        <span className={`rank-change ${place.change > 0 ? "up" : "down"}`}>
+          {place.change > 0 ? <ArrowUp size={12} aria-hidden="true" /> : <ArrowDown size={12} aria-hidden="true" />}
+          {Math.abs(place.change)}
+        </span>
+      )}
+    </span>
+  );
+}
+
+/** Every keyword on every place side by side. */
+function PlacesView({ project, days, onDays }: { project: ProjectRow; days: number; onDays: (days: number) => void }) {
+  const { t, locale } = useI18n();
+  const [query, setQuery] = useState("");
+  const places = useQuery({ queryKey: ["rank", "places", project.id, days], queryFn: () => api.rankPlaces(project.id, days) });
+  const deviceName = (name: string) => t(`rank.${name}`);
+  if (places.isLoading) return <Loading label={t("common.loading")} />;
+  if (places.error || !places.data) {
+    return <ErrorState title={t("common.loadFailed")} message={explain(places.error, t).message} retry={() => void places.refetch()} retryLabel={t("common.retry")} />;
+  }
+  const { trackers, rows, summaries } = places.data;
+  const folded = fold(query.trim());
+  const shown = folded ? rows.filter((row) => fold(row.keyword).includes(folded)) : rows;
+  const columns: Column<KeywordPlaces>[] = [
+    {
+      key: "keyword",
+      label: t("overview.colKeyword"),
+      render: (row) => (
+        <Entity kind="keyword" value={row.keyword}>
+          <strong className="cell-main">{row.keyword}</strong>
+        </Entity>
+      ),
+      sort: (row) => row.keyword,
+    },
+    { key: "volume", label: t("overview.colVolume"), render: (row) => (row.volume === null ? "—" : formatNumber(row.volume, locale)), sort: (row) => row.volume, numeric: true },
+    ...trackers.map(
+      (tracker, index) =>
+        ({
+          key: `place-${tracker.id}`,
+          label: placeLabel(tracker, deviceName),
+          render: (row: KeywordPlaces) => <PlaceCell place={row.places[index]} />,
+          sort: (row: KeywordPlaces) => row.places[index]?.position ?? 1000,
+          numeric: true,
+        }) satisfies Column<KeywordPlaces>,
+    ),
+  ];
+  return (
+    <div className="page-stack">
+      <div className="oc-stats">
+        {summaries.map((summary) => {
+          const tracker = trackers.find((entry) => entry.id === summary.tracker_id);
+          return (
+            <Stat
+              key={summary.tracker_id}
+              label={tracker ? placeLabel(tracker, deviceName) : String(summary.tracker_id)}
+              value={summary.visibility === null ? "—" : formatPercent(summary.visibility, locale)}
+              hint={t("rank.placeSummary", { position: summary.average_position === null ? "—" : one(summary.average_position, locale), n: formatNumber(summary.top10, locale) })}
+            />
+          );
+        })}
+      </div>
+      <section className="oc-panel report">
+        <header className="report-head">
+          <div className="report-title">
+            <h3 className="oc-panel-title">{t("rank.placesTitle")}</h3>
+            <span className="faint">{t("rank.placesHint")}</span>
+          </div>
+          <div className="report-actions">
+            <Segmented<string> label={t("rank.days")} value={String(days)} onChange={(value) => onDays(Number(value))} options={PERIODS.map((value) => ({ value: String(value), label: t(`rank.days${value}`) }))} />
+          </div>
+        </header>
+        <div className="page-stack">
+          <div className="table-toolbar">
+            <label className="filter-search">
+              <Search size={15} aria-hidden="true" />
+              <span className="sr-only">{t("rank.filterSearch")}</span>
+              <input className="oc-input" value={query} placeholder={t("rank.filterSearch")} onChange={(event) => setQuery(event.target.value)} />
+            </label>
+            <Button
+              small
+              disabled={shown.length === 0}
+              onClick={() =>
+                download(
+                  `rank-places-${project.domain}.csv`,
+                  toCsv(
+                    [t("overview.colKeyword"), t("rank.tagsColumn"), t("overview.colVolume"), ...trackers.flatMap((tracker) => [placeLabel(tracker, deviceName), `${placeLabel(tracker, deviceName)} ${t("rank.colChange")}`])],
+                    placesCsvRows(shown),
+                  ),
+                )
+              }
+            >
+              <Download size={14} />
+              {t("overview.export")}
+            </Button>
+          </div>
+          <DataTable rows={shown} columns={columns} rowKey={(row) => String(row.keyword_id)} initialSort={{ key: `place-${trackers[0]?.id ?? 0}`, direction: "asc" }} tableId="rank-places" empty={t("overview.emptyRows")} labels={tableLabels(t, locale)} />
+        </div>
+      </section>
     </div>
   );
 }
@@ -658,17 +977,22 @@ export function RankTracker({ project }: { project: ProjectRow }) {
   const { jobs } = useShell();
   const setup = useQuery({ queryKey: ["rank", "setup", project.id], queryFn: () => api.rankSetup(project.id) });
   const [trackerId, setTrackerId] = useState<number | null>(null);
+  const [allPlaces, setAllPlaces] = useState(false);
   const [days, setDays] = useState(90);
+  const [compare, setCompare] = useState<string | null>(null);
   const [adding, setAdding] = useState(false);
   const [places, setPlaces] = useState(false);
   const [detail, setDetail] = useState<KeywordRank | null>(null);
   const trackers = setup.data?.trackers ?? [];
   const tracker = trackers.find((entry) => entry.id === trackerId) ?? trackers[0] ?? null;
   const report = useQuery({
-    queryKey: ["rank", "report", project.id, tracker?.id ?? null, days],
-    queryFn: () => api.rankReport(project.id, tracker?.id ?? null, days),
-    enabled: Boolean(setup.data && setup.data.keywords > 0),
+    queryKey: ["rank", "report", project.id, tracker?.id ?? null, days, compare],
+    queryFn: () => api.rankReport(project.id, tracker?.id ?? null, days, compare),
+    enabled: Boolean(setup.data && setup.data.keywords > 0 && !(allPlaces && trackers.length > 1)),
+    // Another period or compared day keeps the page in place while it loads.
+    placeholderData: (previous) => (previous?.tracker?.id === tracker?.id ? previous : undefined),
   });
+  const everyPlace = allPlaces && trackers.length > 1;
   const running = jobs.find((job) => job.kind === "rank-check" && job.project_id === project.id && job.status === "running");
   if (setup.isLoading) return <Loading label={t("common.loading")} />;
   if (setup.error || !setup.data) {
@@ -677,7 +1001,20 @@ export function RankTracker({ project }: { project: ProjectRow }) {
   const data = setup.data;
   return (
     <div className="page-stack">
-      <SetupBar project={project} setup={data} tracker={tracker} running={running} onTracker={setTrackerId} onPlaces={() => setPlaces(true)} onAdd={() => setAdding(true)} />
+      <SetupBar
+        project={project}
+        setup={data}
+        tracker={tracker}
+        allPlaces={everyPlace}
+        running={running}
+        onTracker={(id) => {
+          setTrackerId(id);
+          setAllPlaces(false);
+        }}
+        onAll={() => setAllPlaces(true)}
+        onPlaces={() => setPlaces(true)}
+        onAdd={() => setAdding(true)}
+      />
       {data.keywords === 0 ? (
         <div className="oc-card">
           <Empty icon={<TrendingUp size={28} />} title={t("rank.emptyTitle")}>
@@ -691,9 +1028,15 @@ export function RankTracker({ project }: { project: ProjectRow }) {
       ) : (
         <>
           {data.missing_volumes > 0 && <VolumesBanner project={project} missing={data.missing_volumes} />}
-          {report.isLoading && <Loading label={t("common.loading")} />}
-          {report.error && <ErrorState title={t("common.loadFailed")} message={explain(report.error, t).message} retry={() => void report.refetch()} retryLabel={t("common.retry")} />}
-          {report.data && <ReportView project={project} report={report.data} days={days} onDays={setDays} onOpen={setDetail} />}
+          {everyPlace ? (
+            <PlacesView project={project} days={days} onDays={setDays} />
+          ) : (
+            <>
+              {report.isLoading && <Loading label={t("common.loading")} />}
+              {report.error && <ErrorState title={t("common.loadFailed")} message={explain(report.error, t).message} retry={() => void report.refetch()} retryLabel={t("common.retry")} />}
+              {report.data && <ReportView project={project} report={report.data} days={days} compare={compare} onDays={setDays} onCompare={setCompare} onOpen={setDetail} />}
+            </>
+          )}
           <Runs project={project} />
         </>
       )}

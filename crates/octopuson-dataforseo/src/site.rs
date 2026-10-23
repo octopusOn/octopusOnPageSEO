@@ -11,8 +11,11 @@ use serde_json::{Value, json};
 use crate::labs::RankMetrics;
 use crate::{DfsError, Market, count, items_of, number, prices, target_domain};
 
-/// Months of history asked for.
+/// Months of history asked for unless more are wanted.
 pub const HISTORY_MONTHS: u32 = 24;
+
+/// The first month of DataForSEO's ranking history.
+pub const HISTORY_START: (u32, u32) = (2020, 10);
 
 /// Most rows one report returns.
 pub const MAX_ROWS: u32 = 1_000;
@@ -128,9 +131,21 @@ pub fn history_from_result(result: &[Value]) -> Vec<HistoryPoint> {
     points
 }
 
-/// Estimated cost of a ranking history.
+/// Months from the start of the history to `year`-`month`, both counted.
+pub fn months_since_start(year: u32, month: u32) -> u32 {
+    let (start_year, start_month) = HISTORY_START;
+    (year * 12 + month.clamp(1, 12)).saturating_sub(start_year * 12 + start_month) + 1
+}
+
+/// Estimated cost of a ranking history: this endpoint costs ten times the default Labs price,
+/// with one row per month.
 pub fn history_estimate() -> f64 {
-    prices::labs(HISTORY_MONTHS)
+    history_estimate_for(HISTORY_MONTHS)
+}
+
+/// Estimated cost of a ranking history of `months` months.
+pub fn history_estimate_for(months: u32) -> f64 {
+    prices::labs_history(months)
 }
 
 // ------------------------------------------------------------------------------- Ranked keywords
@@ -147,6 +162,30 @@ pub enum Change {
     Down,
     /// It stayed.
     Same,
+}
+
+/// The text of an ad a domain shows for a keyword.
+#[derive(Debug, Clone, Default, PartialEq, Eq, Serialize, Deserialize)]
+pub struct AdText {
+    /// The headline.
+    pub title: String,
+    /// The description.
+    pub description: Option<String>,
+    /// The address shown (breadcrumb).
+    pub breadcrumb: Option<String>,
+}
+
+/// Which of a domain's keywords a list holds.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Default, Serialize, Deserialize)]
+#[serde(rename_all = "snake_case")]
+pub enum KeywordSet {
+    /// Organic results it ranks in now.
+    #[default]
+    Organic,
+    /// Organic results it ranked in before and not in the latest check.
+    Lost,
+    /// Ads it shows.
+    Paid,
 }
 
 /// A keyword a domain ranks for.
@@ -180,6 +219,9 @@ pub struct RankedKeyword {
     pub traffic_value_usd: f64,
     /// Elements of the result page (`featured_snippet`, `ai_overview`, `people_also_ask` …).
     pub serp_features: Vec<String>,
+    /// The ad shown, for paid keywords.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub ad: Option<AdText>,
 }
 
 /// The keywords a domain ranks for.
@@ -196,10 +238,33 @@ pub struct RankedKeywords {
 /// # Errors
 /// [`DfsError::Config`] for an empty domain or an unknown country.
 pub fn ranked_keywords_task(domain: &str, market: &Market, limit: u32) -> Result<Value, DfsError> {
+    ranked_set_task(domain, market, limit, KeywordSet::Organic)
+}
+
+/// The task of one set of a domain's keywords: organic ones by traffic (the same task as
+/// [`ranked_keywords_task`]), lost ones by search volume, or paid ones by ad traffic.
+///
+/// # Errors
+/// [`DfsError::Config`] for an empty domain or an unknown country.
+pub fn ranked_set_task(
+    domain: &str,
+    market: &Market,
+    limit: u32,
+    set: KeywordSet,
+) -> Result<Value, DfsError> {
     let (_, mut task) = target_task(domain, market)?;
-    task["item_types"] = json!(["organic"]);
+    task["item_types"] = json!([if set == KeywordSet::Paid {
+        "paid"
+    } else {
+        "organic"
+    }]);
     task["limit"] = json!(rows(limit));
-    task["order_by"] = json!(["ranked_serp_element.serp_item.etv,desc"]);
+    if set == KeywordSet::Lost {
+        task["historical_serp_mode"] = json!("lost");
+        task["order_by"] = json!(["keyword_data.keyword_info.search_volume,desc"]);
+    } else {
+        task["order_by"] = json!(["ranked_serp_element.serp_item.etv,desc"]);
+    }
     Ok(task)
 }
 
@@ -248,6 +313,15 @@ fn ranked_keyword(item: &Value) -> Option<RankedKeyword> {
         traffic: real(serp, "/etv").unwrap_or_default(),
         traffic_value_usd: real(serp, "/estimated_paid_traffic_cost").unwrap_or_default(),
         serp_features,
+        ad: (serp.get("type").and_then(Value::as_str) == Some("paid"))
+            .then(|| {
+                Some(AdText {
+                    title: text(serp, "/title")?,
+                    description: text(serp, "/description"),
+                    breadcrumb: text(serp, "/breadcrumb"),
+                })
+            })
+            .flatten(),
     })
 }
 
@@ -398,6 +472,65 @@ pub fn subdomains_from_result(result: &[Value]) -> Vec<SubdomainRow> {
             })
         })
         .collect()
+}
+
+// -------------------------------------------------------------------------------- Countries
+
+/// Rows of the traffic by country: every location DataForSEO measures.
+pub const COUNTRY_ROWS: u32 = 100;
+
+/// A domain's rankings in one country and language.
+#[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
+pub struct CountryRow {
+    /// ISO country code (`tr`), when the platform knows the location.
+    pub country: Option<String>,
+    /// DataForSEO's location code.
+    pub location_code: u32,
+    /// Language code.
+    pub language: Option<String>,
+    /// Organic results.
+    pub organic: RankMetrics,
+    /// Paid results.
+    pub paid: RankMetrics,
+}
+
+/// The task of a domain's rankings in every country (`domain_rank_overview` without a
+/// location).
+///
+/// # Errors
+/// [`DfsError::Config`] for an empty domain.
+pub fn countries_task(domain: &str) -> Result<Value, DfsError> {
+    let target = target_domain(domain);
+    if target.is_empty() {
+        return Err(DfsError::Config("the domain is empty".to_owned()));
+    }
+    Ok(json!({ "target": target, "limit": COUNTRY_ROWS }))
+}
+
+/// Reads a `domain_rank_overview` answer over every country, most organic traffic first.
+pub fn countries_from_result(result: &[Value]) -> Vec<CountryRow> {
+    let mut rows: Vec<CountryRow> = items_of(result)
+        .iter()
+        .filter_map(|item| {
+            let location_code = small(item, "/location_code")?;
+            Some(CountryRow {
+                country: octopuson_serp::locale::country_of_location(location_code)
+                    .map(str::to_owned),
+                location_code,
+                language: text(item, "/language_code"),
+                organic: item
+                    .pointer("/metrics/organic")
+                    .map(RankMetrics::from_value)
+                    .unwrap_or_default(),
+                paid: item
+                    .pointer("/metrics/paid")
+                    .map(RankMetrics::from_value)
+                    .unwrap_or_default(),
+            })
+        })
+        .collect();
+    rows.sort_by(|left, right| right.organic.traffic.total_cmp(&left.organic.traffic));
+    rows
 }
 
 // ------------------------------------------------------------------------------ Bulk traffic

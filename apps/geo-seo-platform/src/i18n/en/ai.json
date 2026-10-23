@@ -22,7 +22,7 @@
   "byEngine": "By assistant",
   "byEngineHint": "The latest answer of every question on every assistant",
   "engineLine": "{answers} answers, cited in {cited}",
-  "history": "Mention rate, check by check",
+  "history": "Check by check",
   "allEngines": "All",
   "oneRun": "The chart is drawn after the second check.",
   "shareTitle": "Share of voice and sources",
@@ -134,5 +134,10 @@
   "selectShown": "Select the {n} shown",
   "cell_rival": "A rival instead",
   "cellRivalTitle": "You are not named; {rival} is in place {n}.",
-  "cellPlaceTitle": "{state} · place {n}"
+  "cellPlaceTitle": "{state} · place {n}",
+  "metric": "Showing",
+  "metricMention": "Mentions",
+  "metricCitation": "Citations",
+  "metricVoice": "Share of voice",
+  "topPages": "Pages cited most"
 }

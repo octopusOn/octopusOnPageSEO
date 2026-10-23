@@ -63,6 +63,7 @@ fn project(platform: &Platform) -> i64 {
 }
 
 #[test]
+#[allow(clippy::too_many_lines)] // the command list
 fn every_module_registers_its_commands() {
     let names: Vec<&str> = crate::modules::router().names().collect();
     for expected in [
@@ -104,6 +105,23 @@ fn every_module_registers_its_commands() {
         "gap_estimate",
         "get_gap",
         "fetch_gap",
+        "metric_history",
+        "list_ads",
+        "research_estimate",
+        "get_research",
+        "fetch_research",
+        "serp_cluster_estimate",
+        "start_serp_clustering",
+        "serp_clusters",
+        "link_decisions",
+        "decide_links",
+        "disavow_file",
+        "link_prospects",
+        "save_link_prospect",
+        "remove_link_prospect",
+        "audit_outbound",
+        "get_category_names",
+        "fetch_category_names",
         "rank_setup",
         "save_rank_settings",
         "add_rank_tracker",
@@ -115,9 +133,52 @@ fn every_module_registers_its_commands() {
         "start_rank_check",
         "rank_runs",
         "rank_report",
+        "rank_places",
         "rank_keyword",
         "rank_volumes_estimate",
         "fetch_rank_volumes",
+        "alert_setup",
+        "save_alert_settings",
+        "list_alerts",
+        "mark_alerts_read",
+        "check_alerts",
+        "start_link_watch",
+        "opportunities",
+        "set_opportunity",
+        "project_dashboard",
+        "vitals_setup",
+        "start_vitals",
+        "vitals_report",
+        "audit_links",
+        "audit_hreflang",
+        "audit_pages",
+        "audit_page",
+        "audit_findings_csv",
+        "gsc_export",
+        "content_brief_estimate",
+        "start_content_brief",
+        "content_briefs",
+        "content_brief",
+        "delete_content_brief",
+        "score_content",
+        "content_pages",
+        "content_writing_estimate",
+        "start_content_writing",
+        "reply_estimate",
+        "draft_review_reply",
+        "local_setup",
+        "save_local_settings",
+        "choose_business",
+        "local_estimate",
+        "get_local",
+        "fetch_local",
+        "local_grid_estimate",
+        "start_local_grid",
+        "local_runs",
+        "local_grid",
+        "local_reviews_estimate",
+        "fetch_local_reviews",
+        "local_reviews",
         "audit_setup",
         "save_audit_settings",
         "start_audit",
@@ -623,6 +684,274 @@ fn site_explorer_reports_are_kept_per_report_and_row_count() {
 }
 
 #[test]
+fn filtered_lists_and_other_markets_are_questions_of_their_own() {
+    let dir = tempfile::tempdir().unwrap();
+    let transport = Arc::new(
+        FakeTransport::new()
+            .reply(200, RANKED)
+            .reply(200, RANKED)
+            .reply(200, RANKED),
+    );
+    let platform = platform(dir.path(), &transport);
+    let id = project(&platform);
+    call(
+        &platform,
+        "set_key",
+        json!({ "provider": "dataforseo", "name": "credentials", "value": "a:b" }),
+    );
+    let plain = call(
+        &platform,
+        "fetch_overview",
+        json!({ "project_id": id, "report": "keywords" }),
+    );
+    assert_eq!(plain["total"], 3052);
+    let body: Value =
+        serde_json::from_slice(transport.requests()[0].body.as_deref().unwrap()).unwrap();
+    assert_eq!(body[0].get("offset"), None);
+
+    // An empty query is the same question: the kept answer, nothing asked.
+    let empty = json!({ "filters": [], "order": [], "offset": 0 });
+    let kept = call(
+        &platform,
+        "get_overview",
+        json!({ "project_id": id, "report": "keywords", "query": empty }),
+    );
+    assert_eq!(kept["data"]["total"], 3052);
+
+    // Filters, order and a page are asked of DataForSEO, in a fixed order.
+    let query = json!({
+        "filters": [
+            { "field": "volume", "op": "ge", "value": 100 },
+            { "field": "keyword", "op": "contains", "value": "ayakkabı" }
+        ],
+        "order": [{ "field": "volume", "direction": "desc" }],
+        "offset": 100
+    });
+    let ask = json!({ "project_id": id, "report": "keywords", "query": query });
+    assert_eq!(call(&platform, "get_overview", ask.clone()), Value::Null);
+    call(&platform, "fetch_overview", ask.clone());
+    let body: Value =
+        serde_json::from_slice(transport.requests()[1].body.as_deref().unwrap()).unwrap();
+    assert_eq!(
+        body[0]["filters"],
+        json!([
+            ["keyword_data.keyword", "ilike", "%ayakkabı%"],
+            "and",
+            ["keyword_data.keyword_info.search_volume", ">=", 100]
+        ])
+    );
+    assert_eq!(
+        body[0]["order_by"],
+        json!(["keyword_data.keyword_info.search_volume,desc"])
+    );
+    assert_eq!(body[0]["offset"], 100);
+    assert_eq!(call(&platform, "get_overview", ask)["cached"], true);
+
+    // Unknown fields and reports that are not filtered are refused before anything is asked.
+    for (report, query) in [
+        (
+            "keywords",
+            json!({ "filters": [{ "field": "colour", "op": "eq", "value": "red" }] }),
+        ),
+        (
+            "keywords",
+            json!({ "filters": [{ "field": "volume", "op": "contains", "value": "1" }] }),
+        ),
+        ("summary", json!({ "offset": 10 })),
+    ] {
+        assert_eq!(
+            error(
+                &platform,
+                "overview_estimate",
+                json!({ "project_id": id, "report": report, "query": query })
+            ),
+            ErrorCode::Invalid
+        );
+    }
+
+    // Another market is another question.
+    call(
+        &platform,
+        "fetch_overview",
+        json!({ "project_id": id, "report": "keywords", "market": "de-de" }),
+    );
+    let body: Value =
+        serde_json::from_slice(transport.requests()[2].body.as_deref().unwrap()).unwrap();
+    assert_eq!(body[0]["location_code"], 2276);
+    assert_eq!(body[0]["language_code"], "de");
+    for market in ["de", "xx-de", "de-german"] {
+        assert_eq!(
+            error(
+                &platform,
+                "keywords_estimate",
+                json!({ "project_id": id, "report": "ideas", "seed": "spor", "market": market })
+            ),
+            ErrorCode::Invalid
+        );
+    }
+    assert_eq!(transport.requests().len(), 3);
+}
+
+#[test]
+fn fetched_summaries_leave_a_point_of_history_a_day() {
+    let dir = tempfile::tempdir().unwrap();
+    let transport = Arc::new(
+        FakeTransport::new()
+            .reply(200, OVERVIEW)
+            .reply(200, OVERVIEW),
+    );
+    let platform = platform(dir.path(), &transport);
+    let id = project(&platform);
+    call(
+        &platform,
+        "set_key",
+        json!({ "provider": "dataforseo", "name": "credentials", "value": "a:b" }),
+    );
+    let history = |arguments: Value| call(&platform, "metric_history", arguments);
+    assert_eq!(
+        history(json!({ "project_id": id, "kind": "domain" })),
+        json!([])
+    );
+    call(&platform, "fetch_overview", json!({ "project_id": id }));
+    // Taken again from what is kept: still one point that day.
+    call(&platform, "fetch_overview", json!({ "project_id": id }));
+    let points = history(json!({ "project_id": id, "kind": "domain" }));
+    assert_eq!(points.as_array().unwrap().len(), 1);
+    assert_eq!(points[0]["target"], "example.com");
+    assert_eq!(points[0]["market"], "tr-tr");
+    assert_eq!(points[0]["metrics"]["organic"]["keywords"], 3052);
+    // Another market and a competitor have histories of their own.
+    assert_eq!(
+        history(json!({ "project_id": id, "kind": "domain", "market": "de-de" })),
+        json!([])
+    );
+    call(
+        &platform,
+        "fetch_overview",
+        json!({ "project_id": id, "domain": "https://www.rival.com/" }),
+    );
+    let rival = history(json!({ "project_id": id, "kind": "domain", "target": "rival.com" }));
+    assert_eq!(rival.as_array().unwrap().len(), 1);
+    // Lists leave none.
+    assert_eq!(
+        error(
+            &platform,
+            "metric_history",
+            json!({ "project_id": id, "kind": "keywords" })
+        ),
+        ErrorCode::Invalid
+    );
+    assert_eq!(transport.requests().len(), 2);
+}
+
+#[test]
+fn site_explorer_asks_lost_and_paid_keywords_countries_and_longer_histories() {
+    let dir = tempfile::tempdir().unwrap();
+    let paid = include_str!("../../octopuson-dataforseo/tests/fixtures/ranked_keywords_paid.json");
+    let countries = include_str!(
+        "../../octopuson-dataforseo/tests/fixtures/domain_rank_overview_countries.json"
+    );
+    let history =
+        include_str!("../../octopuson-dataforseo/tests/fixtures/historical_rank_overview.json");
+    let links = include_str!("../../octopuson-dataforseo/tests/fixtures/backlinks_history.json");
+    let transport = Arc::new(
+        FakeTransport::new()
+            .reply(200, RANKED)
+            .reply(200, paid)
+            .reply(200, countries)
+            .reply(200, history)
+            .reply(200, BULK)
+            .reply(200, links),
+    );
+    let platform = platform(dir.path(), &transport);
+    let id = project(&platform);
+    call(
+        &platform,
+        "set_key",
+        json!({ "provider": "dataforseo", "name": "credentials", "value": "a:b" }),
+    );
+    let body = |index: usize| -> Value {
+        serde_json::from_slice(transport.requests()[index].body.as_deref().unwrap()).unwrap()
+    };
+
+    call(
+        &platform,
+        "fetch_overview",
+        json!({ "project_id": id, "report": "keywords", "set": "lost" }),
+    );
+    assert_eq!(body(0)[0]["historical_serp_mode"], "lost");
+
+    // Paid keywords keep the ads they show.
+    assert_eq!(
+        call(&platform, "list_ads", json!({ "project_id": id })),
+        json!([])
+    );
+    let fetched = call(
+        &platform,
+        "fetch_overview",
+        json!({ "project_id": id, "report": "keywords", "set": "paid" }),
+    );
+    assert_eq!(body(1)[0]["item_types"], json!(["paid"]));
+    assert_eq!(
+        fetched["data"]["keywords"][0]["ad"]["title"],
+        "Spor Ayakkabıda %40 İndirim"
+    );
+    let ads = call(&platform, "list_ads", json!({ "project_id": id }));
+    assert_eq!(ads.as_array().unwrap().len(), 1);
+    assert_eq!(
+        ads[0]["keywords"],
+        json!(["spor ayakkabı indirim", "koşu ayakkabısı"])
+    );
+
+    let rows = call(
+        &platform,
+        "fetch_overview",
+        json!({ "project_id": id, "report": "countries", "market": "de-de" }),
+    );
+    assert_eq!(body(2)[0], json!({ "target": "example.com", "limit": 100 }));
+    assert_eq!(rows["data"][0]["country"], "tr");
+
+    // More months reach back to October 2020; the price follows the months.
+    let short = call(
+        &platform,
+        "overview_estimate",
+        json!({ "project_id": id, "report": "history" }),
+    );
+    let long = call(
+        &platform,
+        "overview_estimate",
+        json!({ "project_id": id, "report": "history", "months": 999 }),
+    );
+    assert!(long["usd"].as_f64().unwrap() > short["usd"].as_f64().unwrap());
+    call(
+        &platform,
+        "fetch_overview",
+        json!({ "project_id": id, "report": "history", "months": 999 }),
+    );
+    assert_eq!(body(3)[0]["date_from"], "2020-10-01");
+
+    // Domains typed in join the comparison beside the project's competitors.
+    call(
+        &platform,
+        "fetch_overview",
+        json!({ "project_id": id, "report": "compare", "targets": ["https://www.third.com/"] }),
+    );
+    assert_eq!(
+        body(4)[0]["targets"],
+        json!(["example.com", "rival.com", "third.com"])
+    );
+
+    let points = call(
+        &platform,
+        "fetch_backlinks",
+        json!({ "project_id": id, "report": "history" }),
+    );
+    assert_eq!(body(5)[0]["date_from"], "2019-01-01");
+    assert_eq!(points["data"][2]["rank"], 45);
+    assert_eq!(transport.requests().len(), 6);
+}
+
+#[test]
 fn comparing_needs_competitors_and_reports_must_be_known() {
     let dir = tempfile::tempdir().unwrap();
     let platform = platform(dir.path(), &Arc::new(FakeTransport::new()));
@@ -990,6 +1319,20 @@ fn gaps_ask_once_per_competitor_and_pay_together() {
     // Both parts are kept now: the estimate says so and reading costs nothing.
     let estimate = call(&platform, "gap_estimate", json!({ "project_id": id }));
     assert_eq!(estimate["kept"]["fresh"], true);
+    assert!(
+        (estimate["usd"].as_f64().unwrap() - 2.0 * one).abs() < 1e-12,
+        "all kept: the price is a refresh's"
+    );
+    // One part kept and one new: only the new one is priced.
+    let partly = call(
+        &platform,
+        "gap_estimate",
+        json!({ "project_id": id, "competitors": ["rival.com", "third.com"] }),
+    );
+    assert!(
+        (partly["usd"].as_f64().unwrap() - one).abs() < 1e-12,
+        "{partly}"
+    );
     let kept = call(&platform, "get_gap", json!({ "project_id": id }));
     assert_eq!(kept["cached"], true);
     let usage = call(&platform, "usage", Value::Null);
@@ -1044,6 +1387,426 @@ fn finished(platform: &Platform, id: &str) -> crate::Job {
 }
 
 #[test]
+#[allow(clippy::too_many_lines)] // the gap and the market, report by report
+fn gaps_group_every_keyword_and_the_market_is_read() {
+    let dir = tempfile::tempdir().unwrap();
+    let fixture = |name: &str| {
+        std::fs::read_to_string(format!(
+            "{}/../octopuson-dataforseo/tests/fixtures/{name}.json",
+            env!("CARGO_MANIFEST_DIR")
+        ))
+        .unwrap()
+    };
+    let transport = Arc::new(
+        FakeTransport::new()
+            .reply(200, RANKED)
+            .reply(200, RANKED)
+            .reply(200, fixture("page_intersection"))
+            .reply(200, fixture("historical_bulk_traffic_estimation"))
+            .reply(200, fixture("categories_for_domain"))
+            .reply(200, fixture("domain_metrics_by_categories"))
+            .reply(200, fixture("dataforseo_labs_categories")),
+    );
+    let platform = platform(dir.path(), &transport);
+    let id = project(&platform);
+    call(
+        &platform,
+        "set_key",
+        json!({ "provider": "dataforseo", "name": "credentials", "value": "a:b" }),
+    );
+    let body = |index: usize| -> Value {
+        serde_json::from_slice(transport.requests()[index].body.as_deref().unwrap()).unwrap()
+    };
+
+    let matrix = call(
+        &platform,
+        "fetch_gap",
+        json!({ "project_id": id, "report": "keywords", "limit": 100 }),
+    );
+    assert_eq!(body(0)[0]["target"], "example.com");
+    assert_eq!(body(1)[0]["target"], "rival.com");
+    assert_eq!(matrix["data"]["competitors"], json!(["rival.com"]));
+    assert_eq!(matrix["data"]["rows_per_domain"], 100);
+    // The same keywords on both sides: all shared.
+    assert_eq!(matrix["data"]["counts"]["shared"], 3);
+    // The Site Explorer's list of the site is the same question: kept already.
+    let kept = call(
+        &platform,
+        "get_overview",
+        json!({ "project_id": id, "report": "keywords", "limit": 100 }),
+    );
+    assert_eq!(kept["cached"], true);
+
+    assert_eq!(
+        error(
+            &platform,
+            "gap_estimate",
+            json!({ "project_id": id, "report": "pages" })
+        ),
+        ErrorCode::Invalid
+    );
+    let pages = call(
+        &platform,
+        "fetch_gap",
+        json!({ "project_id": id, "report": "pages", "own_page": "https://www.example.com/kosu", "competitor_page": "https://www.rival.com/kosu" }),
+    );
+    assert_eq!(
+        body(2)[0]["exclude_pages"],
+        json!(["https://www.example.com/kosu"])
+    );
+    assert_eq!(pages["data"][0]["position"], 3);
+
+    let share = call(
+        &platform,
+        "fetch_gap",
+        json!({ "project_id": id, "report": "share" }),
+    );
+    assert_eq!(body(3)[0]["targets"], json!(["example.com", "rival.com"]));
+    assert_eq!(share["data"][1]["target"], "rival.com");
+
+    let categories = call(
+        &platform,
+        "fetch_gap",
+        json!({ "project_id": id, "report": "categories" }),
+    );
+    assert_eq!(categories["data"][0]["code"], 10885);
+    let players = call(
+        &platform,
+        "fetch_gap",
+        json!({ "project_id": id, "report": "players", "categories": [10885] }),
+    );
+    assert_eq!(body(5)[0]["category_codes"], json!([10885]));
+    assert_eq!(players["data"][0]["domain"], "rival.com");
+
+    assert_eq!(
+        call(&platform, "get_category_names", json!({ "project_id": id })),
+        Value::Null
+    );
+    let names = call(
+        &platform,
+        "fetch_category_names",
+        json!({ "project_id": id }),
+    );
+    assert_eq!(names[2]["name"], "Athletic Shoes");
+    assert_eq!(
+        transport.requests()[6].method,
+        octopuson_core::http::HttpMethod::Get
+    );
+    assert!(
+        transport.requests()[6]
+            .url
+            .ends_with("/v3/dataforseo_labs/categories")
+    );
+    assert_eq!(
+        call(&platform, "get_category_names", json!({ "project_id": id }))[0]["code"],
+        10021
+    );
+    assert_eq!(transport.requests().len(), 7);
+}
+
+#[test]
+fn links_are_audited_decided_disavowed_and_prospected() {
+    let dir = tempfile::tempdir().unwrap();
+    let links = include_str!("../../octopuson-dataforseo/tests/fixtures/backlinks_backlinks.json");
+    let transport = Arc::new(FakeTransport::new().reply(200, links));
+    let platform = platform(dir.path(), &transport);
+    let id = project(&platform);
+    call(
+        &platform,
+        "set_key",
+        json!({ "provider": "dataforseo", "name": "credentials", "value": "a:b" }),
+    );
+    let audit = call(
+        &platform,
+        "fetch_backlinks",
+        json!({ "project_id": id, "report": "audit" }),
+    );
+    let body: Value =
+        serde_json::from_slice(transport.requests()[0].body.as_deref().unwrap()).unwrap();
+    assert_eq!(body[0]["mode"], "one_per_domain");
+    assert_eq!(body[0]["order_by"], json!(["backlink_spam_score,desc"]));
+    assert_eq!(body[0]["limit"], 1000);
+    let first = &audit["data"][0];
+    assert!(first["domain"].is_string());
+    assert!(["low", "medium", "high"].contains(&first["risk"].as_str().unwrap()));
+
+    // Decisions, then the file Google takes.
+    let decided = call(
+        &platform,
+        "decide_links",
+        json!({ "project_id": id, "domains": ["spam.xyz", "farm.net"], "decision": "disavow" }),
+    );
+    assert_eq!(decided.as_array().unwrap().len(), 2);
+    call(
+        &platform,
+        "decide_links",
+        json!({ "project_id": id, "domains": ["farm.net"], "decision": "watch", "note": "bakılacak" }),
+    );
+    assert_eq!(
+        error(
+            &platform,
+            "decide_links",
+            json!({ "project_id": id, "domains": [], "decision": "keep" })
+        ),
+        ErrorCode::Invalid
+    );
+    let file = call(&platform, "disavow_file", json!({ "project_id": id }));
+    assert_eq!(file["file_name"], "disavow-example.com.txt");
+    assert_eq!(file["domains"], 1);
+    assert!(
+        file["text"]
+            .as_str()
+            .unwrap()
+            .ends_with("domain:spam.xyz\n")
+    );
+
+    call(
+        &platform,
+        "save_link_prospect",
+        json!({ "project_id": id, "prospect": { "domain": "blog.example.org", "source": "gap", "status": "prospect" } }),
+    );
+    call(
+        &platform,
+        "save_link_prospect",
+        json!({ "project_id": id, "prospect": { "domain": "blog.example.org", "source": "gap", "status": "won", "note": "yazı yayında" } }),
+    );
+    let prospects = call(&platform, "link_prospects", json!({ "project_id": id }));
+    assert_eq!(prospects[0]["status"], "won");
+    call(
+        &platform,
+        "remove_link_prospect",
+        json!({ "project_id": id, "domain": "blog.example.org" }),
+    );
+    assert_eq!(
+        call(&platform, "link_prospects", json!({ "project_id": id })),
+        json!([])
+    );
+    // No audit yet: no outbound links.
+    assert_eq!(
+        call(&platform, "audit_outbound", json!({ "project_id": id })),
+        Value::Null
+    );
+    assert_eq!(transport.requests().len(), 1);
+}
+
+const KEYWORD_HISTORY: &str =
+    include_str!("../../octopuson-dataforseo/tests/fixtures/historical_keyword_data.json");
+const SERP_HISTORY: &str =
+    include_str!("../../octopuson-dataforseo/tests/fixtures/historical_serps.json");
+
+#[test]
+#[allow(clippy::too_many_lines)] // one keyword through every research report
+fn keyword_research_reads_history_weights_parent_and_countries() {
+    let dir = tempfile::tempdir().unwrap();
+    let fixture = |name: &str| {
+        std::fs::read_to_string(format!(
+            "{}/../octopuson-dataforseo/tests/fixtures/{name}.json",
+            env!("CARGO_MANIFEST_DIR")
+        ))
+        .unwrap()
+    };
+    let transport = Arc::new(
+        FakeTransport::new()
+            .reply(200, KEYWORD_HISTORY)
+            .reply(200, SERP_PAGE)
+            .reply(200, fixture("backlinks_bulk_ranks"))
+            .reply(200, fixture("backlinks_bulk_referring_domains"))
+            .reply(200, BULK)
+            .reply(200, RANKED)
+            .reply(200, fixture("keyword_overview"))
+            .reply(200, fixture("keyword_overview")),
+    );
+    let platform = platform(dir.path(), &transport);
+    let id = project(&platform);
+    call(
+        &platform,
+        "set_key",
+        json!({ "provider": "dataforseo", "name": "credentials", "value": "a:b" }),
+    );
+    let body = |index: usize| -> Value {
+        serde_json::from_slice(transport.requests()[index].body.as_deref().unwrap()).unwrap()
+    };
+    let ask = |report: &str| json!({ "project_id": id, "report": report, "seed": "spor ayakkabı" });
+
+    let history = call(&platform, "fetch_research", ask("history"));
+    assert_eq!(history["data"][0]["year"], 2021);
+    assert!(
+        transport.requests()[0]
+            .url
+            .ends_with("/historical_keyword_data/live")
+    );
+
+    // The result page's weights and the parent topic read the kept result page.
+    assert_eq!(
+        error(&platform, "research_estimate", ask("serp_metrics")),
+        ErrorCode::Invalid
+    );
+    call(
+        &platform,
+        "fetch_keywords",
+        json!({ "project_id": id, "report": "serp", "seed": "spor ayakkabı" }),
+    );
+    let weights = call(&platform, "fetch_research", ask("serp_metrics"));
+    assert_eq!(weights["data"][0]["rank"], 1);
+    assert_eq!(
+        weights["data"][0]["url"],
+        "https://www.example.com/spor-ayakkabi"
+    );
+    assert_eq!(
+        body(2)[0]["targets"],
+        json!([
+            "https://www.example.com/spor-ayakkabi",
+            "https://www.rival.com/spor"
+        ])
+    );
+    assert!(
+        transport.requests()[3]
+            .url
+            .ends_with("/bulk_referring_domains/live")
+    );
+
+    let parent = call(&platform, "fetch_research", ask("parent"));
+    assert_eq!(
+        body(5)[0]["target"],
+        "https://www.example.com/spor-ayakkabi"
+    );
+    assert_eq!(
+        parent["data"]["url"],
+        "https://www.example.com/spor-ayakkabi"
+    );
+    assert_eq!(parent["data"]["reach"]["keywords"], 3052);
+    assert!(parent["data"]["parent"]["keyword"].is_string());
+
+    let countries = call(
+        &platform,
+        "fetch_research",
+        json!({ "project_id": id, "report": "countries", "seed": "spor ayakkabı", "markets": ["de-de", "us-en"] }),
+    );
+    assert_eq!(body(6)[0]["location_code"], 2276);
+    assert_eq!(body(7)[0]["location_code"], 2840);
+    assert_eq!(countries["data"][1]["market"], "us-en");
+    assert_eq!(transport.requests().len(), 8);
+}
+
+#[test]
+fn lists_group_by_the_result_pages_their_keywords_share() {
+    let dir = tempfile::tempdir().unwrap();
+    // Two keywords with the same first results, one with others.
+    let elsewhere = SERP_HISTORY.replace("https://www.", "https://www.baska-");
+    let transport = Arc::new(
+        FakeTransport::new()
+            .reply(200, SERP_HISTORY)
+            .reply(200, SERP_HISTORY)
+            .reply(200, elsewhere),
+    );
+    let platform = platform(dir.path(), &transport);
+    let id = project(&platform);
+    call(
+        &platform,
+        "set_key",
+        json!({ "provider": "dataforseo", "name": "credentials", "value": "a:b" }),
+    );
+    let list = call(
+        &platform,
+        "create_keyword_list",
+        json!({ "project_id": id, "name": "Ayakkabı" }),
+    );
+    let list_id = list["id"].as_i64().unwrap();
+    call(
+        &platform,
+        "add_to_keyword_list",
+        json!({ "list_id": list_id, "keywords": [
+            { "keyword": "spor ayakkabı", "volume": 40000, "difficulty": 60, "intent": "commercial" },
+            { "keyword": "spor ayakkabı modelleri", "volume": 9000, "difficulty": 40, "intent": "commercial" },
+            { "keyword": "ayakkabı bakımı", "volume": 4000, "difficulty": 20, "intent": "informational" }
+        ] }),
+    );
+    let estimate = call(
+        &platform,
+        "serp_cluster_estimate",
+        json!({ "list_id": list_id }),
+    );
+    assert_eq!(estimate["keywords"], 3);
+    assert_eq!(estimate["kept"], 0);
+    assert!(estimate["estimate"]["usd"].as_f64().unwrap() > 0.0);
+    // Nothing kept: every keyword waits for its page.
+    let empty = call(&platform, "serp_clusters", json!({ "list_id": list_id }));
+    assert_eq!(empty["without_page"].as_array().unwrap().len(), 3);
+
+    let job = call(
+        &platform,
+        "start_serp_clustering",
+        json!({ "list_id": list_id }),
+    );
+    let job = finished(&platform, job.as_str().unwrap());
+    assert_eq!(job.status, crate::JobStatus::Done);
+    assert_eq!(transport.requests().len(), 3);
+    let body: Value =
+        serde_json::from_slice(transport.requests()[0].body.as_deref().unwrap()).unwrap();
+    assert!(
+        transport.requests()[0]
+            .url
+            .ends_with("/historical_serps/live")
+    );
+    assert!(body[0]["date_from"].as_str().unwrap().ends_with("-01"));
+
+    let groups = call(&platform, "serp_clusters", json!({ "list_id": list_id }));
+    let sizes: Vec<usize> = groups["groups"]
+        .as_array()
+        .unwrap()
+        .iter()
+        .map(|group| group["keywords"].as_array().unwrap().len())
+        .collect();
+    let mut sorted = sizes.clone();
+    sorted.sort_unstable();
+    assert_eq!(sorted, [1, 2]);
+    assert_eq!(groups["without_page"], json!([]));
+    let big = groups["groups"]
+        .as_array()
+        .unwrap()
+        .iter()
+        .find(|group| group["keywords"].as_array().unwrap().len() == 2)
+        .unwrap();
+    // The first two keywords of the list got the same page.
+    let listed = call(&platform, "list_keywords", json!({ "list_id": list_id }));
+    let volume = |index: usize| listed[index]["data"]["volume"].as_u64().unwrap();
+    assert_eq!(big["volume"], volume(0) + volume(1));
+    // Kept now: grouping again asks nothing.
+    let again = call(
+        &platform,
+        "serp_cluster_estimate",
+        json!({ "list_id": list_id }),
+    );
+    assert_eq!(again["kept"], 3);
+    assert_eq!(again["estimate"], Value::Null);
+}
+
+/// What the standard queue answers to a request of two tasks (keyword and tracker ids in
+/// their tags); a task without an id is refused.
+fn posted(tasks: &[(&str, Option<&str>)], cost: f64) -> String {
+    json!({
+        "status_code": 20_000,
+        "cost": cost,
+        "tasks": tasks.iter().map(|(tag, id)| match id {
+            Some(id) => json!({ "id": id, "status_code": 20_100, "status_message": "Task Created.", "cost": cost / 2.0, "data": { "tag": tag } }),
+            None => json!({ "id": "refused", "status_code": 40_501, "status_message": "Invalid Field.", "cost": 0, "data": { "tag": tag } }),
+        }).collect::<Vec<_>>()
+    })
+    .to_string()
+}
+
+/// A queued task still waiting.
+const IN_QUEUE: &str = r#"{"status_code": 20000, "tasks": [{"status_code": 40602, "status_message": "Task In Queue.", "cost": 0, "result": null}]}"#;
+
+/// Makes every queued check due now.
+fn queue_due(platform: &Platform) {
+    let store = platform.workspace().store().unwrap();
+    for task in store.due_rank_tasks(i64::MAX, 100).unwrap() {
+        store.delay_rank_task(task.id, 0).unwrap();
+    }
+}
+
+#[test]
 #[allow(clippy::too_many_lines)] // one tracker from its first keyword to its schedule
 fn rank_checks_run_as_jobs_keep_readings_and_follow_the_schedule() {
     let dir = tempfile::tempdir().unwrap();
@@ -1054,8 +1817,15 @@ fn rank_checks_run_as_jobs_keep_readings_and_follow_the_schedule() {
             .reply(200, RANK_PAGE)
             .reply(200, RANK_PAGE)
             .reply(200, KEYWORD_NUMBERS)
+            // The scheduled run: a request of two tasks per place, one refused.
+            .reply(
+                200,
+                posted(&[("1|1", Some("q-1")), ("2|1", Some("q-2"))], 0.0024),
+            )
+            .reply(200, posted(&[("1|2", Some("q-3")), ("2|2", None)], 0.0012))
+            // Their answers: one still in the queue at first.
             .reply(200, RANK_PAGE)
-            .reply(200, RANK_PAGE)
+            .reply(200, IN_QUEUE)
             .reply(200, RANK_PAGE)
             .reply(200, RANK_PAGE),
     );
@@ -1124,7 +1894,10 @@ fn rank_checks_run_as_jobs_keep_readings_and_follow_the_schedule() {
     assert!(setup["next_check_at"].is_string(), "never checked: due now");
     let estimate = call(&platform, "rank_estimate", json!({ "project_id": id }));
     assert_eq!(estimate["runs_per_month"], 4);
-    assert!((estimate["month_usd"].as_f64().unwrap() - 0.096).abs() < 1e-9);
+    // Scheduled runs on the own key go through the standard queue: 4 × $0.0018 a run.
+    assert_eq!(estimate["queued"], true);
+    assert!((estimate["scheduled_usd"].as_f64().unwrap() - 0.0072).abs() < 1e-9);
+    assert!((estimate["month_usd"].as_f64().unwrap() - 0.0288).abs() < 1e-9);
 
     // A run: the second keyword's first check fails and the run goes on.
     let job = call(&platform, "start_rank_check", json!({ "project_id": id }));
@@ -1215,14 +1988,99 @@ fn rank_checks_run_as_jobs_keep_readings_and_follow_the_schedule() {
         .unwrap();
     let started = platform.run_due().unwrap();
     assert_eq!(started.len(), 1);
-    assert_eq!(
-        finished(&platform, &started[0]).status,
-        crate::JobStatus::Done
+    let job = finished(&platform, &started[0]);
+    assert_eq!(job.status, crate::JobStatus::Partial);
+    assert_eq!(job.result.as_ref().unwrap()["queued"], 3);
+    assert_eq!(job.result.as_ref().unwrap()["failed"], 1);
+    let requests = transport.requests();
+    assert!(
+        requests[5]
+            .url
+            .ends_with("/v3/serp/google/organic/task_post")
     );
+    let batch: Value = serde_json::from_slice(requests[5].body.as_deref().unwrap()).unwrap();
+    assert_eq!(batch.as_array().unwrap().len(), 2);
+    assert_eq!(batch[0]["priority"], 1);
+    assert_eq!(batch[1]["tag"], "2|1");
+    // The run waits for its answers; the schedule does not start another meanwhile.
     let runs = call(&platform, "rank_runs", json!({ "project_id": id }));
     assert_eq!(runs[0]["scheduled"], true);
-    assert_eq!(runs[0]["status"], "done");
-    assert_eq!(transport.requests().len(), 9);
+    assert_eq!(runs[0]["status"], "running");
+    assert_eq!(runs[0]["waiting"], 3);
+    assert!((runs[0]["cost_usd"].as_f64().unwrap() - 0.0036).abs() < 1e-9);
+    assert!(platform.next_collect().unwrap().is_some());
+    platform
+        .workspace()
+        .store()
+        .unwrap()
+        .mark_rank_run(id, "2026-01-01T00:00:00Z")
+        .unwrap();
+    assert_eq!(platform.run_due().unwrap(), Vec::<String>::new());
+
+    // Nothing is asked before the first wait; then one answer is not ready yet.
+    assert_eq!(platform.collect_queued().unwrap().read, 0);
+    queue_due(&platform);
+    let round = platform.collect_queued().unwrap();
+    assert_eq!((round.read, round.waiting, round.finished), (2, 1, 0));
+    assert!(
+        transport.requests()[7]
+            .url
+            .ends_with("/v3/serp/google/organic/task_get/advanced/q-1")
+    );
+    queue_due(&platform);
+    let round = platform.collect_queued().unwrap();
+    assert_eq!((round.read, round.waiting, round.finished), (1, 0, 1));
+    let runs = call(&platform, "rank_runs", json!({ "project_id": id }));
+    assert_eq!(runs[0]["status"], "partial");
+    assert_eq!(runs[0]["checked"], 3);
+    assert_eq!(runs[0]["failed"], 1);
+    assert_eq!(runs[0]["waiting"], 0);
+    assert_eq!(platform.next_collect().unwrap(), None);
+    let today = crate::now()[..10].to_owned();
+    let report = call(
+        &platform,
+        "rank_report",
+        json!({ "project_id": id, "compare": today }),
+    );
+    let spor = &report["rows"][0];
+    assert_eq!(spor["position"], 2);
+    assert_eq!(spor["owned"], json!(["ai_overview", "featured_snippet"]));
+    // 2,900 searches at second place: 15% of them.
+    assert_eq!(spor["traffic"], 435.0);
+    assert_eq!(spor["rivals"]["rival.com"], 1);
+    assert_eq!(spor["compared"]["position"], 2);
+    assert_eq!(report["compare"], json!(today));
+    assert_eq!(
+        report["landing_pages"][0]["url"],
+        "https://www.example.com/spor-ayakkabi"
+    );
+    assert!(report["traffic"]["rival.com"].as_f64().unwrap() >= 812.0);
+    let overview = report["summary"]["features"]
+        .as_array()
+        .unwrap()
+        .iter()
+        .find(|feature| feature["feature"] == "ai_overview")
+        .unwrap();
+    assert_eq!(
+        (overview["shown"].as_u64(), overview["owned"].as_u64()),
+        (Some(2), Some(2))
+    );
+    // A day before any check compares with nothing.
+    let before = call(
+        &platform,
+        "rank_report",
+        json!({ "project_id": id, "compare": "2020-01-01" }),
+    );
+    assert_eq!(before["rows"][0].get("compared"), None);
+
+    // Every place side by side.
+    let places = call(&platform, "rank_places", json!({ "project_id": id }));
+    assert_eq!(places["trackers"].as_array().unwrap().len(), 2);
+    assert_eq!(places["rows"][0]["places"].as_array().unwrap().len(), 2);
+    assert_eq!(places["rows"][0]["places"][1]["position"], 2);
+    // The refused check keeps the keyword's last position on the city place.
+    assert_eq!(places["summaries"][1]["ranked"], 2);
+    assert_eq!(transport.requests().len(), 11);
     assert!(crate::modules::rank::changes_schedule("track_keywords"));
     assert!(!crate::modules::rank::changes_schedule("rank_report"));
 
@@ -1250,6 +2108,211 @@ fn rank_checks_run_as_jobs_keep_readings_and_follow_the_schedule() {
     );
     call(&platform, "delete_project", json!({ "id": id }));
     assert_eq!(platform.next_due().unwrap(), None);
+}
+
+/// Makes every queued local task due now.
+fn local_due(platform: &Platform) {
+    let store = platform.workspace().store().unwrap();
+    for task in store.due_local_tasks(i64::MAX, 100).unwrap() {
+        store.delay_local_task(task.id, 0).unwrap();
+    }
+}
+
+#[test]
+#[allow(clippy::too_many_lines)] // a business from its search to its scheduled grid
+fn local_seo_finds_the_business_checks_its_grid_and_reads_reviews() {
+    let dir = tempfile::tempdir().unwrap();
+    let maps = fixture("maps_grid");
+    let grid_tasks: Vec<String> = (0..9).map(|n| format!("grid|{n}")).collect();
+    let posted_grid: Vec<(&str, Option<&str>)> = grid_tasks
+        .iter()
+        .enumerate()
+        .map(|(n, tag)| {
+            (
+                tag.as_str(),
+                Some(
+                    [
+                        "m-0", "m-1", "m-2", "m-3", "m-4", "m-5", "m-6", "m-7", "m-8",
+                    ][n],
+                ),
+            )
+        })
+        .collect();
+    let mut transport = FakeTransport::new()
+        .reply(200, fixture("business_info"))
+        .reply(200, fixture("business_listings"));
+    // A live grid of nine points, read several at once.
+    for _ in 0..9 {
+        transport = transport.reply(200, maps.clone());
+    }
+    // The scheduled grid: nine points in one request, then the newest reviews.
+    transport = transport
+        .reply(200, posted(&posted_grid, 0.0054))
+        .reply(200, posted(&[("reviews", Some("rv-1"))], 0.003));
+    // Their answers: one point still in the queue at first.
+    transport = transport.reply(200, IN_QUEUE);
+    for _ in 0..8 {
+        transport = transport.reply(200, maps.clone());
+    }
+    transport = transport
+        .reply(200, fixture("google_reviews"))
+        .reply(200, maps.clone());
+    let transport = Arc::new(transport);
+    let platform = platform(dir.path(), &transport);
+    let id = project(&platform);
+    call(
+        &platform,
+        "set_key",
+        json!({ "provider": "dataforseo", "name": "credentials", "value": "me@example.com:secret" }),
+    );
+
+    let setup = call(&platform, "local_setup", json!({ "project_id": id }));
+    assert_eq!(setup["business"], Value::Null);
+    assert_eq!(setup["points"], json!([]));
+    assert_eq!(
+        error(&platform, "start_local_grid", json!({ "project_id": id })),
+        ErrorCode::Invalid
+    );
+    assert_eq!(
+        error(
+            &platform,
+            "local_estimate",
+            json!({ "project_id": id, "report": "profile" })
+        ),
+        ErrorCode::Invalid
+    );
+
+    // Found by name, then chosen.
+    let find = json!({ "project_id": id, "report": "find", "query": "Örnek Kahve Kadıköy" });
+    let estimate = call(&platform, "local_estimate", find.clone());
+    assert!((estimate["usd"].as_f64().unwrap() - 0.0054).abs() < 1e-9);
+    assert_eq!(estimate["blocked"], Value::Null);
+    let found = call(&platform, "fetch_local", find);
+    let business = found["data"]["business"].clone();
+    assert_eq!(business["cid"], "222222222222222222");
+    assert_eq!(found["data"]["hours"][0]["hours"][0], "08:00–22:30");
+    let request: Value =
+        serde_json::from_slice(transport.requests()[0].body.as_deref().unwrap()).unwrap();
+    assert_eq!(request[0]["keyword"], "Örnek Kahve Kadıköy");
+    let setup = call(
+        &platform,
+        "choose_business",
+        json!({ "project_id": id, "business": business }),
+    );
+    assert_eq!(setup["business"]["title"], "Örnek Kahve Kadıköy");
+    assert_eq!(setup["points"].as_array().unwrap().len(), 25);
+    let setup = call(
+        &platform,
+        "save_local_settings",
+        json!({ "project_id": id, "keywords": ["kahve"], "grid": 3, "radius_km": 1.0, "schedule": "weekly" }),
+    );
+    assert_eq!(setup["points"].as_array().unwrap().len(), 9);
+    assert_eq!(setup["zoom"], 16);
+    assert!(setup["next_run_at"].is_string(), "never run: due now");
+
+    // Nine live pages by hand; scheduled runs through the queue with twenty reviews.
+    let estimate = call(
+        &platform,
+        "local_grid_estimate",
+        json!({ "project_id": id }),
+    );
+    assert_eq!(
+        (estimate["points"].as_u64(), estimate["checks"].as_u64()),
+        (Some(9), Some(9))
+    );
+    assert!((estimate["run"]["usd"].as_f64().unwrap() - 0.018).abs() < 1e-9);
+    assert_eq!(estimate["queued"], true);
+    assert!((estimate["scheduled_usd"].as_f64().unwrap() - 0.0069).abs() < 1e-9);
+    assert!((estimate["month_usd"].as_f64().unwrap() - 0.0276).abs() < 1e-9);
+
+    // The businesses around it, the project's own marked.
+    let around = call(
+        &platform,
+        "fetch_local",
+        json!({ "project_id": id, "report": "competitors" }),
+    );
+    assert_eq!(around["data"]["total"], 214);
+    let own: Vec<bool> = around["data"]["businesses"]
+        .as_array()
+        .unwrap()
+        .iter()
+        .map(|business| business["own"].as_bool().unwrap())
+        .collect();
+    assert_eq!(own, [false, false, true]);
+    assert_eq!(around["data"]["businesses"][2]["distance_km"], 0.0);
+
+    let job = call(&platform, "start_local_grid", json!({ "project_id": id }));
+    let job = finished(&platform, job.as_str().unwrap());
+    assert_eq!(job.status, crate::JobStatus::Done);
+    assert_eq!(job.result.as_ref().unwrap()["checked"], 9);
+    let maps_request = transport
+        .requests()
+        .into_iter()
+        .find(|request| request.url.ends_with("/v3/serp/google/maps/live/advanced"))
+        .unwrap();
+    let body: Value = serde_json::from_slice(maps_request.body.as_deref().unwrap()).unwrap();
+    assert_eq!(body[0]["keyword"], "kahve");
+    assert!(
+        body[0]["location_coordinate"]
+            .as_str()
+            .unwrap()
+            .ends_with(",16z")
+    );
+    let grid = call(&platform, "local_grid", json!({ "project_id": id }));
+    assert_eq!(grid["run"]["status"], "done");
+    assert_eq!(grid["keywords"][0]["keyword"], "kahve");
+    assert_eq!(grid["keywords"][0]["cells"].as_array().unwrap().len(), 9);
+    assert_eq!(grid["summary"]["arp"], 2.0);
+    assert_eq!(grid["summary"]["solv"], 100.0);
+    assert_eq!(grid["rivals"][0]["title"], "Rakip Kahve");
+    assert_eq!(grid["rivals"][0]["top3"], 9);
+    assert_eq!(
+        grid["rivals"].as_array().unwrap().len(),
+        2,
+        "the project's own is not a rival"
+    );
+
+    // The schedule: nine points posted to the queue, and the newest reviews.
+    platform
+        .workspace()
+        .store()
+        .unwrap()
+        .mark_local_run(id, "2026-01-01T00:00:00Z")
+        .unwrap();
+    let started = platform.run_due().unwrap();
+    assert_eq!(started.len(), 1);
+    let job = finished(&platform, &started[0]);
+    assert_eq!(job.result.as_ref().unwrap()["queued"], 9);
+    assert_eq!(job.result.as_ref().unwrap()["reviews_queued"], 1);
+    let runs = call(&platform, "local_runs", json!({ "project_id": id }));
+    assert_eq!(
+        (runs[0]["status"].as_str(), runs[0]["waiting"].as_u64()),
+        (Some("running"), Some(9))
+    );
+    let setup = call(&platform, "local_setup", json!({ "project_id": id }));
+    assert_eq!(setup["waiting_reviews"], 1);
+    assert!(platform.next_collect().unwrap().is_some());
+    local_due(&platform);
+    let round = platform.collect_queued().unwrap();
+    assert_eq!((round.read, round.waiting, round.finished), (9, 1, 0));
+    local_due(&platform);
+    let round = platform.collect_queued().unwrap();
+    assert_eq!((round.read, round.waiting, round.finished), (1, 0, 1));
+    let grid = call(&platform, "local_grid", json!({ "project_id": id }));
+    assert_eq!(grid["run"]["scheduled"], true);
+    assert_eq!(grid["run"]["checked"], 9);
+    assert_eq!(grid["trend"].as_array().unwrap().len(), 2);
+
+    let reviews = call(&platform, "local_reviews", json!({ "project_id": id }));
+    assert_eq!(reviews["reviews"].as_array().unwrap().len(), 3);
+    assert_eq!(reviews["summary"]["unanswered"], 2);
+    assert_eq!(reviews["summary"]["unanswered_negative"], 0);
+    assert_eq!(reviews["summary"]["stars"], json!([0, 1, 0, 1, 1]));
+    assert_eq!(reviews["ratings"].as_array().unwrap().len(), 1);
+    assert_eq!(reviews["ratings"][0]["votes"], 640);
+    assert_eq!(reviews["waiting"], 0);
+    assert_eq!(platform.next_collect().unwrap(), None);
+    call(&platform, "delete_project", json!({ "id": id }));
 }
 
 /// A site served from memory: pages by address, everything else 404.
@@ -1364,6 +2427,18 @@ fn audits_crawl_the_site_compare_and_follow_the_schedule() {
     assert!(report["overview"]["html"].as_u64().unwrap() >= 3);
     assert!(report["overview"]["health"].is_number());
     assert!(report["geo"]["score"].is_number());
+    // The crawl's links to other sites: listed, not checked unless asked.
+    let outbound = call(&platform, "audit_outbound", json!({ "project_id": id }));
+    assert_eq!(outbound["audit_id"], first);
+    assert_eq!(outbound["checked"], false);
+    assert!(
+        outbound["columns"]
+            .as_array()
+            .unwrap()
+            .iter()
+            .any(|column| column == "inlinks")
+    );
+    assert_eq!(setup["settings"]["check_outbound"], false);
     let issue = |report: &Value, id: &str| -> Value {
         report["categories"]
             .as_array()
@@ -1709,6 +2784,11 @@ fn ai_visibility_asks_assistants_reads_brands_and_follows_the_schedule() {
         "https://www.ornekmagaza.com/spor"
     );
     assert_eq!(report["top_domains"].as_array().unwrap().len(), 2);
+    assert_eq!(report["top_pages"].as_array().unwrap().len(), 2);
+    assert_eq!(report["top_pages"][0]["answers"], 1);
+    // The run's share of voice, brand by brand: the own one and the rival it names.
+    assert_eq!(report["history"][0]["brands"]["ornekmagaza.com"], 50.0);
+    assert_eq!(report["history"][0]["brands"]["rakip-magaza.com"], 50.0);
     assert_eq!(report["last_run"]["status"], "partial");
     let prompt_id = report["prompts"][0]["prompt_id"].as_i64().unwrap();
     let detail = call(
@@ -2001,8 +3081,10 @@ fn search_console_syncs_join_analytics_and_the_rank_tracker() {
             .reply(200, json!({ "accountSummaries": [{ "displayName": "Example", "propertySummaries": [
                 { "property": "properties/42", "displayName": "Example site" }
             ]}]}).to_string())
-            // The sync: days, queries, pages, devices, countries, queries on pages.
-            .reply(200, gsc_rows(&[(&now_day, 30.0, 600.0, 6.0), (&before_day, 10.0, 400.0, 9.0)]))
+            // The sync: days (now, then before), queries, pages, devices, countries, queries on
+            // pages.
+            .reply(200, gsc_rows(&[(&now_day, 30.0, 600.0, 6.0)]))
+            .reply(200, gsc_rows(&[(&before_day, 10.0, 400.0, 9.0)]))
             .reply(200, gsc_rows(&[("sneaker", 20.0, 300.0, 4.2), ("spor ayakkabı", 10.0, 2_000.0, 8.5)]))
             .reply(200, gsc_rows(&[("sneaker", 5.0, 200.0, 7.0)]))
             .reply(200, gsc_rows(&[("https://example.com/sneaker", 25.0, 500.0, 4.0)]))
@@ -2013,8 +3095,9 @@ fn search_console_syncs_join_analytics_and_the_rank_tracker() {
                 { "keys": ["sneaker", "https://example.com/sneaker"], "clicks": 18.0, "impressions": 250.0, "ctr": 0.07, "position": 4.0 },
                 { "keys": ["sneaker", "https://example.com/blog/sneaker"], "clicks": 2.0, "impressions": 50.0, "ctr": 0.04, "position": 9.0 }
             ]}).to_string())
-            // Analytics: days, landing pages now and before.
+            // Analytics: days (now, then before), landing pages now and before.
             .reply(200, ga4_rows(&[(&now_day.replace('-', ""), 40.0, 3.0)]))
+            .reply(200, ga4_rows(&[]))
             .reply(200, ga4_rows(&[("/sneaker", 35.0, 2.0)]))
             .reply(200, ga4_rows(&[("/sneaker", 20.0, 1.0)])),
     );
@@ -2092,19 +3175,29 @@ fn search_console_syncs_join_analytics_and_the_rank_tracker() {
     let job = finished(&platform, job.as_str().unwrap());
     assert_eq!(job.status, crate::JobStatus::Done, "{:?}", job.error);
     let requests = transport.requests();
-    assert_eq!(requests.len(), 16);
+    assert_eq!(requests.len(), 18);
     let days: Value = serde_json::from_slice(requests[5].body.as_deref().unwrap()).unwrap();
     assert_eq!(days["dimensions"], json!(["date"]));
-    assert_eq!(days["endDate"], ago(3));
-    assert_eq!(days["startDate"], ago(58));
-    let queries: Value = serde_json::from_slice(requests[6].body.as_deref().unwrap()).unwrap();
+    assert_eq!(
+        (days["startDate"].as_str(), days["endDate"].as_str()),
+        (Some(ago(30).as_str()), Some(ago(3).as_str()))
+    );
+    let days_before: Value = serde_json::from_slice(requests[6].body.as_deref().unwrap()).unwrap();
+    assert_eq!(
+        (
+            days_before["startDate"].as_str(),
+            days_before["endDate"].as_str()
+        ),
+        (Some(ago(58).as_str()), Some(ago(31).as_str()))
+    );
+    let queries: Value = serde_json::from_slice(requests[7].body.as_deref().unwrap()).unwrap();
     assert_eq!(
         (queries["startDate"].as_str(), queries["endDate"].as_str()),
         (Some(ago(30).as_str()), Some(ago(3).as_str()))
     );
-    let before: Value = serde_json::from_slice(requests[7].body.as_deref().unwrap()).unwrap();
+    let before: Value = serde_json::from_slice(requests[8].body.as_deref().unwrap()).unwrap();
     assert_eq!(before["endDate"], ago(31));
-    assert!(requests[13].url.ends_with("/properties/42:runReport"));
+    assert!(requests[14].url.ends_with("/properties/42:runReport"));
     assert_eq!(
         requests
             .iter()
@@ -2120,6 +3213,33 @@ fn search_console_syncs_join_analytics_and_the_rank_tracker() {
     assert_eq!(report["now"]["ctr"], 5.0);
     assert_eq!(report["period"][1], ago(3));
     assert_eq!(report["previous"][1], ago(31));
+    assert_eq!(report["compare"], "previous");
+    assert_eq!(report["brand"]["terms"], json!(["example"]));
+    assert_eq!(report["brand"]["other"]["clicks"], 30.0);
+    assert_eq!(report["brand"]["brand"]["clicks"], 0.0);
+    assert_eq!(report["queries"][0]["brand"], false);
+    let exported = call(
+        &platform,
+        "gsc_export",
+        json!({ "project_id": id, "kind": "queries" }),
+    );
+    assert_eq!(exported["columns"][0], "query");
+    assert_eq!(exported["rows"].as_array().unwrap().len(), 2);
+    assert_eq!(exported["rows"][0][5], 5.0);
+    let pairs = call(
+        &platform,
+        "gsc_export",
+        json!({ "project_id": id, "kind": "query_pages" }),
+    );
+    assert_eq!(pairs["rows"][1][1], "https://example.com/blog/sneaker");
+    assert_eq!(
+        error(
+            &platform,
+            "gsc_export",
+            json!({ "project_id": id, "kind": "days" })
+        ),
+        ErrorCode::Invalid
+    );
     assert_eq!(report["traffic_now"]["sessions"], 40.0);
     assert_eq!(report["currency"], "TRY");
     let sneaker = &report["queries"][0];
@@ -2213,6 +3333,21 @@ fn reports_are_drawn_printed_shared_and_emailed() {
         "nothing tracked or audited yet"
     );
     assert!(page["name"].as_str().unwrap().starts_with("aylik-rapor-"));
+    // The edit dialog's preview draws settings not saved yet, and stores nothing.
+    let mut edited = spec.clone();
+    edited["report_id"] = json!(report_id);
+    edited["design"] = json!("accent");
+    edited["colors"] = json!({ "cover": "#14213d", "heading": "#7a1f3d" });
+    let preview = call(&desktop, "report_preview", edited);
+    let preview = preview["html"].as_str().unwrap();
+    assert!(preview.contains("class=\"report design-accent custom-cover cover-dark\""));
+    assert!(preview.contains("--heading:#7a1f3d"));
+    let kept = call(&desktop, "reports_setup", json!({ "project_id": id }));
+    assert_eq!(kept["reports"][0]["design"], "clean");
+    assert_eq!(
+        kept["designs"],
+        json!(["clean", "ocean", "accent", "elegant"])
+    );
     let pdf = call(
         &desktop,
         "report_pdf",
@@ -2401,6 +3536,7 @@ fn mcp_tools_read_free_data_and_buy_only_what_is_allowed() {
         "keyword_gap",
         "ai_mentions",
         "rank_report",
+        "local_seo",
         "site_audit_issues",
         "ai_visibility",
         "search_console",
@@ -2624,4 +3760,1324 @@ fn a_problem_report_needs_words_and_an_account() {
         .unwrap_err();
     assert_eq!(signed_out.code, ErrorCode::Account);
     assert!(signed_out.message.contains("destek@octopuson.com"));
+}
+
+fn fixture(name: &str) -> String {
+    std::fs::read_to_string(format!(
+        "{}/../octopuson-dataforseo/tests/fixtures/{name}.json",
+        env!("CARGO_MANIFEST_DIR")
+    ))
+    .unwrap()
+}
+
+#[test]
+#[allow(clippy::too_many_lines)] // taking, keeping, comparing, the tools, and no source
+fn snapshots_keep_the_whole_project_and_compare_two_moments() {
+    let dir = tempfile::tempdir().unwrap();
+    let mut transport = FakeTransport::new();
+    for name in [
+        "domain_rank_overview",
+        "ranked_keywords",
+        "relevant_pages",
+        "backlinks_summary",
+        "backlinks_referring_domains",
+        "domain_rank_overview",
+        "backlinks_summary",
+    ] {
+        transport = transport.reply(200, fixture(name));
+    }
+    let transport = Arc::new(transport);
+    let platform = Arc::new(platform(dir.path(), &transport));
+    let server = crate::mcp::McpServer::new(Arc::clone(&platform), "octopuson-platform");
+    let id = project(&platform);
+    call(
+        &platform,
+        "set_key",
+        json!({ "provider": "dataforseo", "name": "credentials", "value": "me@example.com:secret" }),
+    );
+    let priced = tool(&server, "take_snapshot", json!({ "project_id": id }));
+    let priced = &priced["structuredContent"];
+    assert_eq!(priced["status"], "needs_approval", "{priced}");
+    assert!(priced["price"]["usd"].as_f64().unwrap() > 0.2);
+    assert_eq!(
+        transport.requests().len(),
+        0,
+        "nothing is bought without an allowance"
+    );
+    let setup = call(&platform, "snapshot_setup", json!({ "project_id": id }));
+    assert_eq!(setup["competitors"], json!(["rival.com"]));
+    assert_eq!(setup["baseline_id"], Value::Null);
+    call(
+        &platform,
+        "save_snapshot_settings",
+        json!({ "project_id": id, "settings": { "schedule": "monthly", "competitors": ["rival.com", "unknown.com"] } }),
+    );
+    let estimate = call(&platform, "snapshot_estimate", json!({ "project_id": id }));
+    assert_eq!(estimate["paid"], 7, "{estimate}");
+    assert_eq!(estimate["via"], "own");
+    assert!(estimate["usd"].as_f64().unwrap() > 0.2);
+
+    let job = call(
+        &platform,
+        "start_snapshot",
+        json!({ "project_id": id, "label": "Başlangıç" }),
+    );
+    let done = finished(&platform, job.as_str().unwrap());
+    assert_eq!(done.status, crate::JobStatus::Done, "{:?}", done.error);
+    assert_eq!(transport.requests().len(), 7);
+    // What the snapshot paid for is kept for the modules' pages too: a second one pays nothing.
+    let again = call(&platform, "snapshot_estimate", json!({ "project_id": id }));
+    assert_eq!(
+        (again["paid"].as_u64(), again["kept"].as_u64()),
+        (Some(0), Some(7))
+    );
+    let second = call(&platform, "start_snapshot", json!({ "project_id": id }));
+    finished(&platform, second.as_str().unwrap());
+    assert_eq!(transport.requests().len(), 7);
+
+    let list = call(&platform, "list_snapshots", json!({ "project_id": id }));
+    assert_eq!(list.as_array().unwrap().len(), 2);
+    let first_id = list[1]["id"].as_i64().unwrap();
+    let first = call(
+        &platform,
+        "get_snapshot",
+        json!({ "project_id": id, "snapshot_id": first_id }),
+    );
+    assert_eq!(first["label"], "Başlangıç");
+    assert_eq!(first["data"]["domain"], "example.com");
+    assert!(first["data"]["overview"]["traffic"].as_f64().unwrap() > 0.0);
+    assert_ne!(first["data"]["keywords"], json!([]));
+    assert_ne!(first["data"]["domains"], json!([]));
+    assert_eq!(first["data"]["competitors"][0]["domain"], "rival.com");
+    assert!(first["cost_usd"].as_f64().unwrap() > 0.0);
+
+    let compared = call(
+        &platform,
+        "compare_snapshots",
+        json!({ "project_id": id, "lang": "en" }),
+    );
+    assert_eq!(compared["from"]["id"], first_id);
+    assert_eq!(compared["keywords"]["gained"], 0);
+    assert_eq!(compared["summary"][0]["tone"], "note");
+    assert_eq!(compared["sites"][1]["domain"], "rival.com");
+    let setup = call(&platform, "snapshot_setup", json!({ "project_id": id }));
+    assert_eq!(setup["baseline_id"], first_id);
+    assert!(setup["next_at"].as_i64().unwrap() > octopuson_platform::unix_now());
+    assert!(crate::modules::snapshots::changes_schedule(
+        "save_snapshot_settings"
+    ));
+    let listed = tool(&server, "list_snapshots", json!({ "project_id": id }));
+    let listed = &listed["structuredContent"];
+    assert_eq!(listed["baseline_id"], first_id);
+    assert_eq!(listed["schedule"], "monthly");
+    assert_eq!(listed["snapshots"].as_array().unwrap().len(), 2);
+    assert!(listed["snapshots"][0].get("data").is_none());
+    let sheet = call(
+        &platform,
+        "snapshot_xlsx",
+        json!({ "project_id": id, "lang": "en" }),
+    );
+    assert!(
+        sheet["name"]
+            .as_str()
+            .unwrap()
+            .starts_with("snapshots-example.com-")
+    );
+    assert_ne!(sheet["data"].as_str().unwrap(), "");
+    assert!(
+        list[0]["headline"]["traffic"].as_f64().unwrap() > 0.0,
+        "{}",
+        list[0]
+    );
+    let progress = call(&platform, "snapshot_progress", Value::Null);
+    assert_eq!(progress[0]["project_id"], id);
+    assert_eq!(progress[0]["kpis"][0]["key"], "traffic");
+    let told = tool(
+        &server,
+        "compare_snapshots",
+        json!({ "project_id": id, "previous": true }),
+    );
+    assert_eq!(
+        told["structuredContent"]["summary"][0]["tone"], "note",
+        "{told}"
+    );
+
+    // Kept answers are reused even without a source; a project with nothing kept and no source
+    // has nothing to keep, and the snapshot says why.
+    call(
+        &platform,
+        "remove_key",
+        json!({ "provider": "dataforseo", "name": "credentials" }),
+    );
+    let other = call(
+        &platform,
+        "create_project",
+        json!({ "spec": { "domain": "baska.com", "country": "tr", "language": "tr" } }),
+    )["id"]
+        .as_i64()
+        .unwrap();
+    let blocked = call(
+        &platform,
+        "snapshot_estimate",
+        json!({ "project_id": other }),
+    );
+    assert_eq!(blocked["blocked"]["code"], "no_source");
+    let refused = tool(&server, "take_snapshot", json!({ "project_id": other }));
+    assert_eq!(
+        refused["structuredContent"]["status"], "blocked",
+        "{refused}"
+    );
+    let none = tool(&server, "compare_snapshots", json!({ "project_id": other }));
+    assert!(
+        none["structuredContent"]["message"]
+            .as_str()
+            .unwrap()
+            .contains("fewer than two")
+    );
+    let empty = call(&platform, "start_snapshot", json!({ "project_id": other }));
+    let failed = finished(&platform, empty.as_str().unwrap());
+    assert_eq!(failed.status, crate::JobStatus::Partial);
+    let rows = call(&platform, "list_snapshots", json!({ "project_id": other }));
+    assert_eq!(rows[0]["status"], "failed");
+    assert!(
+        rows[0]["error"].as_str().unwrap().contains("DataForSEO"),
+        "{}",
+        rows[0]
+    );
+    assert_eq!(transport.requests().len(), 7);
+}
+
+#[test]
+fn reports_go_out_after_each_new_snapshot() {
+    use crate::snapshot::tests::{after, before};
+    use octopuson_core::Timestamp;
+    use octopuson_platform::SnapshotEnd;
+
+    let dir = tempfile::tempdir().unwrap();
+    let transport = Arc::new(FakeTransport::new());
+    let mail = Arc::new(KeptMail::default());
+    let web = Platform::new(
+        workspace(dir.path(), Host::Web, &transport)
+            .with_printer(printer())
+            .with_mailer(mail.clone()),
+        Arc::new(NoEvents),
+        Arc::new(|_| false),
+    );
+    let id = project(&web);
+    let at = |back: i64| {
+        Timestamp::from_unix_micros((octopuson_platform::unix_now() - back) * 1_000_000).to_string()
+    };
+    let keep = |data: &crate::snapshot::SnapshotData, when: &str| {
+        let store = web.workspace().store().unwrap();
+        let snapshot = store.begin_snapshot(id, true, None, when).unwrap();
+        store
+            .finish_snapshot(
+                snapshot,
+                &SnapshotEnd {
+                    status: "done",
+                    cost_usd: 0.3,
+                    error: None,
+                    data: &serde_json::to_value(data).unwrap(),
+                },
+                when,
+            )
+            .unwrap();
+    };
+    keep(&before(), &at(7_200));
+    let report = call(
+        &web,
+        "save_report",
+        json!({ "project_id": id, "name": "Önce / sonra", "language": "tr", "days": 28,
+            "widgets": ["comparison", "comparison_previous"], "schedule": "snapshot",
+            "recipients": ["musteri@example.com"] }),
+    );
+    let report_id = report["id"].as_i64().unwrap();
+    assert_eq!(
+        web.next_due().unwrap(),
+        None,
+        "no new snapshot since the report was saved"
+    );
+    assert_eq!(web.run_due().unwrap(), Vec::<String>::new());
+
+    // A snapshot being taken: looked at again a little later.
+    std::thread::sleep(std::time::Duration::from_millis(1_100));
+    let taking = web
+        .workspace()
+        .store()
+        .unwrap()
+        .begin_snapshot(id, true, None, &at(0))
+        .unwrap();
+    let next = web.next_due().unwrap().unwrap();
+    assert!(next > octopuson_platform::unix_now() + 500, "{next}");
+    web.workspace()
+        .store()
+        .unwrap()
+        .delete_snapshot(id, taking)
+        .unwrap();
+    keep(&after(), &at(0));
+    assert!(web.next_due().unwrap().unwrap() <= octopuson_platform::unix_now());
+    let started = web.run_due().unwrap();
+    assert_eq!(started.len(), 1, "sent once the snapshot is kept");
+    let job = finished(&web, &started[0]);
+    assert_eq!(job.status, crate::JobStatus::Done, "{:?}", job.error);
+    assert_eq!(mail.0.lock().unwrap().len(), 1);
+    assert_eq!(
+        web.next_due().unwrap(),
+        None,
+        "sent: waits for the next snapshot"
+    );
+    assert_eq!(web.run_due().unwrap(), Vec::<String>::new());
+
+    let page = call(
+        &web,
+        "report_html",
+        json!({ "project_id": id, "report_id": report_id }),
+    );
+    let html = page["html"].as_str().unwrap();
+    assert!(html.contains("Organik trafik %23 arttı (1.240 → 1.525)."));
+    assert!(html.contains("Önce / sonra: son anlık görüntüden bu yana"));
+    assert_eq!(transport.requests().len(), 0, "a report pays no source");
+}
+
+/// Two ranking pages about running shoes and the project's own, thinner page.
+fn ranking_pages() -> FakeSite {
+    let page = |title: &str, extra: &str| {
+        format!(
+            r#"<html lang="tr"><head><title>{title}</title><meta name="description" content="Spor ayakkabı seçimi">
+            <script type="application/ld+json">{{"@context":"https://schema.org","@type":"Article"}}</script></head>
+            <body><main><h1>{title}</h1>
+            <h2>Spor ayakkabı nasıl seçilir</h2><p>Koşu için hafif taban, doğru numara ve nefes alan kumaş önemlidir. Spor ayakkabı seçerken ayak tipinize bakın.</p>
+            <h2>Taban ve yastıklama</h2><p>Yastıklama dizleri korur. Taban esnek olmalı; koşu ayakkabısı ile yürüyüş ayakkabısı farklıdır.</p>
+            <h2>Fiyatlar</h2><p>Fiyat aralığı geniştir; kampanya dönemlerinde indirim olur. {extra}</p></main></body></html>"#
+        )
+    };
+    FakeSite(std::collections::HashMap::from([
+        ("https://www.rival.com/spor".to_owned(), page("Spor Ayakkabı Rehberi", "Numara tablosu ile doğru beden.")),
+        ("https://www.example.com/spor-ayakkabi".to_owned(), page("Spor Ayakkabı Modelleri", "Numara seçimi kolaydır.")),
+        (
+            "https://www.example.com/kosu".to_owned(),
+            "<html><head><title>Koşu</title></head><body><h1>Koşu</h1><p>Kısa bir sayfa.</p></body></html>".to_owned(),
+        ),
+    ]))
+}
+
+#[test]
+#[allow(clippy::too_many_lines)] // a brief from the result page to writing
+fn briefs_read_the_ranking_pages_score_pages_and_write_with_the_users_key() {
+    let dir = tempfile::tempdir().unwrap();
+    let claude = json!({
+        "model": "claude-opus-5-5",
+        "stop_reason": "end_turn",
+        "content": [{ "type": "text", "text": "# Brief\nHedef: 900 kelime" }],
+        "usage": { "input_tokens": 2_000, "output_tokens": 1_000 }
+    })
+    .to_string();
+    let transport = Arc::new(
+        FakeTransport::new()
+            .reply(200, SERP_PAGE)
+            .reply(200, claude),
+    );
+    let platform = crawling_platform(dir.path(), Host::Desktop, &transport, ranking_pages());
+    let id = project(&platform);
+    let ask = json!({ "project_id": id, "keyword": "Spor  ayakkabı", "page": "https://www.example.com/kosu" });
+    assert_eq!(
+        error(&platform, "start_content_brief", ask.clone()),
+        ErrorCode::NoSource
+    );
+    call(
+        &platform,
+        "set_key",
+        json!({ "provider": "dataforseo", "name": "credentials", "value": "a:b" }),
+    );
+    let estimate = call(&platform, "content_brief_estimate", ask.clone());
+    assert_eq!(estimate["via"], "own");
+    assert!((estimate["usd"].as_f64().unwrap() - 0.002).abs() < 1e-9);
+
+    let started = call(&platform, "start_content_brief", ask);
+    let job = finished(&platform, started["job_id"].as_str().unwrap());
+    assert_eq!(job.status, crate::JobStatus::Done, "{:?}", job.error);
+    let brief_id = started["brief_id"].as_i64().unwrap();
+    assert_eq!(job.result.as_ref().unwrap()["read"], 2);
+
+    let briefs = call(&platform, "content_briefs", json!({ "project_id": id }));
+    assert_eq!(briefs[0]["status"], "done");
+    assert_eq!(briefs[0]["keyword"], "Spor ayakkabı");
+    assert_eq!(briefs[0]["pages"], 2);
+    let view = call(&platform, "content_brief", json!({ "brief_id": brief_id }));
+    let brief = &view["brief"];
+    assert_eq!(brief["competitors"].as_array().unwrap().len(), 2);
+    assert!(brief["competitors"][0]["score"].as_f64().unwrap() > 0.0);
+    let terms: Vec<&str> = brief["terms"]
+        .as_array()
+        .unwrap()
+        .iter()
+        .filter_map(|term| term["term"].as_str())
+        .collect();
+    assert!(terms.iter().any(|term| term.contains("taban")), "{terms:?}");
+    assert_eq!(brief["schema"], json!(["Article"]));
+    // The fixture's "People also ask" block lists no questions; the shared headings make the
+    // outline.
+    assert_eq!(brief["questions"], json!([]));
+    assert!(!brief["outline"].as_array().unwrap().is_empty(), "{brief}");
+    // The project's thin page was scored against the brief, missing most terms.
+    let scores = view["scores"].as_array().unwrap();
+    assert_eq!(scores.len(), 1);
+    assert_eq!(scores[0]["url"], "https://www.example.com/kosu");
+    assert_ne!(scores[0]["result"]["missing"].as_array().unwrap().len(), 0);
+    let thin = scores[0]["score"].as_f64().unwrap();
+
+    let draft = json!({
+        "brief_id": brief_id,
+        "title": "Spor Ayakkabı Rehberi 2026",
+        "description": "Spor ayakkabı nasıl seçilir, taban ve numara",
+        "body": "# Spor ayakkabı rehberi\n\n## Spor ayakkabı nasıl seçilir\nKoşu için hafif taban, doğru numara ve nefes alan kumaş önemlidir.\n\n## Taban ve yastıklama\nYastıklama dizleri korur, taban esnek olmalı.\n\n## Fiyatlar\n- Kampanya dönemlerinde indirim\n- Numara tablosu ile doğru beden\n",
+    });
+    let preview = call(&platform, "score_content", draft.clone());
+    assert_eq!(preview["id"], Value::Null);
+    assert!(preview["breakdown"]["score"].as_f64().unwrap() > thin);
+    assert!(preview["keyword_in_title"].as_bool().unwrap());
+    let mut kept = draft.clone();
+    kept["save"] = json!(true);
+    let saved = call(&platform, "score_content", kept);
+    let draft_id = saved["id"].as_i64().unwrap();
+    let view = call(&platform, "content_brief", json!({ "brief_id": brief_id }));
+    assert_eq!(view["scores"][0]["kind"], "draft");
+    assert!(
+        view["scores"][0]["body"]
+            .as_str()
+            .unwrap()
+            .starts_with("# Spor")
+    );
+    assert_eq!(
+        error(
+            &platform,
+            "score_content",
+            json!({ "brief_id": brief_id, "body": " " })
+        ),
+        ErrorCode::Invalid
+    );
+    assert_eq!(
+        call(&platform, "content_pages", json!({ "project_id": id })),
+        json!([])
+    );
+
+    let writing = json!({ "brief_id": brief_id, "task": "brief" });
+    let writers = call(&platform, "content_writing_estimate", writing.clone());
+    assert_eq!(writers["writers"][0]["engine"], "claude");
+    assert_eq!(writers["writers"][0]["ready"], false);
+    assert_eq!(
+        error(&platform, "start_content_writing", writing.clone()),
+        ErrorCode::NoSource
+    );
+    call(
+        &platform,
+        "set_key",
+        json!({ "provider": "anthropic", "name": "api_key", "value": "sk-test" }),
+    );
+    let job = call(&platform, "start_content_writing", writing);
+    let job = finished(&platform, job.as_str().unwrap());
+    assert_eq!(job.status, crate::JobStatus::Done, "{:?}", job.error);
+    let view = call(&platform, "content_brief", json!({ "brief_id": brief_id }));
+    assert_eq!(view["ai_text"], "# Brief\nHedef: 900 kelime");
+    assert_eq!(view["ai_model"], "claude:claude-opus-5-5");
+    let requests = transport.requests();
+    let sent = requests.last().unwrap();
+    assert_eq!(sent.url, "https://api.anthropic.com/v1/messages");
+    let body: Value = serde_json::from_slice(sent.body.as_deref().unwrap()).unwrap();
+    assert!(body["system"].as_str().unwrap().contains("Turkish"));
+    assert!(
+        body["messages"][0]["content"]
+            .as_str()
+            .unwrap()
+            .contains("Spor ayakkabı")
+    );
+    assert!(view["cost_usd"].as_f64().unwrap() > 0.002);
+    assert_eq!(
+        error(
+            &platform,
+            "start_content_writing",
+            json!({ "brief_id": brief_id, "task": "improve" })
+        ),
+        ErrorCode::Invalid
+    );
+    let _ = draft_id;
+
+    call(
+        &platform,
+        "delete_content_brief",
+        json!({ "brief_id": brief_id }),
+    );
+    assert_eq!(
+        call(&platform, "content_briefs", json!({ "project_id": id })),
+        json!([])
+    );
+}
+
+#[test]
+fn a_reply_to_a_review_is_drafted_with_the_users_key() {
+    let dir = tempfile::tempdir().unwrap();
+    let claude = json!({
+        "model": "claude-opus-5-5",
+        "stop_reason": "end_turn",
+        "content": [{ "type": "text", "text": " Teşekkürler Ayşe Hanım! " }],
+        "usage": { "input_tokens": 400, "output_tokens": 120 }
+    })
+    .to_string();
+    let transport = Arc::new(FakeTransport::new().reply(200, claude));
+    let platform = platform(dir.path(), &transport);
+    let id = project(&platform);
+    {
+        let store = platform.workspace().store().unwrap();
+        store
+            .save_local_settings(
+                id,
+                &octopuson_platform::LocalSettings {
+                    business: Some(json!({ "title": "Örnek Kahve", "category": "Kafe", "lat": 40.9, "lng": 29.0 })),
+                    ..octopuson_platform::LocalSettings::default()
+                },
+            )
+            .unwrap();
+        store
+            .save_local_reviews(
+                id,
+                &[octopuson_platform::LocalReviewRow {
+                    review_id: "r-1".to_owned(),
+                    rating: Some(2),
+                    text: Some("Kahve soğuktu.".to_owned()),
+                    author: Some("Ayşe".to_owned()),
+                    author_url: None,
+                    url: None,
+                    published_at: None,
+                    owner_answer: None,
+                    answered_at: None,
+                    photos: 0,
+                    local_guide: false,
+                    first_seen: "2026-10-23T09:00:00Z".to_owned(),
+                }],
+                "2026-10-23T09:00:00Z",
+            )
+            .unwrap();
+    }
+    let ask = json!({ "project_id": id, "review_id": "r-1" });
+    assert_eq!(
+        error(&platform, "draft_review_reply", ask.clone()),
+        ErrorCode::NoSource
+    );
+    call(
+        &platform,
+        "set_key",
+        json!({ "provider": "anthropic", "name": "api_key", "value": "sk-test" }),
+    );
+    assert_eq!(
+        call(&platform, "reply_estimate", json!({ "project_id": id }))[0]["ready"],
+        true
+    );
+    let drafted = call(&platform, "draft_review_reply", ask);
+    assert_eq!(drafted["text"], "Teşekkürler Ayşe Hanım!");
+    let body: Value =
+        serde_json::from_slice(transport.requests()[0].body.as_deref().unwrap()).unwrap();
+    let material = body["messages"][0]["content"].as_str().unwrap();
+    assert!(material.contains("Örnek Kahve") && material.contains("2 of 5 stars"));
+    assert_eq!(
+        error(
+            &platform,
+            "draft_review_reply",
+            json!({ "project_id": id, "review_id": "nope" })
+        ),
+        ErrorCode::NotFound
+    );
+}
+
+#[test]
+fn an_audits_crawl_shows_its_links_pages_hreflang_and_findings() {
+    let dir = tempfile::tempdir().unwrap();
+    let transport = Arc::new(FakeTransport::new());
+    let platform = crawling_platform(dir.path(), Host::Desktop, &transport, small_site());
+    let id = project(&platform);
+    assert_eq!(
+        call(&platform, "audit_links", json!({ "project_id": id })),
+        Value::Null
+    );
+    let job = call(&platform, "start_audit", json!({ "project_id": id }));
+    assert_eq!(
+        finished(&platform, job.as_str().unwrap()).status,
+        crate::JobStatus::Done
+    );
+
+    let links = call(&platform, "audit_links", json!({ "project_id": id }));
+    assert_eq!(links["pages"], 3);
+    assert_eq!(links["depth"], json!([[0, 1], [1, 2]]));
+    // The home page passes its rank to the two pages it links to, which link nowhere.
+    assert_eq!(links["top"][0]["url"], "https://example.com/a");
+    assert_eq!(links["top"][0]["rank"], 100.0);
+    assert_eq!(links["top"][2]["url"], "https://example.com/");
+    assert_eq!(links["top"][2]["rank"], 0.0);
+    assert_eq!(links["sitemaps"], false);
+    // Kept in memory: asked again, the same.
+    assert_eq!(
+        call(&platform, "audit_links", json!({ "project_id": id })),
+        links
+    );
+
+    let pages = call(
+        &platform,
+        "audit_pages",
+        json!({ "project_id": id, "sort": "address", "limit": 2 }),
+    );
+    assert_eq!(pages["total"], 3);
+    assert_eq!(pages["rows"].as_array().unwrap().len(), 2);
+    let address = pages["columns"]
+        .as_array()
+        .unwrap()
+        .iter()
+        .position(|column| column == "address")
+        .unwrap();
+    assert_eq!(pages["rows"][0][address], "https://example.com/");
+    let searched = call(
+        &platform,
+        "audit_pages",
+        json!({ "project_id": id, "search": "/b" }),
+    );
+    assert_eq!(searched["total"], 1);
+
+    let audit_id = pages["audit_id"].as_i64().unwrap();
+    let page = call(
+        &platform,
+        "audit_page",
+        json!({ "project_id": id, "audit_id": audit_id, "url": "https://example.com/a", "lang": "tr" }),
+    );
+    assert_eq!(page["inlinks_total"], 1);
+    assert_eq!(page["inlinks"][0]["url"], "https://example.com/");
+    assert_eq!(page["inlinks"][0]["anchor"], "A");
+    assert!(
+        page["findings"]
+            .as_array()
+            .unwrap()
+            .iter()
+            .any(|finding| finding["id"] == "title-missing")
+    );
+    assert!(
+        page["facts"]
+            .as_array()
+            .unwrap()
+            .iter()
+            .any(|fact| fact[0] == "h1" && fact[1] == "A")
+    );
+    assert_eq!(
+        error(
+            &platform,
+            "audit_page",
+            json!({ "project_id": id, "audit_id": audit_id, "url": "https://example.com/zzz" })
+        ),
+        ErrorCode::NotFound
+    );
+
+    let hreflang = call(&platform, "audit_hreflang", json!({ "project_id": id }));
+    assert_eq!(hreflang["pages"], 0);
+    assert!(
+        hreflang["issues"]
+            .as_array()
+            .unwrap()
+            .iter()
+            .any(|issue| issue["id"] == "hreflang-missing-return")
+    );
+
+    let file = call(
+        &platform,
+        "audit_findings_csv",
+        json!({ "project_id": id, "lang": "en" }),
+    );
+    let csv = file["csv"].as_str().unwrap();
+    assert!(csv.starts_with("check,title,priority,url\n"));
+    assert!(csv.contains("title-missing,"));
+    assert!(csv.contains("https://example.com/a"));
+    assert_eq!(file["cut"], false);
+}
+
+#[test]
+fn core_web_vitals_come_from_google_with_the_users_key() {
+    let dir = tempfile::tempdir().unwrap();
+    let record = json!({ "record": {
+        "metrics": {
+            "largest_contentful_paint": { "histogram": [{ "density": 0.8 }, { "density": 0.15 }, { "density": 0.05 }], "percentiles": { "p75": 2100 } },
+            "cumulative_layout_shift": { "histogram": [], "percentiles": { "p75": "0.03" } },
+            "interaction_to_next_paint": { "histogram": [], "percentiles": { "p75": 150 } }
+        },
+        "collectionPeriod": { "firstDate": { "year": 2026, "month": 9, "day": 22 }, "lastDate": { "year": 2026, "month": 10, "day": 19 } }
+    }});
+    let history = json!({ "record": {
+        "metrics": { "largest_contentful_paint": { "percentilesTimeseries": { "p75s": [2300, 2100] } } },
+        "collectionPeriods": [
+            { "lastDate": { "year": 2026, "month": 10, "day": 12 } },
+            { "lastDate": { "year": 2026, "month": 10, "day": 19 } }
+        ]
+    }});
+    let missing = json!({ "error": { "code": 404, "message": "chrome ux report data not found" } })
+        .to_string();
+    let lab = json!({ "lighthouseResult": {
+        "finalDisplayedUrl": "https://example.com/",
+        "categories": { "performance": { "score": 0.83 } },
+        "audits": { "largest-contentful-paint": { "numericValue": 2400 }, "unused-css-rules": { "title": "Unused CSS", "details": { "type": "opportunity", "overallSavingsMs": 300 } } }
+    }});
+    let transport = Arc::new(
+        FakeTransport::new()
+            .reply(200, record.to_string())
+            .reply(200, history.to_string())
+            .reply(404, missing.clone())
+            .reply(404, missing)
+            .reply(200, lab.to_string()),
+    );
+    let platform = platform(dir.path(), &transport);
+    let id = project(&platform);
+    let setup = call(&platform, "vitals_setup", json!({ "project_id": id }));
+    assert_eq!(setup["key_ready"], false);
+    assert_eq!(setup["pages"][0], "https://example.com/");
+    assert_eq!(
+        error(&platform, "start_vitals", json!({ "project_id": id })),
+        ErrorCode::NoSource
+    );
+    call(
+        &platform,
+        "set_key",
+        json!({ "provider": "google-api", "name": "api_key", "value": "AIza-test" }),
+    );
+    assert_eq!(
+        error(
+            &platform,
+            "start_vitals",
+            json!({ "project_id": id, "pages": ["ftp://x"] })
+        ),
+        ErrorCode::Invalid
+    );
+    let job = call(
+        &platform,
+        "start_vitals",
+        json!({ "project_id": id, "pages": ["https://example.com/"] }),
+    );
+    let job = finished(&platform, job.as_str().unwrap());
+    assert_eq!(job.status, crate::JobStatus::Done, "{:?}", job.error);
+    assert_eq!(job.result.as_ref().unwrap()["origins"], 1);
+    let requests = transport.requests();
+    assert_eq!(requests.len(), 5);
+    assert!(requests.iter().all(|request| !request.url.contains("AIza")));
+    let report = call(&platform, "vitals_report", json!({ "project_id": id }));
+    let origin = &report["origins"][0];
+    assert_eq!(
+        (origin["origin"].as_str(), origin["device"].as_str()),
+        (Some("https://example.com"), Some("phone"))
+    );
+    assert_eq!(origin["passes"], true);
+    assert_eq!(origin["field"]["lcp"]["p75"], 2100.0);
+    assert_eq!(origin["history"]["lcp"][0], 2300.0);
+    let page = &report["pages"][0];
+    assert_eq!(page["lab"]["score"], 83.0);
+    assert_eq!(page["lab"]["opportunities"][0]["id"], "unused-css-rules");
+    assert_eq!(report["scores"][0][3], 83.0);
+    assert!(
+        call(&platform, "vitals_setup", json!({ "project_id": id }))["last_checked"].is_string()
+    );
+}
+
+#[test]
+#[allow(clippy::too_many_lines)] // a project's data, its opportunities, decisions and dashboard
+fn opportunities_come_from_the_modules_data_and_decisions_hide_them() {
+    use octopuson_platform::{
+        CheckResult, GscData, GscSyncEnd, LinkProspect, Period, QueryPage, RankCheckRow,
+        SearchKind, SearchRow, TrackerSpec,
+    };
+    let dir = tempfile::tempdir().unwrap();
+    let transport = Arc::new(FakeTransport::new());
+    let platform = platform(dir.path(), &transport);
+    let id = project(&platform);
+    let empty = call(&platform, "opportunities", json!({ "project_id": id }));
+    assert_eq!(empty["open"], 0);
+    assert_eq!(empty["sources"]["rank"], false);
+    {
+        let store = platform.workspace().store().unwrap();
+        let now = crate::now();
+        let tracker = store
+            .add_rank_tracker(
+                id,
+                &TrackerSpec {
+                    engine: "google".to_owned(),
+                    country: "tr".to_owned(),
+                    language: "tr".to_owned(),
+                    device: "desktop".to_owned(),
+                    location: None,
+                },
+                &now,
+            )
+            .unwrap();
+        store
+            .track_keywords(id, &[("spor ayakkabı".to_owned(), Some(9_900))], &[], &now)
+            .unwrap();
+        let keyword = store.tracked_keywords(id).unwrap()[0].id;
+        let run = store.begin_rank_run(id, false, 1, &now).unwrap();
+        store
+            .add_rank_check(&RankCheckRow {
+                run_id: run,
+                project_id: id,
+                keyword_id: keyword,
+                tracker_id: tracker.id,
+                checked_at: now.clone(),
+                position: Some(6),
+                url: Some("https://example.com/spor".to_owned()),
+                pages: vec![(6, "https://example.com/spor".to_owned())],
+                features: Vec::new(),
+                ai_overview: false,
+                ai_cited: false,
+                snippet: false,
+                owned: Vec::new(),
+                results: vec![CheckResult {
+                    position: 1,
+                    domain: "rival.com".to_owned(),
+                    url: "https://rival.com/".to_owned(),
+                    title: None,
+                }],
+                error: None,
+            })
+            .unwrap();
+        let row = |key: &str, clicks: f64, impressions: f64, position: f64| SearchRow {
+            key: key.to_owned(),
+            clicks,
+            impressions,
+            position,
+        };
+        store
+            .replace_gsc_data(
+                id,
+                &GscData {
+                    search: vec![
+                        (
+                            SearchKind::Date,
+                            Period::Days,
+                            row(&ago(10), 40.0, 9_000.0, 7.0),
+                        ),
+                        (
+                            SearchKind::Date,
+                            Period::Days,
+                            row(&ago(40), 60.0, 9_000.0, 7.0),
+                        ),
+                        (
+                            SearchKind::Query,
+                            Period::Now,
+                            row("beyaz sneaker", 20.0, 8_000.0, 8.0),
+                        ),
+                        (
+                            SearchKind::Query,
+                            Period::Now,
+                            row("example", 30.0, 300.0, 1.0),
+                        ),
+                        (
+                            SearchKind::Page,
+                            Period::Now,
+                            row("https://example.com/eski", 10.0, 900.0, 9.0),
+                        ),
+                        (
+                            SearchKind::Page,
+                            Period::Before,
+                            row("https://example.com/eski", 60.0, 1_200.0, 6.0),
+                        ),
+                    ],
+                    query_pages: vec![QueryPage {
+                        query: "beyaz sneaker".to_owned(),
+                        page: "https://example.com/beyaz".to_owned(),
+                        clicks: 20.0,
+                        impressions: 8_000.0,
+                        position: 8.0,
+                    }],
+                    traffic: Vec::new(),
+                },
+            )
+            .unwrap();
+        let sync = store.begin_gsc_sync(id, false, &now).unwrap();
+        let (start, end) = (ago(30), ago(3));
+        store
+            .finish_gsc_sync(
+                sync,
+                &GscSyncEnd {
+                    status: "done",
+                    period: Some((&start, &end)),
+                    rows: 7,
+                    currency: None,
+                    limited: false,
+                    error: None,
+                },
+                &now,
+            )
+            .unwrap();
+        store
+            .save_prospect(
+                id,
+                &LinkProspect {
+                    domain: "blog.com".to_owned(),
+                    url: None,
+                    source: "lost".to_owned(),
+                    status: "prospect".to_owned(),
+                    note: None,
+                    added_at: now.clone(),
+                    updated_at: now.clone(),
+                },
+                &now,
+            )
+            .unwrap();
+    }
+    let found = call(
+        &platform,
+        "opportunities",
+        json!({ "project_id": id, "lang": "en" }),
+    );
+    let keys: Vec<&str> = found["items"]
+        .as_array()
+        .unwrap()
+        .iter()
+        .filter_map(|item| item["key"].as_str())
+        .collect();
+    for key in [
+        "near_top|spor ayakkabı",
+        "near_top|beyaz sneaker",
+        "low_ctr|beyaz sneaker",
+        "losing_page|https://example.com/eski",
+        "lost_links|lost",
+    ] {
+        assert!(keys.contains(&key), "{key} in {keys:?}");
+    }
+    // The brand query is no opportunity.
+    assert!(!keys.iter().any(|key| key.ends_with("|example")));
+    assert_eq!(found["sources"]["rank"], true);
+    assert_eq!(found["sources"]["gsc"], true);
+    // A low-effort fix comes first.
+    assert_eq!(found["items"][0]["key"], "low_ctr|beyaz sneaker");
+    assert_eq!(found["items"][0]["effort"], "low");
+    let near = found["items"]
+        .as_array()
+        .unwrap()
+        .iter()
+        .find(|item| item["key"] == "near_top|spor ayakkabı")
+        .unwrap();
+    assert_eq!(near["page"], "rank");
+    assert!(near["gain"].as_f64().unwrap() > 100.0);
+    let open = found["open"].as_u64().unwrap();
+
+    call(
+        &platform,
+        "set_opportunity",
+        json!({ "project_id": id, "key": "near_top|spor ayakkabı", "state": "done" }),
+    );
+    call(
+        &platform,
+        "set_opportunity",
+        json!({ "project_id": id, "key": "lost_links|lost", "state": "snoozed", "days": 14 }),
+    );
+    assert_eq!(
+        error(
+            &platform,
+            "set_opportunity",
+            json!({ "project_id": id, "key": "x", "state": "later" })
+        ),
+        ErrorCode::Invalid
+    );
+    let after = call(&platform, "opportunities", json!({ "project_id": id }));
+    assert_eq!(after["open"].as_u64().unwrap(), open - 2);
+    assert_eq!(after["hidden"], json!({ "done": 1, "snoozed": 1 }));
+    let every = call(
+        &platform,
+        "opportunities",
+        json!({ "project_id": id, "all": true }),
+    );
+    let done = every["items"]
+        .as_array()
+        .unwrap()
+        .iter()
+        .find(|item| item["key"] == "near_top|spor ayakkabı")
+        .unwrap();
+    assert_eq!(done["state"], "done");
+    call(
+        &platform,
+        "set_opportunity",
+        json!({ "project_id": id, "key": "near_top|spor ayakkabı", "state": "open" }),
+    );
+
+    let dashboard = call(
+        &platform,
+        "project_dashboard",
+        json!({ "project_id": id, "lang": "en" }),
+    );
+    assert_eq!(dashboard["project"]["id"], id);
+    assert_eq!(dashboard["rank"]["checked"], 1.0);
+    assert_eq!(dashboard["rank"]["top10"], 1.0);
+    assert_eq!(dashboard["search"]["clicks"], 40.0);
+    assert_eq!(dashboard["search"]["clicks_before"], 60.0);
+    assert_eq!(dashboard["audit"], Value::Null);
+    assert_eq!(
+        dashboard["opportunities"][0]["key"],
+        "low_ctr|beyaz sneaker"
+    );
+    assert_eq!(dashboard["opportunities_open"].as_u64().unwrap(), open - 1);
+    assert_eq!(dashboard["spend_total"], 0.0);
+    assert_eq!(dashboard["content"]["briefs"], 0);
+}
+
+/// Keeps the notifications it is asked to show.
+#[derive(Default)]
+struct KeptNotes(std::sync::Mutex<Vec<(String, String)>>);
+
+impl crate::mail::Notifier for KeptNotes {
+    fn notify(&self, title: &str, body: &str) {
+        self.0
+            .lock()
+            .unwrap()
+            .push((title.to_owned(), body.to_owned()));
+    }
+}
+
+/// A finished Search Console sync whose clicks fell from 100 to 40.
+fn seed_click_drop(platform: &Platform, id: i64) {
+    use octopuson_platform::{GscData, GscSyncEnd, Period, SearchKind, SearchRow};
+    let store = platform.workspace().store().unwrap();
+    let row = |key: String, clicks: f64| SearchRow {
+        key,
+        clicks,
+        impressions: clicks * 30.0,
+        position: 6.0,
+    };
+    store
+        .replace_gsc_data(
+            id,
+            &GscData {
+                search: vec![
+                    (SearchKind::Date, Period::Days, row(ago(10), 40.0)),
+                    (SearchKind::Date, Period::Days, row(ago(40), 100.0)),
+                ],
+                query_pages: Vec::new(),
+                traffic: Vec::new(),
+            },
+        )
+        .unwrap();
+    let now = crate::now();
+    let sync = store.begin_gsc_sync(id, false, &now).unwrap();
+    let (start, end) = (ago(30), ago(3));
+    store
+        .finish_gsc_sync(
+            sync,
+            &GscSyncEnd {
+                status: "done",
+                period: Some((&start, &end)),
+                rows: 2,
+                currency: None,
+                limited: false,
+                error: None,
+            },
+            &now,
+        )
+        .unwrap();
+}
+
+#[test]
+fn alerts_are_found_once_mailed_from_the_web_and_shown_on_the_desktop() {
+    let dir = tempfile::tempdir().unwrap();
+    let transport = Arc::new(FakeTransport::new());
+    let mail = Arc::new(KeptMail::default());
+    let web = Platform::new(
+        workspace(dir.path(), Host::Web, &transport)
+            .with_mailer(mail.clone())
+            .with_public_url("https://app.octopuson.com"),
+        Arc::new(NoEvents),
+        Arc::new(|_| false),
+    );
+    let id = project(&web);
+    seed_click_drop(&web, id);
+    let setup = call(&web, "alert_setup", json!({ "project_id": id }));
+    assert_eq!(
+        (setup["can_email"].as_bool(), setup["can_notify"].as_bool()),
+        (Some(true), Some(false))
+    );
+    let mut settings = setup["settings"].clone();
+    settings["email"] = json!("instant");
+    settings["lang"] = json!("en");
+    assert_eq!(
+        error(
+            &web,
+            "save_alert_settings",
+            json!({ "project_id": id, "settings": settings })
+        ),
+        ErrorCode::Invalid,
+        "no recipients"
+    );
+    settings["recipients"] = json!(["ajans@ornek.com"]);
+    call(
+        &web,
+        "save_alert_settings",
+        json!({ "project_id": id, "settings": settings }),
+    );
+
+    assert_eq!(call(&web, "check_alerts", json!({ "project_id": id })), 1);
+    {
+        let sent = mail.0.lock().unwrap();
+        assert_eq!(sent.len(), 1);
+        assert_eq!(sent[0].to, ["ajans@ornek.com"]);
+        assert!(
+            sent[0].subject.ends_with(": 1 new alerts"),
+            "{}",
+            sent[0].subject
+        );
+        assert!(
+            sent[0]
+                .text
+                .contains("Search Console clicks fell 60%: 100 → 40"),
+            "{}",
+            sent[0].text
+        );
+        assert!(sent[0].text.contains(&format!(
+            "https://app.octopuson.com/#/project?project={id}&tab=alerts"
+        )));
+    }
+    assert_eq!(
+        call(&web, "check_alerts", json!({ "project_id": id })),
+        0,
+        "kept once"
+    );
+    assert_eq!(mail.0.lock().unwrap().len(), 1);
+    let listed = call(&web, "list_alerts", json!({}));
+    assert_eq!(listed["unread"], 1);
+    assert_eq!(listed["alerts"][0]["kind"], "gsc_drop");
+    assert_eq!(listed["alerts"][0]["detail"]["drop"], 60.0);
+    assert_eq!(listed["by_project"][id.to_string()], 1);
+    assert_eq!(
+        call(&web, "mark_alerts_read", json!({ "project_id": id })),
+        1
+    );
+    assert_eq!(
+        call(&web, "list_alerts", json!({ "unread": true }))["unread"],
+        0
+    );
+
+    let dir = tempfile::tempdir().unwrap();
+    let notes = Arc::new(KeptNotes::default());
+    let desktop = Platform::new(
+        workspace(dir.path(), Host::Desktop, &transport).with_notifier(notes.clone()),
+        Arc::new(NoEvents),
+        Arc::new(|_| false),
+    );
+    let id = project(&desktop);
+    seed_click_drop(&desktop, id);
+    assert_eq!(
+        call(&desktop, "alert_setup", json!({ "project_id": id }))["can_notify"],
+        true
+    );
+    assert_eq!(
+        call(&desktop, "check_alerts", json!({ "project_id": id })),
+        1
+    );
+    let shown = notes.0.lock().unwrap().clone();
+    assert_eq!(shown.len(), 1);
+    assert!(shown[0].1.contains("60"), "{shown:?}");
+    // Already shown: not again.
+    crate::modules::alerts::announce(desktop.workspace()).unwrap();
+    assert_eq!(notes.0.lock().unwrap().len(), 1);
+}
+
+#[test]
+fn a_finished_job_reaches_the_hook() {
+    let jobs = crate::JobManager::new(Arc::new(NoEvents));
+    let seen = Arc::new(std::sync::Mutex::new(Vec::new()));
+    let kept = seen.clone();
+    jobs.on_finish(move |job| kept.lock().unwrap().push((job.kind.clone(), job.status)));
+    jobs.start("site-audit", "x", Some(1), |_| {
+        Ok(crate::jobs::JobDone::with(json!({})))
+    })
+    .unwrap();
+    let deadline = Instant::now() + Duration::from_secs(5);
+    while seen.lock().unwrap().is_empty() {
+        assert!(Instant::now() < deadline, "the hook was not called");
+        std::thread::sleep(Duration::from_millis(5));
+    }
+    assert_eq!(
+        seen.lock().unwrap()[0],
+        ("site-audit".to_owned(), crate::JobStatus::Done)
+    );
+}
+
+#[test]
+fn the_link_watch_reads_won_and_lost_sites_and_keeps_the_lost_ones_to_win_back() {
+    let dir = tempfile::tempdir().unwrap();
+    let recent = format!("{} 08:30:00 +00:00", ago(2));
+    let old = format!("{} 08:30:00 +00:00", ago(40));
+    let answer = |items: Value| {
+        json!({ "status_code": 20000, "cost": 0.02, "tasks": [{ "status_code": 20000, "status_message": "Ok.", "cost": 0.02,
+            "result": [{ "target": "example.com", "total_count": 2, "items_count": 2, "items": items }] }] })
+        .to_string()
+    };
+    let transport = Arc::new(
+        FakeTransport::new()
+            .reply(200, answer(json!([
+                { "domain_from": "yeni.com", "url_from": "https://yeni.com/a", "first_seen": recent, "last_seen": recent, "is_new": true },
+                { "domain_from": "eskiyeni.com", "url_from": "https://eskiyeni.com/a", "first_seen": old, "last_seen": recent, "is_new": true }
+            ])))
+            .reply(200, answer(json!([
+                { "domain_from": "kayip.com", "url_from": "https://kayip.com/a", "first_seen": old, "last_seen": recent, "is_lost": true },
+                { "domain_from": "eski.com", "url_from": "https://eski.com/a", "first_seen": old, "last_seen": old, "is_lost": true }
+            ]))),
+    );
+    let platform = platform(dir.path(), &transport);
+    let id = project(&platform);
+    call(
+        &platform,
+        "set_key",
+        json!({ "provider": "dataforseo", "name": "credentials", "value": "a:b" }),
+    );
+    let job = call(&platform, "start_link_watch", json!({ "project_id": id }));
+    let job = finished(&platform, job.as_str().unwrap());
+    assert_eq!(job.status, crate::JobStatus::Done, "{:?}", job.error);
+    let result = job.result.unwrap();
+    assert_eq!(
+        (result["new"].clone(), result["lost"].clone()),
+        (json!(["yeni.com"]), json!(["kayip.com"]))
+    );
+    let requests = transport.requests();
+    let first: Value = serde_json::from_slice(requests[0].body.as_deref().unwrap()).unwrap();
+    assert_eq!(first[0]["filters"], json!(["is_new", "=", true]));
+    let second: Value = serde_json::from_slice(requests[1].body.as_deref().unwrap()).unwrap();
+    assert_eq!(second[0]["backlinks_status_type"], "lost");
+    let alerts = call(&platform, "list_alerts", json!({ "project_id": id }));
+    assert_eq!(alerts["alerts"][0]["kind"], "links");
+    assert_eq!(alerts["alerts"][0]["detail"]["lost"], 1);
+    let prospects = call(&platform, "link_prospects", json!({ "project_id": id }));
+    assert!(
+        prospects
+            .as_array()
+            .unwrap()
+            .iter()
+            .any(|row| row["domain"] == "kayip.com" && row["source"] == "lost")
+    );
+    assert!(
+        call(&platform, "alert_setup", json!({ "project_id": id }))["settings"]["links_last_run"]
+            .is_string()
+    );
+}
+
+#[test]
+fn mcp_work_tools_read_the_project_and_price_every_action() {
+    let dir = tempfile::tempdir().unwrap();
+    let transport = Arc::new(FakeTransport::new());
+    let platform = Arc::new(platform(dir.path(), &transport));
+    let server = crate::mcp::McpServer::new(Arc::clone(&platform), "octopuson-platform");
+    let id = project(&platform);
+    let tools = mcp(&server, "tools/list", json!({}))["result"]["tools"].clone();
+    let names: Vec<&str> = tools
+        .as_array()
+        .unwrap()
+        .iter()
+        .map(|tool| tool["name"].as_str().unwrap())
+        .collect();
+    let free = [
+        "project_dashboard",
+        "opportunities",
+        "alerts",
+        "keyword_lists",
+        "content_briefs",
+        "link_work",
+        "core_web_vitals",
+    ];
+    for name in free.iter().chain(&[
+        "metric_history",
+        "keyword_insights",
+        "track_keywords",
+        "check_rankings",
+        "start_site_audit",
+        "run_ai_visibility",
+        "create_content_brief",
+    ]) {
+        assert!(names.contains(name), "{name} missing");
+    }
+    // The free reads answer even before anything is kept.
+    for name in free {
+        let answer = tool(&server, name, json!({ "project_id": id }));
+        assert_eq!(answer["isError"], false, "{name}: {answer}");
+    }
+    assert_eq!(
+        tool(
+            &server,
+            "keyword_lists",
+            json!({ "project_id": id, "list_id": 999 })
+        )["isError"],
+        true
+    );
+    assert_eq!(tool(&server, "opportunities", json!({}))["isError"], true);
+
+    // Tracking is free and immediate.
+    let tracked = tool(
+        &server,
+        "track_keywords",
+        json!({ "project_id": id, "keywords": ["spor ayakkabı", " ", "koşu ayakkabısı"] }),
+    );
+    assert_eq!(tracked["structuredContent"]["added"], 2, "{tracked}");
+
+    // Without a key nothing can be paid: told so, nothing bought.
+    let blocked = tool(&server, "check_rankings", json!({ "project_id": id }));
+    assert_eq!(blocked["isError"], true);
+    assert!(
+        blocked["content"][0]["text"]
+            .as_str()
+            .unwrap()
+            .contains("cannot be paid now")
+    );
+    let no_questions = tool(&server, "run_ai_visibility", json!({ "project_id": id }));
+    assert_eq!(no_questions["isError"], true);
+
+    // With a key every paid action gives its price first.
+    call(
+        &platform,
+        "set_key",
+        json!({ "provider": "dataforseo", "name": "credentials", "value": "me@example.com:secret" }),
+    );
+    let priced = tool(&server, "check_rankings", json!({ "project_id": id }));
+    assert_eq!(
+        priced["structuredContent"]["status"], "needs_approval",
+        "{priced}"
+    );
+    assert!(
+        priced["structuredContent"]["price"]["usd"]
+            .as_f64()
+            .unwrap()
+            > 0.0
+    );
+    let brief = tool(
+        &server,
+        "create_content_brief",
+        json!({ "project_id": id, "keyword": "spor ayakkabı" }),
+    );
+    assert_eq!(
+        brief["structuredContent"]["status"], "needs_approval",
+        "{brief}"
+    );
+    let too_little = tool(
+        &server,
+        "check_rankings",
+        json!({ "project_id": id, "allow_spend_usd": 0.000_1 }),
+    );
+    assert_eq!(too_little["structuredContent"]["status"], "needs_approval");
+    assert_eq!(
+        transport.requests().len(),
+        0,
+        "nothing is bought without an allowance"
+    );
+}
+
+#[test]
+fn the_program_shows_the_release_version_of_the_desktop_program() {
+    let dir = tempfile::tempdir().unwrap();
+    let platform = platform(dir.path(), &Arc::new(FakeTransport::new()));
+    let config: Value = serde_json::from_str(
+        &std::fs::read_to_string(
+            Path::new(env!("CARGO_MANIFEST_DIR"))
+                .join("../../apps/geo-seo-platform/src-tauri/tauri.conf.json"),
+        )
+        .unwrap(),
+    )
+    .unwrap();
+    assert_eq!(
+        call(&platform, "app_info", Value::Null)["version"],
+        config["version"]
+    );
 }

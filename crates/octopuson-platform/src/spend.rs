@@ -85,6 +85,26 @@ impl PlatformStore {
         Ok(rows.collect::<Result<_, _>>()?)
     }
 
+    /// US dollars a project spent in `month` (`YYYY-MM`) by module, most first.
+    ///
+    /// # Errors
+    /// Database errors.
+    pub fn project_spend(
+        &self,
+        project_id: i64,
+        month: &str,
+    ) -> Result<Vec<(String, f64)>, PlatformStoreError> {
+        let mut statement = self.connection.prepare(
+            "SELECT module, sum(cost_usd) FROM spend
+             WHERE project_id = ? AND substr(spent_at, 1, 7) = ?
+             GROUP BY module ORDER BY 2 DESC, module",
+        )?;
+        let rows = statement.query_map(params![project_id, month], |row| {
+            Ok((row.get(0)?, row.get(1)?))
+        })?;
+        Ok(rows.collect::<Result<_, _>>()?)
+    }
+
     /// US dollars spent on `provider` in `month` (`YYYY-MM`), both ways of paying.
     ///
     /// # Errors

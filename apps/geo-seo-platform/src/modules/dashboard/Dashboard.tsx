@@ -3,12 +3,13 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { FolderPlus, Globe, Pencil, Plus, Trash2, Wallet } from "lucide-react";
 import { Button, Empty, ErrorState, Loading } from "@octopusseo/ui";
 import { api } from "../../api/client";
-import type { ProjectRow } from "../../api/types";
+import type { ProjectRow, SnapshotProgress } from "../../api/types";
 import { useI18n } from "../../i18n";
 import { useShell } from "../../lib/context";
 import { explain } from "../../lib/errors";
 import { creditsOf, formatCredits } from "../../lib/format";
 import { ProjectDialog } from "../projects/ProjectDialog";
+import { deltaText, toneOf } from "../snapshots/snapshot";
 
 function AccountStrip() {
   const { t, locale } = useI18n();
@@ -39,7 +40,25 @@ function AccountStrip() {
   );
 }
 
-function ProjectCard({ project, onEdit }: { project: ProjectRow; onEdit: () => void }) {
+/** Where the project stands against its first snapshot. */
+function Progress({ project, progress }: { project: ProjectRow; progress: SnapshotProgress }) {
+  const { t, locale } = useI18n();
+  const { go } = useShell();
+  const moved = progress.kpis.filter((kpi) => deltaText(kpi, locale) !== null).slice(0, 3);
+  if (moved.length === 0) return null;
+  return (
+    <button type="button" className="project-progress chip-button-row" onClick={() => go({ page: "snapshots", project: project.id })} title={t("snapshots.openPage")}>
+      <span className="faint small">{t("snapshots.since", { n: progress.days })}</span>
+      {moved.map((kpi) => (
+        <span key={kpi.key} className={`oc-chip ${toneOf(kpi) ?? ""}`}>
+          {t(`snapshots.kpi_${kpi.key}`)} {deltaText(kpi, locale)}
+        </span>
+      ))}
+    </button>
+  );
+}
+
+function ProjectCard({ project, progress, onEdit }: { project: ProjectRow; progress: SnapshotProgress | undefined; onEdit: () => void }) {
   const { t, locale } = useI18n();
   const { go, notify, fail } = useShell();
   const queryClient = useQueryClient();
@@ -75,8 +94,12 @@ function ProjectCard({ project, onEdit }: { project: ProjectRow; onEdit: () => v
           <dd>{project.competitors.length ? t("projects.competitorsCount", { n: project.competitors.length }) : t("projects.noCompetitors")}</dd>
         </div>
       </dl>
+      {progress && <Progress project={project} progress={progress} />}
       <footer className="project-card-foot">
-        <Button primary small onClick={() => go({ page: "overview", project: project.id })}>
+        <Button primary small onClick={() => go({ page: "project", project: project.id })}>
+          {t("projects.openDashboard")}
+        </Button>
+        <Button small className="ghost" onClick={() => go({ page: "overview", project: project.id })}>
           {t("projects.openOverview")}
         </Button>
         <Button small className="icon ghost" onClick={onEdit} aria-label={t("common.edit")} title={t("common.edit")}>
@@ -103,6 +126,7 @@ export function Dashboard() {
   const { t } = useI18n();
   const { go } = useShell();
   const projects = useQuery({ queryKey: ["projects"], queryFn: api.projects });
+  const progress = useQuery({ queryKey: ["snapshot-progress"], queryFn: api.snapshotProgress });
   const [editing, setEditing] = useState<ProjectRow | "new" | null>(null);
   return (
     <div className="page-stack">
@@ -133,7 +157,7 @@ export function Dashboard() {
         {projects.data && projects.data.length > 0 && (
           <div className="project-grid">
             {projects.data.map((project) => (
-              <ProjectCard key={project.id} project={project} onEdit={() => setEditing(project)} />
+              <ProjectCard key={project.id} project={project} progress={progress.data?.find((entry) => entry.project_id === project.id)} onEdit={() => setEditing(project)} />
             ))}
           </div>
         )}
@@ -144,7 +168,7 @@ export function Dashboard() {
           onClose={() => setEditing(null)}
           onSaved={(row) => {
             setEditing(null);
-            if (editing === "new") go({ page: "overview", project: row.id });
+            if (editing === "new") go({ page: "project", project: row.id });
           }}
         />
       )}

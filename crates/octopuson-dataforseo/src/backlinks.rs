@@ -23,6 +23,11 @@ pub const DOMAIN_PAGES: &str = "backlinks/domain_pages/live";
 pub const NEW_LOST: &str = "backlinks/timeseries_new_lost_summary/live";
 /// Endpoint of the ranks of many targets.
 pub const BULK_RANKS: &str = "backlinks/bulk_ranks/live";
+/// Endpoint of a domain's link profile month by month.
+pub const HISTORY: &str = "backlinks/history/live";
+
+/// The first month of the link history (`yyyy-mm-dd`).
+pub const HISTORY_START: &str = "2019-01-01";
 
 /// Most targets one bulk rank request takes.
 pub const MAX_BULK: usize = 1_000;
@@ -115,6 +120,21 @@ pub struct BacklinkRow {
     pub is_broken: bool,
     /// Country of the linking site.
     pub country: Option<String>,
+    /// IP address of the linking site.
+    #[serde(default)]
+    pub ip: Option<String>,
+    /// Top-level domain of the linking site (`com`, `xyz`).
+    #[serde(default)]
+    pub tld: Option<String>,
+    /// Links from the linking site to the target (one-per-domain lists).
+    #[serde(default)]
+    pub links_from_domain: Option<u64>,
+    /// Links to other sites on the linking page.
+    #[serde(default)]
+    pub page_external_links: Option<u64>,
+    /// Where the linked page redirects.
+    #[serde(default)]
+    pub redirect_target: Option<String>,
 }
 
 /// A domain linking to the target.
@@ -180,6 +200,29 @@ pub struct NewLostPoint {
     /// Referring domains won.
     pub new_referring_domains: u64,
     /// Referring domains lost.
+    pub lost_referring_domains: u64,
+}
+
+/// A domain's link profile on the first day of a month.
+#[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
+pub struct LinkHistoryPoint {
+    /// The month, `yyyy-mm`.
+    pub month: String,
+    /// Authority, 0–100.
+    pub rank: Option<u32>,
+    /// Live backlinks.
+    pub backlinks: u64,
+    /// Domains linking.
+    pub referring_domains: u64,
+    /// Registrable domains linking.
+    pub referring_main_domains: u64,
+    /// Backlinks won since the month before (from May 2021).
+    pub new_backlinks: u64,
+    /// Backlinks lost since the month before (from May 2021).
+    pub lost_backlinks: u64,
+    /// Referring domains won since the month before.
+    pub new_referring_domains: u64,
+    /// Referring domains lost since the month before.
     pub lost_referring_domains: u64,
 }
 
@@ -303,6 +346,23 @@ pub fn backlinks_task(target: &str, query: BacklinkQuery, limit: u32) -> Result<
     Ok(task)
 }
 
+/// Linking sites read by the toxic-link audit at most: the riskiest first.
+pub const AUDIT_ROWS: u32 = 1_000;
+
+/// The task of the toxic-link audit: one live link from each linking site, the highest spam
+/// score first.
+///
+/// # Errors
+/// [`DfsError::Config`] for an empty target.
+pub fn audit_task(target: &str, limit: u32) -> Result<Value, DfsError> {
+    let mut task = base(target)?;
+    task["limit"] = json!(crate::site::rows(limit));
+    task["mode"] = json!("one_per_domain");
+    task["backlinks_status_type"] = json!("live");
+    task["order_by"] = json!(["backlink_spam_score,desc"]);
+    Ok(task)
+}
+
 /// The task of referring domains, strongest first.
 ///
 /// # Errors
@@ -356,6 +416,29 @@ pub fn new_lost_task(target: &str) -> Result<Value, DfsError> {
         "group_range": "month",
         "include_subdomains": true,
     }))
+}
+
+/// The task of a domain's link profile month by month since `date_from` (`yyyy-mm-dd`, not
+/// before [`HISTORY_START`]), authority on the 0–100 scale.
+///
+/// # Errors
+/// [`DfsError::Config`] for an empty target.
+pub fn history_task(target: &str, date_from: &str) -> Result<Value, DfsError> {
+    let domain = crate::target_domain(target);
+    if domain.is_empty() {
+        return Err(DfsError::Config("the target is empty".to_owned()));
+    }
+    let from = if date_from < HISTORY_START {
+        HISTORY_START
+    } else {
+        date_from
+    };
+    Ok(json!({ "target": domain, "date_from": from, "rank_scale": "one_hundred" }))
+}
+
+/// Months of link history from [`HISTORY_START`] to `year`-`month`, both counted.
+pub fn history_months(year: u32, month: u32) -> u32 {
+    (year * 12 + month.clamp(1, 12)).saturating_sub(2019 * 12 + 1) + 1
 }
 
 /// The task of the authority of `targets` (at most [`MAX_BULK`], duplicates dropped).
@@ -477,6 +560,11 @@ pub fn backlinks_from_result(result: &[Value]) -> Vec<BacklinkRow> {
                 is_lost: flag(item, "is_lost"),
                 is_broken: flag(item, "is_broken"),
                 country: text(item, "domain_from_country"),
+                ip: text(item, "domain_from_ip"),
+                tld: text(item, "tld_from"),
+                links_from_domain: item.get("group_count").and_then(count),
+                page_external_links: item.get("page_from_external_links").and_then(count),
+                redirect_target: text(item, "url_to_redirect_target"),
             })
         })
         .collect()
@@ -552,6 +640,28 @@ pub fn new_lost_from_result(result: &[Value]) -> Vec<NewLostPoint> {
         })
         .collect();
     points.sort_by(|left, right| left.date.cmp(&right.date));
+    points
+}
+
+/// Reads a link history answer, oldest first.
+pub fn history_from_result(result: &[Value]) -> Vec<LinkHistoryPoint> {
+    let mut points: Vec<LinkHistoryPoint> = items_of(result)
+        .iter()
+        .filter_map(|item| {
+            Some(LinkHistoryPoint {
+                month: text(item, "date")?.chars().take(7).collect(),
+                rank: small(item, "rank"),
+                backlinks: whole(item, "backlinks"),
+                referring_domains: whole(item, "referring_domains"),
+                referring_main_domains: whole(item, "referring_main_domains"),
+                new_backlinks: whole(item, "new_backlinks"),
+                lost_backlinks: whole(item, "lost_backlinks"),
+                new_referring_domains: whole(item, "new_referring_domains"),
+                lost_referring_domains: whole(item, "lost_referring_domains"),
+            })
+        })
+        .collect();
+    points.sort_by(|left, right| left.month.cmp(&right.month));
     points
 }
 

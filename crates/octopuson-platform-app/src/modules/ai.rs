@@ -168,7 +168,7 @@ fn route_of(workspace: &Workspace, settings: &AiSettings, engine: &str) -> Optio
     })
 }
 
-fn llm_error(error: LlmError) -> AppError {
+pub(crate) fn llm_error(error: LlmError) -> AppError {
     match error {
         LlmError::Auth(message) => AppError::Auth(message),
         LlmError::Quota(message) => AppError::Quota(message),
@@ -587,6 +587,7 @@ fn ask_once(
         Path::AiMode => (dfs::AI_MODE, dfs::ai_mode_task(prompt, &market)?),
     };
     let paid = Paid {
+        travels: true,
         module: MODULE,
         provider: route.provider(),
         endpoint,
@@ -994,6 +995,8 @@ struct RunPoint {
     share_of_voice: f64,
     /// Mention rate by assistant.
     engines: BTreeMap<String, f64>,
+    /// Each brand's share of the run's brand mentions, 0–100: the own one and its rivals.
+    brands: BTreeMap<String, f64>,
 }
 
 /// The latest answer of a question on one assistant.
@@ -1046,8 +1049,44 @@ struct AiReport {
     top_domains: Vec<SourceCount>,
     /// The own site's pages the latest answers cite.
     own_pages: Vec<SourceCount>,
+    /// Pages of any site the latest answers cite most.
+    top_pages: Vec<SourceCount>,
     last_run: Option<AiRunRow>,
     since: String,
+}
+
+/// Brands kept in a run's shares.
+const RUN_BRANDS: usize = 6;
+
+/// Each brand's share of a set of answers' brand mentions, 0–100: the own brand and the most
+/// named rivals.
+#[allow(clippy::cast_precision_loss)] // mention counts
+fn brand_shares(answers: &[&AiAnswerRow]) -> BTreeMap<String, f64> {
+    let mut counts: BTreeMap<(bool, String), u32> = BTreeMap::new();
+    let mut all = 0_u32;
+    for row in answers.iter().filter(|row| row.error.is_none()) {
+        for brand in row.brands.iter().filter(|brand| brand.position.is_some()) {
+            *counts.entry((brand.own, brand.key.clone())).or_default() += 1;
+            all += 1;
+        }
+    }
+    if all == 0 {
+        return BTreeMap::new();
+    }
+    let mut ranked: Vec<((bool, String), u32)> = counts.into_iter().collect();
+    ranked.sort_by(|((own_a, key_a), a), ((own_b, key_b), b)| {
+        own_b.cmp(own_a).then(b.cmp(a)).then(key_a.cmp(key_b))
+    });
+    ranked
+        .into_iter()
+        .take(RUN_BRANDS)
+        .map(|((_, key), mentions)| {
+            (
+                key,
+                (f64::from(mentions) / f64::from(all) * 1000.0).round() / 10.0,
+            )
+        })
+        .collect()
 }
 
 fn belongs(domain: &str, site: &str) -> bool {
@@ -1170,6 +1209,7 @@ fn ai_report(context: &Context<'_>, ask: ReportAsk) -> Result<AiReport, AppError
                 }
             }
             RunPoint {
+                brands: brand_shares(&rows),
                 run_id,
                 date: rows
                     .first()
@@ -1222,12 +1262,21 @@ fn ai_report(context: &Context<'_>, ask: ReportAsk) -> Result<AiReport, AppError
 
     let mut domains: HashMap<String, u32> = HashMap::new();
     let mut pages: HashMap<String, (Option<String>, u32)> = HashMap::new();
+    let mut cited_pages: HashMap<String, (String, Option<String>, u32)> = HashMap::new();
     for row in &ok {
         let mut seen = Vec::new();
+        let mut seen_pages = Vec::new();
         for citation in &row.citations {
             if !seen.contains(&citation.domain) {
                 *domains.entry(citation.domain.clone()).or_default() += 1;
                 seen.push(citation.domain.clone());
+            }
+            if !seen_pages.contains(&citation.url) {
+                cited_pages
+                    .entry(citation.url.clone())
+                    .or_insert((citation.domain.clone(), citation.title.clone(), 0))
+                    .2 += 1;
+                seen_pages.push(citation.url.clone());
             }
             if belongs(&citation.domain, &own) {
                 let entry = pages
@@ -1269,6 +1318,22 @@ fn ai_report(context: &Context<'_>, ask: ReportAsk) -> Result<AiReport, AppError
             .then(left.key.cmp(&right.key))
     });
     own_pages.truncate(TOP_SOURCES);
+    let mut top_pages: Vec<SourceCount> = cited_pages
+        .into_iter()
+        .map(|(key, (domain, title, answers))| SourceCount {
+            own: belongs(&domain, &own),
+            key,
+            title,
+            answers,
+        })
+        .collect();
+    top_pages.sort_by(|left, right| {
+        right
+            .answers
+            .cmp(&left.answers)
+            .then(left.key.cmp(&right.key))
+    });
+    top_pages.truncate(TOP_SOURCES);
 
     Ok(AiReport {
         summary: visibility(&current),
@@ -1278,6 +1343,7 @@ fn ai_report(context: &Context<'_>, ask: ReportAsk) -> Result<AiReport, AppError
         prompts: prompt_rows,
         top_domains,
         own_pages,
+        top_pages,
         last_run: runs.into_iter().next(),
         since,
     })
@@ -1366,6 +1432,7 @@ fn mentions_question(
     drop(store);
     let market = Market::new(&project.country, &project.language);
     let paid = |endpoint: &'static str, task: Value, estimate_usd: f64| Paid {
+        travels: true,
         module: MODULE,
         provider: octopuson_dataforseo::ID,
         endpoint,
@@ -1458,6 +1525,7 @@ fn regrouped(fetched: Fetched<Vec<Vec<Value>>>, question: &MentionsQuestion) -> 
         spent_usd: fetched.spent_usd,
         via: fetched.via,
         saved_usd: fetched.saved_usd,
+        total: None,
     }
 }
 

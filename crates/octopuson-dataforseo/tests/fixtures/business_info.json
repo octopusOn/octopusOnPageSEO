@@ -1,0 +1,73 @@
+{
+  "version": "0.1.20260801",
+  "status_code": 20000,
+  "status_message": "Ok.",
+  "cost": 0.0054,
+  "tasks_count": 1,
+  "tasks": [
+    {
+      "id": "10231201-1535-0139-0000-2d2d4e0b6c1b",
+      "status_code": 20000,
+      "status_message": "Ok.",
+      "cost": 0.0054,
+      "data": { "api": "business_data", "function": "my_business_info", "se": "google", "keyword": "Örnek Kahve Kadıköy", "location_code": 2792, "language_code": "tr" },
+      "result": [
+        {
+          "keyword": "Örnek Kahve Kadıköy",
+          "se_domain": "google.com",
+          "location_code": 2792,
+          "language_code": "tr",
+          "check_url": "https://www.google.com/search?q=%C3%96rnek+Kahve+Kad%C4%B1k%C3%B6y",
+          "datetime": "2026-10-23 09:00:00 +00:00",
+          "items_count": 1,
+          "items": [
+            {
+              "type": "google_business_info",
+              "title": "Örnek Kahve Kadıköy",
+              "description": "Kadıköy'de taze kavrulmuş kahve.",
+              "category": "Kafe",
+              "category_ids": ["cafe", "coffee_shop"],
+              "additional_categories": ["Kahve dükkanı", "Kahvaltı restoranı"],
+              "cid": "222222222222222222",
+              "feature_id": "0x2:0x2",
+              "address": "Bahariye Cd. 20, Kadıköy/İstanbul",
+              "address_info": { "borough": "Kadıköy", "address": "Bahariye Cd. 20", "city": "İstanbul", "zip": "34714", "region": "İstanbul", "country_code": "TR" },
+              "place_id": "ChIJornek",
+              "phone": "+90 216 000 00 02",
+              "url": "https://www.ornekkahve.com/kadikoy",
+              "domain": "www.ornekkahve.com",
+              "logo": null,
+              "main_image": "https://lh5.googleusercontent.com/p/ornek",
+              "total_photos": 312,
+              "snippet": "Bahariye Cd. 20",
+              "latitude": 40.9901,
+              "longitude": 29.0291,
+              "is_claimed": true,
+              "attributes": { "available_attributes": { "service_options": ["has_seating_outdoors", "has_takeout"] }, "unavailable_attributes": { "payments": ["pay_mobile_nfc"] } },
+              "place_topics": { "filtre kahve": 41, "tatlı": 22, "çalışma": 15 },
+              "rating": { "rating_type": "Max5", "value": 4.5, "votes_count": 640, "rating_max": 5 },
+              "rating_distribution": { "1": 22, "2": 13, "3": 35, "4": 120, "5": 450 },
+              "hotel_rating": null,
+              "price_level": "₺₺",
+              "work_time": {
+                "work_hours": {
+                  "timetable": {
+                    "sunday": [{ "open": { "hour": 9, "minute": 0 }, "close": { "hour": 22, "minute": 0 } }],
+                    "monday": [{ "open": { "hour": 8, "minute": 0 }, "close": { "hour": 22, "minute": 30 } }],
+                    "tuesday": [{ "open": { "hour": 8, "minute": 0 }, "close": { "hour": 22, "minute": 30 } }],
+                    "wednesday": [{ "open": { "hour": 8, "minute": 0 }, "close": { "hour": 22, "minute": 30 } }],
+                    "thursday": [{ "open": { "hour": 8, "minute": 0 }, "close": { "hour": 22, "minute": 30 } }],
+                    "friday": [{ "open": { "hour": 8, "minute": 0 }, "close": { "hour": 23, "minute": 0 } }],
+                    "saturday": null
+                  },
+                  "current_status": "opened"
+                }
+              },
+              "popular_times": null
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

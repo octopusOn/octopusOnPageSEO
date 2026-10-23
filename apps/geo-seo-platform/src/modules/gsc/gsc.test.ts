@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import type { GscDay, GscQuery } from "../../api/types";
-import { ALL_QUERIES, auditState, dailySeries, filterQueries, pageCsv, percentChange, queryCsv } from "./gsc";
+import { ALL_QUERIES, auditState, dailySeries, exportRows, filterQueries, pageCsv, percentChange, queryCsv } from "./gsc";
 
 const day = (date: string, period: "now" | "before", clicks: number): GscDay => ({ date, period, clicks, impressions: clicks * 10, position: 5, sessions: null, key_events: null });
 
@@ -16,6 +16,7 @@ const query = (text: string, extra: Partial<GscQuery> = {}): GscQuery => ({
   tracked: false,
   near_top: false,
   low_ctr: false,
+  brand: false,
   ...extra,
 });
 
@@ -36,6 +37,10 @@ describe("search console", () => {
     expect(filterQueries(rows, { ...ALL_QUERIES, query: "ayakkabi" }).map((row) => row.query)).toEqual(["Spor Ayakkabı"]);
     expect(filterQueries(rows, { ...ALL_QUERIES, nearTop: true })).toHaveLength(1);
     expect(filterQueries(rows, { ...ALL_QUERIES, untracked: true }).map((row) => row.query)).toEqual(["Spor Ayakkabı", "bot"]);
+    const named = [...rows, query("örnek mağaza", { brand: true })];
+    expect(filterQueries(named, { ...ALL_QUERIES, brand: "brand" }).map((row) => row.query)).toEqual(["örnek mağaza"]);
+    expect(filterQueries(named, { ...ALL_QUERIES, brand: "other" })).toHaveLength(rows.length);
+    expect(exportRows([["a", 1, true, null, false]])).toEqual([["a", "1", "1", "", "0"]]);
   });
 
   it("reads how the audit saw a page and writes CSV rows", () => {

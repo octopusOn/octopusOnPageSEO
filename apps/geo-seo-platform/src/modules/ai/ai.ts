@@ -1,7 +1,7 @@
 // What the AI Visibility page computes on its own: assistant names, question input, the state of
 // an answer in the matrix, its tone, brand highlights in an answer and the rows of its CSV.
 
-import type { AiCell, AiEngine, AiPromptRow, Brand } from "../../api/types";
+import type { AiCell, AiEngine, AiPromptRow, AiRunPoint, Brand, BrandShare } from "../../api/types";
 import { fold } from "../../lib/report";
 
 export const ENGINES: AiEngine[] = ["chatgpt", "claude", "gemini", "perplexity", "google_ai_mode"];
@@ -137,4 +137,22 @@ export function csvRows(rows: readonly AiPromptRow[], engines: readonly AiEngine
       return cell?.position ? `${state(now)} (${cell.position})` : state(now);
     }),
   ]);
+}
+
+/** What the history chart draws. */
+export type HistoryMetric = "mention" | "citation" | "voice";
+
+/** Brands drawn in the share-of-voice history at most. */
+const VOICE_LINES = 5;
+
+/**
+ * Each brand's share of voice run by run, for the history chart: the own brand first, then the
+ * rivals named most in the latest answers (`brands`), then any other the runs name.
+ */
+export function voiceSeries(history: readonly AiRunPoint[], brands: readonly BrandShare[]): { key: string; own: boolean; values: (number | null)[] }[] {
+  const named = new Set(history.flatMap((point) => Object.keys(point.brands ?? {})));
+  const order = [...brands.filter((brand) => brand.own), ...brands.filter((brand) => !brand.own)].map((brand) => brand.key).filter((key) => named.has(key));
+  for (const key of named) if (!order.includes(key)) order.push(key);
+  const own = new Set(brands.filter((brand) => brand.own).map((brand) => brand.key));
+  return order.slice(0, VOICE_LINES).map((key) => ({ key, own: own.has(key), values: history.map((point) => point.brands?.[key] ?? null) }));
 }

@@ -1,7 +1,15 @@
 // Sample answers for the interface outside the program (site previews, screenshots): nothing is
 // sent anywhere and nothing is stored.
 
+import { demoReportHtml } from "./demoReports";
+import { auditDemo } from "./demoAudit";
+import { projectDemo } from "./demoProject";
+import { alertsDemo } from "./demoAlerts";
+import { contentDemo } from "./demoContent";
+import { localDemo } from "./demoLocal";
+import { snapshotDemo } from "./demoSnapshots";
 import { CallError } from "./transport";
+import { BACKLINK_ACCESSORS, isEmptyQuery, KEYWORD_ACCESSORS, RANKED_KEYWORD_ACCESSORS, REFERRING_DOMAIN_ACCESSORS, runQuery, type ListQuery } from "../lib/query";
 import type {
   AccountStatus,
   AiAnswer,
@@ -72,7 +80,21 @@ import type {
   Fetched,
   HistoryPoint,
   KeywordData,
+  AdCopy,
+  CategoryName,
+  CategoryPlayer,
+  ClusterEstimate,
+  DisavowFile,
+  DomainCategory,
+  CountryRow,
   KeywordList,
+  GapGroup,
+  GapMatrix,
+  LinkDecision,
+  LinkHistoryPoint,
+  LinkProspect,
+  LinkRisk,
+  MetricPoint,
   KeywordListRow,
   LinkedPageRow,
   ListKeyword,
@@ -85,6 +107,11 @@ import type {
   RankMetrics,
   RankRow,
   ReferringDomainRow,
+  Outbound,
+  PageGapRow,
+  PlacesReport,
+  SerpGroups,
+  TrafficHistory,
   SerpPage,
   Settings,
   SubdomainRow,
@@ -181,11 +208,13 @@ const SAMPLE_KEYWORDS: [string, number, number, number, number, string, string, 
   ["su geçirmez ayakkabı", 9, 3600, 33, 210, "commercial", "/su-gecirmez", ["people_also_ask", "ai_overview"]],
 ];
 
-function report(kind: string, target: string): unknown {
+function report(kind: string, target: string, args: Record<string, unknown> = {}): unknown {
   switch (kind) {
-    case "history":
-      return Array.from({ length: 24 }, (_, index) => {
-        const date = new Date(Date.UTC(2024, 9 + index, 1));
+    case "history": {
+      // Two years, or everything since October 2020.
+      const months = typeof args.months === "number" && args.months > 24 ? 73 : 24;
+      return Array.from({ length: months }, (_, index) => {
+        const date = new Date(Date.UTC(2026, 9 - months + index, 1));
         const growth = 1 + index * 0.035 + Math.sin(index / 2) * 0.04;
         return {
           year: date.getUTCFullYear(),
@@ -194,6 +223,28 @@ function report(kind: string, target: string): unknown {
           paid: metrics(120, 3_900, 3_200, 100),
         } satisfies HistoryPoint;
       });
+    }
+    case "countries":
+      return [
+        ["tr", 2792, "tr", 17_900, 93_000],
+        ["de", 2276, "de", 1_240, 4_100],
+        ["az", 2031, "az", 880, 3_300],
+        ["nl", 2528, "nl", 410, 1_200],
+        ["gb", 2826, "en", 390, 950],
+        ["us", 2840, "en", 350, 700],
+        ["fr", 2250, "fr", 120, 260],
+        ["cy", 2196, "tr", 95, 240],
+        ["at", 2040, "de", 80, 190],
+        ["be", 2056, "nl", 60, 120],
+        ["ch", 2756, "de", 40, 90],
+        ["kz", 2398, "ru", 30, 40],
+      ].map(([country, location, language, keywords, traffic]) => ({
+        country: String(country),
+        location_code: Number(location),
+        language: String(language),
+        organic: metrics(Number(keywords), Number(traffic), Number(traffic) * 0.4, Number(keywords) / 5),
+        paid: metrics(Math.round(Number(keywords) / 40), Math.round(Number(traffic) / 30), Number(traffic) / 10, 0),
+      })) satisfies CountryRow[];
     case "keywords":
       return {
         total: 18_420,
@@ -248,10 +299,107 @@ function report(kind: string, target: string): unknown {
         [target, 96_310, 4_210],
         ["rakip-magaza.com", 140_000, 12_400],
         ["digerdukkan.com.tr", 61_000, 900],
+        ...(Array.isArray(args.targets) ? args.targets.map((entry, index) => [String(entry), 30_000 + index * 9_000, 300]) : []),
       ].map(([domain, organic, paid]) => ({ target: String(domain), organic_traffic: Number(organic), organic_keywords: Math.round(Number(organic) / 5), paid_traffic: Number(paid), paid_keywords: Math.round(Number(paid) / 30) })) satisfies TrafficRow[];
     default:
       return overview(target);
   }
+}
+
+/** Linking sites as the toxic-link audit judges them. */
+const DEMO_RISKS: LinkRisk[] = [
+  ["seo-links-cheap.xyz", 78, ["spam", "tld"], "185.22.14", 4, true, "en iyi spor ayakkabı"],
+  ["casino-bonus-hub.top", 71, ["spam", "tld", "spam_anchor"], "91.211.8", 2, true, "canlı casino bonus"],
+  ["blog-net-a.com", 18, ["network"], "185.12.7", 9, true, "ornekmagaza"],
+  ["blog-net-b.com", 21, ["network"], "185.12.7", 8, true, "spor ayakkabı"],
+  ["blog-net-c.com", 16, ["network", "sitewide"], "185.12.7", 7, true, "tıklayın"],
+  ["linkdirectory.info", 42, ["spam_some", "link_farm"], "78.46.1", 11, true, "ornekmagaza.com"],
+  ["forum.kosucular.org", 33, ["spam_some"], "88.250.4", 31, true, "bu mağaza"],
+  ["spam-yorum.icu", 64, ["spam", "tld"], "45.9.20", 3, false, "ayakkabı"],
+  ["haber.com.tr", 2, [], "212.58.2", 71, true, "Örnek Mağaza"],
+  ["blog.moda.net", 4, [], "104.21.3", 48, true, "yeni sezon"],
+  ["magazin.com", 1, [], "151.101.1", 64, false, "spor ayakkabı trendleri"],
+].map(([domain, spam, flags, network, rank, dofollow, anchor]) => {
+  const weights: Record<string, number> = { spam: 55, spam_some: 25, network: 20, tld: 15, sitewide: 10, link_farm: 20, spam_anchor: 35 };
+  const raw = (flags as string[]).reduce((sum, flag) => sum + (weights[flag] ?? 0), 0);
+  const score = Math.min(100, dofollow ? raw : Math.floor(raw / 2));
+  return {
+    domain: String(domain),
+    url_from: `https://${String(domain)}/yazi/${String(anchor).replace(/\s+/g, "-")}`,
+    url_to: "https://www.ornekmagaza.com/",
+    anchor: String(anchor),
+    dofollow: Boolean(dofollow),
+    spam_score: Number(spam),
+    domain_rank: Number(rank),
+    network: String(network),
+    tld: String(domain).split(".").pop() ?? null,
+    links: (flags as string[]).includes("sitewide") ? 240 : 3,
+    country: "TR",
+    first_seen: "2025-03-14",
+    flags: flags as string[],
+    score,
+    risk: score >= 50 ? "high" : score >= 25 ? "medium" : "low",
+  } satisfies LinkRisk;
+});
+
+let linkDecisions: LinkDecision[] = [{ domain: "seo-links-cheap.xyz", decision: "disavow", note: null, decided_at: NOW }];
+let linkProspects: LinkProspect[] = [
+  { domain: "kosuhaberleri.com", url: "https://kosuhaberleri.com/en-iyi-kosu-ayakkabilari", source: "gap", status: "contacted", note: "editor@kosuhaberleri.com — 21 Ekim'de yazıldı", added_at: NOW, updated_at: NOW },
+  { domain: "sporrehberi.net", url: null, source: "lost", status: "prospect", note: null, added_at: NOW, updated_at: NOW },
+];
+
+const DEMO_SERP_DOMAINS = ["rakip-magaza.com", "ornekmagaza.com", "buyukpazar.com", "kosuclub.com", "digerdukkan.com.tr", "blog.ornek.org", "magaza.net", "sporium.com.tr", "ayakkabix.com", "trendy.com"];
+
+/** Keyword research in depth, from the sample keywords. */
+function research(report: string, args: Record<string, unknown>): unknown {
+  const seed = String(args.seed ?? "spor ayakkabı");
+  const url = (domain: string) => `https://www.${domain}/${seed.replace(/\s+/g, "-")}`;
+  switch (report) {
+    case "history":
+      // Every month since August 2021: a summer peak each year and slow growth.
+      return Array.from({ length: 62 }, (_, index) => {
+        const date = new Date(Date.UTC(2021, 7 + index, 1));
+        const season = 1 + 0.25 * Math.sin(((date.getUTCMonth() - 2) / 12) * 2 * Math.PI);
+        return { year: date.getUTCFullYear(), month: date.getUTCMonth() + 1, volume: Math.round(26_000 * season * (1 + index * 0.009)) };
+      });
+    case "serp_history":
+      return Array.from({ length: 12 }, (_, index) => {
+        const date = new Date(Date.UTC(2025, 10 + index, 3)).toISOString().slice(0, 10);
+        const order = [...DEMO_SERP_DOMAINS.slice(0, 8)].sort((left, right) => ((left.length * (index + 3)) % 7) - ((right.length * (index + 3)) % 7));
+        if (index > 7) order.unshift(order.splice(order.indexOf("ornekmagaza.com"), 1)[0]!);
+        return { date, results_count: 4_000_000, features: ["people_also_ask", ...(index > 5 ? ["ai_overview"] : [])], results: order.map((domain, rank) => ({ rank: rank + 1, domain, url: url(domain), title: `${seed} | ${domain}` })) };
+      });
+    case "serp_metrics":
+      return DEMO_SERP_DOMAINS.map((domain, index) => ({ rank: index + 1, url: url(domain), page_rank: Math.max(8, 52 - index * 4), referring_domains: Math.round(900 / (index + 1)), traffic: Math.round(14_000 / (index + 1)), keywords: Math.round(2_400 / (index + 1)) }));
+    case "parent": {
+      const keywords = SAMPLE_KEYWORDS.map(([keyword, position, volume, difficulty, traffic, intent, , features]) => ({ keyword, position, absolute_position: position, previous_position: null, change: "same" as const, url: url(DEMO_SERP_DOMAINS[0]!), volume, difficulty, cpc: 0.8, competition: 0.4, intent, traffic: traffic * 1.4, traffic_value_usd: traffic, serp_features: features }));
+      return { url: url(DEMO_SERP_DOMAINS[0]!), parent: keywords[0] ?? null, reach: { traffic: 48_200, keywords: 1_870 }, keywords };
+    }
+    case "countries":
+      return ["us-en", "gb-en", "de-de", "fr-fr", "nl-nl", "es-es", "it-it", "az-az", "ru-ru", "ae-ar"].map((market, index) => ({ market, data: index % 4 === 3 ? null : sampleKeyword(seed, Math.round(2_400 / (index + 1)), 30 + index * 4, "commercial") }));
+    default:
+      return null;
+  }
+}
+
+/** The sample keywords as lost ones (no position now) or as ads with their text. */
+function keywordSet(list: RankedKeywords, set: string, target: string): RankedKeywords {
+  if (set === "lost")
+    return {
+      total: 1_240,
+      keywords: list.keywords.slice(3, 9).map((row) => ({ ...row, keyword: `${row.keyword} fiyatları`, position: null, absolute_position: null, previous_position: (row.position ?? 10) + 4, change: "same", traffic: 0, traffic_value_usd: 0 })),
+    };
+  if (set === "paid") {
+    const ads = [
+      { title: "Spor Ayakkabıda %40'a Varan İndirim", description: "Binlerce model, ücretsiz kargo ve 30 gün kolay iade. Hemen keşfedin.", breadcrumb: `www.${target}/kampanya` },
+      { title: "Yeni Sezon Koşu Ayakkabıları", description: "Hafif, nefes alan modeller. Aynı gün kargo.", breadcrumb: `www.${target}/kosu` },
+    ];
+    return {
+      total: 96,
+      keywords: list.keywords.slice(0, 6).map((row, index) => ({ ...row, position: (index % 3) + 1, absolute_position: (index % 3) + 1, traffic: Math.round(row.traffic / 6), traffic_value_usd: Math.round((row.traffic / 6) * (row.cpc ?? 1)), ad: ads[index % 2] })),
+    };
+  }
+  return list;
 }
 
 const sampleKeyword = (keyword: string, volume: number, difficulty: number, intent: string, features: string[] = []): KeywordData => ({
@@ -285,6 +433,11 @@ const SAMPLE_IDEAS: KeywordData[] = [
   sampleKeyword("spor ayakkabı indirim", 6_600, 44, "transactional", ["shopping"]),
   sampleKeyword("koşu ayakkabısı", 14_800, 51, "commercial", ["video", "images"]),
   sampleKeyword("spor ayakkabı mı sneaker mı", 320, 6, "informational", ["people_also_ask"]),
+  sampleKeyword("beyaz spor ayakkabı kadın", 5_400, 36, "transactional", ["images", "shopping"]),
+  sampleKeyword("siyah spor ayakkabı erkek", 3_600, 33, "transactional", ["images", "shopping"]),
+  sampleKeyword("kadın spor ayakkabı indirim", 2_900, 31, "transactional", ["shopping"]),
+  sampleKeyword("erkek spor ayakkabı beyaz", 1_900, 28, "transactional", ["images"]),
+  sampleKeyword("koşu için spor ayakkabı", 1_300, 25, "commercial", ["video", "people_also_ask"]),
 ];
 
 let lists: KeywordListRow[] = [{ id: 1, project_id: 1, name: "Spor ayakkabı", keywords: 3, created_at: NOW }];
@@ -396,6 +549,25 @@ function backlinkReport(kind: string, args: Record<string, unknown>): unknown {
       const targets = Array.isArray(args.targets) && args.targets.length ? args.targets.map(String) : [target, "rakip-magaza.com", "digerdukkan.com.tr"];
       return targets.map((entry, index) => ({ target: entry, rank: Math.max(5, 61 - index * 9 + (entry.length % 7)) })) satisfies RankRow[];
     }
+    case "audit":
+      return DEMO_RISKS;
+    case "history":
+      // Every month since January 2019: slow growth with a jump in 2023.
+      return Array.from({ length: 94 }, (_, index) => {
+        const date = new Date(Date.UTC(2019, index, 1));
+        const growth = 1 + index * 0.025 + (index > 52 ? 0.6 : 0);
+        return {
+          month: date.toISOString().slice(0, 7),
+          rank: Math.min(100, Math.round(21 + index * 0.28)),
+          backlinks: Math.round(52_000 * growth),
+          referring_domains: Math.round(780 * growth),
+          referring_main_domains: Math.round(700 * growth),
+          new_backlinks: index > 27 ? 900 + (index % 5) * 120 : 0,
+          lost_backlinks: index > 27 ? 600 + (index % 4) * 90 : 0,
+          new_referring_domains: index > 27 ? 20 + (index % 6) : 0,
+          lost_referring_domains: index > 27 ? 12 + (index % 3) : 0,
+        } satisfies LinkHistoryPoint;
+      });
     default:
       return null;
   }
@@ -443,6 +615,85 @@ function gapReport(kind: string, args: Record<string, unknown>): unknown {
       const targets = Array.isArray(args.targets) && args.targets.length ? args.targets.map(String) : [own, ...competitors];
       return targets.map((target, index) => ({ target, organic_traffic: 140_000 / (index + 1.4), organic_keywords: 26_000 - index * 4_000, paid_traffic: 4_000 - index * 900, rank: 61 - index * 7 }));
     }
+    case "keywords": {
+      // Positions of the site and each competitor (0: does not rank among the keywords read).
+      const rows: [string, number, number, number, string, number[]][] = [
+        ["spor ayakkabı", 40_500, 62, 1.2, "commercial", [3, 1, 6]],
+        ["koşu ayakkabısı", 14_800, 51, 1.1, "commercial", [0, 2, 4]],
+        ["yürüyüş ayakkabısı", 12_100, 44, 0.9, "commercial", [2, 5, 8]],
+        ["ortopedik ayakkabı", 9_900, 46, 1.4, "commercial", [0, 3, 0]],
+        ["kadın sneaker", 22_200, 55, 1.0, "transactional", [5, 0, 0]],
+        ["deri bot", 9_900, 41, 0.8, "transactional", [8, 2, 3]],
+        ["trail ayakkabı", 1_900, 30, 0.6, "commercial", [0, 6, 0]],
+        ["spor çorap", 4_400, 22, 0.3, "transactional", [0, 2, 5]],
+        ["ayakkabı bakımı", 4_400, 22, 0.2, "informational", [12, 0, 0]],
+        ["su geçirmez ayakkabı", 3_600, 33, 0.7, "commercial", [9, 4, 11]],
+        ["sneaker temizleme", 1_300, 11, 0.1, "informational", [0, 0, 4]],
+        ["ornekmagaza", 2_900, 4, 0.2, "navigational", [1, 0, 0]],
+      ];
+      const domains = [own, ...competitors];
+      const groupsOf = (positions: number[]): string[] => {
+        const mine = positions[0] || null;
+        const theirs = positions.slice(1, domains.length).map((position) => position || null);
+        const ranked = theirs.filter((position): position is number => position !== null);
+        const all = theirs.length > 0 && ranked.length === theirs.length;
+        const groups: string[] = [];
+        if (mine) {
+          if (all) groups.push("shared");
+          if (all && ranked.every((position) => mine > position)) groups.push("weak");
+          if (ranked.length === 0) groups.push("unique");
+          else if (ranked.every((position) => mine < position)) groups.push("strong");
+        } else if (all) groups.push("missing");
+        else if (ranked.length > 0) groups.push("untapped");
+        return groups;
+      };
+      // Only keywords one of the compared sites ranks for come back.
+      const keywords = rows.filter(([, , , , , positions]) => positions.slice(0, domains.length).some(Boolean)).map(([keyword, volume, difficulty, cpc, intent, positions]) => ({
+        keyword,
+        volume,
+        difficulty,
+        cpc,
+        intent,
+        rankings: domains.map((domain, index) => (positions[index] ? ranking(domain, positions[index]!) : null)),
+        groups: groupsOf(positions) as GapGroup[],
+      }));
+      const counts = Object.fromEntries(["shared", "missing", "weak", "strong", "untapped", "unique"].map((group) => [group, keywords.filter((row) => row.groups.includes(group as GapGroup)).length])) as Record<GapGroup, number>;
+      return { own, competitors, rows_per_domain: Number(args.limit ?? 500), keywords_per_domain: domains.map((_, index) => keywords.filter((row) => row.rankings[index]).length * 180), counts, keywords } satisfies GapMatrix;
+    }
+    case "pages":
+      return [
+        ["kadın koşu ayakkabısı", 6_600, 38, 1.1, "commercial", 3, 410],
+        ["koşu ayakkabısı nasıl seçilir", 1_900, 22, 0.4, "informational", 7, 38],
+        ["hafif koşu ayakkabısı", 1_300, 29, 0.9, "commercial", 4, 120],
+        ["maraton ayakkabısı", 880, 35, 1.0, "commercial", 9, 22],
+      ].map(([keyword, volume, difficulty, cpc, intent, position, traffic]) => ({ keyword: String(keyword), volume: Number(volume), difficulty: Number(difficulty), cpc: Number(cpc), intent: String(intent), position: Number(position), traffic: Number(traffic) })) satisfies PageGapRow[];
+    case "share": {
+      const targets = [own, ...(Array.isArray(args.targets) && args.targets.length ? args.targets.map(String) : competitors)];
+      const months = typeof args.months === "number" ? Math.min(args.months, 72) : 12;
+      return targets.map((target, index) => ({
+        target,
+        months: Array.from({ length: months }, (_, month) => {
+          const date = new Date(Date.UTC(2026, 9 - months + month, 1));
+          const trend = index === 0 ? 1 + month * 0.03 : index === 1 ? 1.3 - month * 0.01 : 0.6 + Math.sin(month / 3) * 0.08;
+          return { year: date.getUTCFullYear(), month: date.getUTCMonth() + 1, traffic: Math.round(60_000 * trend), keywords: Math.round(18_000 * trend) };
+        }),
+      })) satisfies TrafficHistory[];
+    }
+    case "categories":
+      return [
+        [[10021, 10178, 10885], 41_200, 6_400],
+        [[10021, 10178], 23_900, 3_100],
+        [[10021, 10178, 10886], 12_800, 1_900],
+        [[10019, 10094], 3_400, 820],
+      ].map(([path, traffic, keywords]) => ({ code: (path as number[]).at(-1)!, path: path as number[], traffic: Number(traffic), keywords: Number(keywords) })) satisfies DomainCategory[];
+    case "players":
+      return [
+        ["rakip-magaza.com", 182_000, 31_000, 12_400],
+        [own, 96_300, 18_400, 9_800],
+        ["buyukpazar.com", 88_100, 22_000, -4_200],
+        ["sporium.com.tr", 41_500, 9_300, 3_100],
+        ["digerdukkan.com.tr", 37_900, 8_800, -900],
+      ].map(([domain, traffic, keywords, change]) => ({ domain: String(domain), traffic: Number(traffic), keywords: Number(keywords), traffic_change: Number(change) })) satisfies CategoryPlayer[];
     default:
       return null;
   }
@@ -519,8 +770,15 @@ function samplePosition(keyword: DemoKeyword, back: number, trackerId: number): 
 
 const slug = (keyword: string) => keyword.toLowerCase().replace(/[^a-z0-9ğüşıöç]+/g, "-");
 
-function rankRows(state: DemoRank, trackerId: number, days: number): KeywordRank[] {
+/** A competitor's sample position for a keyword; `null` when it does not rank. */
+function rivalPosition(keywordId: number, index: number): number | null {
+  const position = index === 0 ? ((keywordId * 7 + 3) % 15) + 1 : ((keywordId * 5 + 2) % 25) + 1;
+  return (keywordId + index) % 4 === 0 ? null : position;
+}
+
+function rankRows(state: DemoRank, trackerId: number, days: number, competitors: string[] = [], compare: string | null = null): KeywordRank[] {
   const span = Math.min(days, 60);
+  const compareBack = compare ? Math.round((Date.parse(NOW) - Date.parse(`${compare}T00:00:00Z`)) / 86_400_000) : null;
   return state.keywords.map((keyword) => {
     const history: [string, number | null][] = Array.from({ length: span }, (_, index) => {
       const back = span - 1 - index;
@@ -531,6 +789,14 @@ function rankRows(state: DemoRank, trackerId: number, days: number): KeywordRank
     const ranked = history.map(([, value]) => value).filter((value): value is number => value !== null);
     const informational = /nasıl|en iyi|rehber/.test(keyword.keyword) || keyword.id <= 2;
     const url = position === null ? null : `https://ornekmagaza.com/${slug(keyword.keyword)}`;
+    const local = keyword.tags.includes("bot");
+    const features = informational ? ["ai_overview", "organic", "people_also_ask"] : local ? ["organic", "local_pack", "images"] : ["organic", "images", "shopping"];
+    const owned = [
+      ...(keyword.id === 8 || keyword.id === 9 ? ["ai_overview"] : []),
+      ...(keyword.id === 8 ? ["featured_snippet"] : []),
+      ...(local && keyword.id !== 12 ? ["local_pack"] : []),
+      ...(!informational && keyword.id % 3 === 0 ? ["images"] : []),
+    ];
     return {
       keyword_id: keyword.id,
       keyword: keyword.keyword,
@@ -546,10 +812,14 @@ function rankRows(state: DemoRank, trackerId: number, days: number): KeywordRank
       history,
       error: null,
       pages: url ? (keyword.id === 4 ? [[position!, url], [17, "https://ornekmagaza.com/kadin"]] : [[position!, url]]) : [],
-      features: informational ? ["ai_overview", "organic", "people_also_ask"] : ["organic", "images", "shopping"],
+      features,
       ai_overview: informational,
       ai_cited: keyword.id === 8 || keyword.id === 9,
       snippet: keyword.id === 8,
+      owned,
+      traffic: keyword.volume === null || position === null ? null : Math.round(keyword.volume * ctr(position)),
+      rivals: Object.fromEntries(competitors.map((domain, index) => [domain, rivalPosition(keyword.id, index)])),
+      ...(compareBack !== null && compareBack >= 0 && compareBack <= 365 ? { compared: { position: samplePosition(keyword, compareBack, trackerId), checked_at: `${compare}T08:00:00Z` } } : {}),
     } satisfies KeywordRank;
   });
 }
@@ -572,10 +842,11 @@ function visibilityOf(rows: KeywordRank[], index: number): VisibilityPoint {
   return { date: rows[0]?.history[index]?.[0] ?? NOW.slice(0, 10), visibility: best ? Math.round((got / best) * 1000) / 10 : 0, top3, top10, ranked };
 }
 
-function rankReport(projectId: number, trackerId: number | null, days: number): RankReport {
+function rankReport(projectId: number, trackerId: number | null, days: number, compare: string | null = null): RankReport {
   const state = rankOf(projectId);
   const chosen = state.trackers.find((entry) => entry.id === trackerId) ?? state.trackers[0] ?? null;
-  const rows = chosen ? rankRows(state, chosen.id, days) : [];
+  const rivals = projects.find((row) => row.id === projectId)?.competitors ?? [];
+  const rows = chosen ? rankRows(state, chosen.id, days, rivals, compare) : [];
   const span = rows[0]?.history.length ?? 0;
   const visibility = Array.from({ length: span }, (_, index) => visibilityOf(rows, index));
   const last = visibility.at(-1);
@@ -597,6 +868,25 @@ function rankReport(projectId: number, trackerId: number | null, days: number): 
   ];
   const positions = rows.map((row) => row.position).filter((value): value is number => value !== null);
   const count = (test: (row: KeywordRank) => boolean) => rows.filter(test).length;
+  const features = new Map<string, { shown: number; owned: number }>();
+  for (const row of rows) {
+    for (const feature of row.features.filter((name) => name !== "organic")) {
+      const entry = features.get(feature) ?? { shown: 0, owned: 0 };
+      entry.shown += 1;
+      if (row.owned.includes(feature)) entry.owned += 1;
+      features.set(feature, entry);
+    }
+  }
+  const landing = new Map<string, { keywords: number; best_position: number; traffic: number }>();
+  for (const row of rows) {
+    if (!row.url || row.position === null) continue;
+    const page = landing.get(row.url) ?? { keywords: 0, best_position: row.position, traffic: 0 };
+    page.keywords += 1;
+    page.best_position = Math.min(page.best_position, row.position);
+    page.traffic += row.traffic ?? 0;
+    landing.set(row.url, page);
+  }
+  const visits = (index: number | null) => Math.round(rows.reduce((sum, row) => sum + (row.volume ?? 0) * ctr(index === null ? row.position : (row.rivals[competitors[index]!] ?? null)), 0));
   return {
     tracker: chosen,
     rows,
@@ -615,9 +905,14 @@ function rankReport(projectId: number, trackerId: number | null, days: number): 
       ai_cited: count((row) => row.ai_cited),
       snippets: count((row) => row.snippet),
       cannibalised: count((row) => row.cannibalised),
+      traffic: rows.reduce((sum, row) => sum + (row.traffic ?? 0), 0),
+      features: [...features].map(([feature, entry]) => ({ feature, ...entry })).sort((left, right) => right.shown - left.shown),
     },
     visibility,
     competitors: competitorShares,
+    traffic: Object.fromEntries([[own, visits(null)], ...competitors.map((domain, index) => [domain, visits(index)])]),
+    landing_pages: [...landing].map(([url, page]) => ({ url, ...page })).sort((left, right) => right.traffic - left.traffic),
+    compare,
     share_history: visibility.map((point) => ({
       date: point.date,
       shares: Object.fromEntries(competitorShares.map((share, index) => [share.domain, index === 0 ? point.visibility : Math.round(point.visibility * (factors[index - 1] ?? 0.3) * 10) / 10])),
@@ -628,10 +923,42 @@ function rankReport(projectId: number, trackerId: number | null, days: number): 
 }
 
 const rankRuns: RankRun[] = [
-  { id: 14, project_id: 1, scheduled: true, status: "done", total: 24, checked: 24, failed: 0, cost_usd: 0.144, error: null, started_at: NOW, finished_at: NOW },
-  { id: 13, project_id: 1, scheduled: false, status: "partial", total: 24, checked: 23, failed: 1, cost_usd: 0.138, error: null, started_at: dayBefore(1) + "T09:12:00Z", finished_at: dayBefore(1) + "T09:13:10Z" },
-  { id: 12, project_id: 1, scheduled: true, status: "done", total: 24, checked: 24, failed: 0, cost_usd: 0.144, error: null, started_at: dayBefore(2) + "T08:00:00Z", finished_at: dayBefore(2) + "T08:01:05Z" },
+  // A scheduled run whose checks partly wait in the standard queue.
+  { id: 15, project_id: 1, scheduled: true, status: "running", total: 24, checked: 0, failed: 0, cost_usd: 0.0432, error: null, started_at: new Date(Date.parse(NOW) - 4 * 60_000).toISOString().replace(/\.\d+Z$/, "Z"), finished_at: null, waiting: 9 },
+  { id: 14, project_id: 1, scheduled: true, status: "done", total: 24, checked: 24, failed: 0, cost_usd: 0.0432, error: null, started_at: dayBefore(1) + "T08:00:00Z", finished_at: dayBefore(1) + "T08:06:40Z", waiting: 0 },
+  { id: 13, project_id: 1, scheduled: false, status: "partial", total: 24, checked: 23, failed: 1, cost_usd: 0.138, error: null, started_at: dayBefore(1) + "T09:12:00Z", finished_at: dayBefore(1) + "T09:13:10Z", waiting: 0 },
+  { id: 12, project_id: 1, scheduled: true, status: "done", total: 24, checked: 24, failed: 0, cost_usd: 0.0432, error: null, started_at: dayBefore(2) + "T08:00:00Z", finished_at: dayBefore(2) + "T08:05:12Z", waiting: 0 },
 ];
+
+function rankPlaces(projectId: number, days: number): PlacesReport {
+  const state = rankOf(projectId);
+  const byPlace = state.trackers.map((entry) => rankRows(state, entry.id, days));
+  return {
+    trackers: state.trackers,
+    rows: state.keywords.map((keyword, index) => ({
+      keyword_id: keyword.id,
+      keyword: keyword.keyword,
+      tags: keyword.tags,
+      volume: keyword.volume,
+      places: state.trackers.map((entry, place) => {
+        const row = byPlace[place]![index]!;
+        return { tracker_id: entry.id, position: row.position, change: row.change, url: row.url, checked_at: row.checked_at, error: null };
+      }),
+    })),
+    summaries: state.trackers.map((entry, place) => {
+      const rows = byPlace[place]!;
+      const positions = rows.map((row) => row.position).filter((value): value is number => value !== null);
+      const last = visibilityOf(rows, (rows[0]?.history.length ?? 1) - 1);
+      return {
+        tracker_id: entry.id,
+        visibility: last.visibility,
+        average_position: positions.length ? Math.round((positions.reduce((sum, value) => sum + value, 0) / positions.length) * 10) / 10 : null,
+        top10: positions.filter((value) => value <= 10).length,
+        ranked: positions.length,
+      };
+    }),
+  };
+}
 
 function rankSetup(projectId: number): RankSetup {
   const state = rankOf(projectId);
@@ -907,6 +1234,14 @@ function visibilityOfAnswers(answers: SampleAnswer[]): Visibility {
   };
 }
 
+/** Each brand's share of a run's brand mentions, as the program counts them. */
+function runShares(answers: SampleAnswer[]): Record<string, number> {
+  const counts = new Map<string, number>();
+  for (const answer of answers) if (!answer.error) for (const hit of answer.brands) if (hit.position !== null) counts.set(hit.key, (counts.get(hit.key) ?? 0) + 1);
+  const all = [...counts.values()].reduce((sum, n) => sum + n, 0);
+  return all ? Object.fromEntries([...counts].map(([key, n]) => [key, Math.round((n / all) * 1000) / 10])) : {};
+}
+
 function aiReport(projectId: number, days: number): AiReport {
   const state = aiOf(projectId);
   const brands = aiBrands(projectId);
@@ -939,6 +1274,7 @@ function aiReport(projectId: number, days: number): AiReport {
       citation_rate: overall.citation_rate,
       share_of_voice: overall.share_of_voice,
       engines: Object.fromEntries(engines.map((engine) => [engine, visibilityOfAnswers(rows.filter((entry) => entry.engine === engine).map((entry) => entry.answer)).mention_rate])),
+      brands: runShares(rows.map((entry) => entry.answer)),
     };
   });
   const prompts: AiPromptRow[] = state.prompts.map((prompt) => ({
@@ -976,6 +1312,14 @@ function aiReport(projectId: number, days: number): AiReport {
           { key: "https://ornekmagaza.com/kosu-ayakkabisi", title: "Koşu Ayakkabısı | Örnek Mağaza", own: true, answers: Math.ceil(citedAnswers * 0.3) },
           { key: "https://ornekmagaza.com/blog/ayakkabi-numarasi-secimi", title: "Ayakkabı numarası nasıl seçilir?", own: true, answers: Math.max(1, Math.floor(citedAnswers * 0.1)) },
         ]
+      : [],
+    top_pages: runs
+      ? [
+          { key: "https://rakip-magaza.com/en-iyi-kosu-ayakkabilari", title: "En iyi koşu ayakkabıları 2026", own: false, answers: Math.round(ok.length * 0.35) },
+          { key: "https://ornekmagaza.com/spor-ayakkabi", title: "Spor Ayakkabı Modelleri | Örnek Mağaza", own: true, answers: Math.ceil(citedAnswers * 0.6) },
+          { key: "https://tr.wikipedia.org/wiki/Spor_ayakkabısı", title: "Spor ayakkabısı - Vikipedi", own: false, answers: Math.round(ok.length * 0.25) },
+          { key: "https://kosu-dergisi.com/rehber/ayakkabi-secimi", title: "Koşu ayakkabısı seçim rehberi", own: false, answers: Math.round(ok.length * 0.18) },
+        ].sort((left, right) => right.answers - left.answers)
       : [],
     last_run: runs ? aiRuns[0]! : null,
     since: new Date(Date.parse(NOW) - days * 86_400_000).toISOString().replace(/\.\d+Z$/, "Z"),
@@ -1117,11 +1461,11 @@ function mentionsReport(projectId: number, kind: string): unknown {
 const googleStatus: GoogleStatus = { configured: true, own_client_id: null, built_in: true, connected: true, search_console: true, analytics: true };
 
 const gscSettings: Record<number, GscSettings> = {
-  1: { property: "sc-domain:ornekmagaza.com", ga4_property: "properties/312345678", ga4_name: "Örnek Mağaza", days: 28, schedule: "weekly", last_sync_at: NOW },
+  1: { property: "sc-domain:ornekmagaza.com", ga4_property: "properties/312345678", ga4_name: "Örnek Mağaza", days: 28, schedule: "weekly", last_sync_at: NOW, compare: "previous" },
 };
 
 function gscSettingsOf(projectId: number): GscSettings {
-  return (gscSettings[projectId] ??= { property: null, ga4_property: null, ga4_name: null, days: 28, schedule: "weekly", last_sync_at: null });
+  return (gscSettings[projectId] ??= { property: null, ga4_property: null, ga4_name: null, days: 28, schedule: "weekly", last_sync_at: null, compare: "previous" });
 }
 
 const isoDay = (back: number) => new Date(Date.parse(NOW) - back * 86_400_000).toISOString().slice(0, 10);
@@ -1199,7 +1543,16 @@ function gscReport(projectId: number): GscReport | null {
     tracked,
     near_top: position >= 3.5 && position <= 20 && impressions >= 2_000,
     low_ctr: query === "kışlık bot" || query === "çocuk spor ayakkabı",
+    brand: query.startsWith("örnek mağaza"),
   }));
+  const queryTotals = (rows: GscQuery[], before: boolean) => {
+    const clicks = rows.reduce((sum, row) => sum + (before ? row.clicks - (row.clicks_change ?? 0) : row.clicks), 0);
+    const impressions = rows.reduce((sum, row) => sum + row.impressions, 0);
+    const weighted = rows.reduce((sum, row) => sum + (before ? row.position + (row.position_change ?? 0) : row.position) * row.impressions, 0);
+    return { clicks, impressions, ctr: Math.round((clicks / impressions) * 1000) / 10, position: Math.round((weighted / impressions) * 10) / 10 };
+  };
+  const branded = queries.filter((row) => row.brand);
+  const others = queries.filter((row) => !row.brand);
   const page = (path: string, clicks: number, impressions: number, position: number, before: number, sessions: number, events: number, revenue: number, audit: GscPage["audit"]): GscPage => ({
     page: `https://ornekmagaza.com${path}`,
     clicks,
@@ -1217,6 +1570,8 @@ function gscReport(projectId: number): GscReport | null {
     sync: gscSyncs[0]!,
     period: [isoDay(days + 2), isoDay(3)],
     previous: [isoDay(days * 2 + 2), isoDay(days + 3)],
+    compare: "previous",
+    brand: { terms: ["ornekmagaza"], brand: queryTotals(branded, false), other: queryTotals(others, false), brand_before: queryTotals(branded, true), other_before: queryTotals(others, true) },
     now: totals("now"),
     before: totals("before"),
     traffic_now: { sessions: Math.round(sum("now", (day) => day.sessions ?? 0)), engaged_sessions: Math.round(sum("now", (day) => day.sessions ?? 0) * 0.64), key_events: sum("now", (day) => day.key_events ?? 0), revenue: 184_500 },
@@ -1282,7 +1637,7 @@ function gscSetup(projectId: number): GscSetup {
 
 // ----- Reports -------------------------------------------------------------------------------
 
-let reportBranding: Branding = { company: "Örnek Ajans", logo: null, accent: "#6d4dff", website: "https://ornekajans.com", footer: "Gizli · yalnızca müşterimiz içindir", hide_octopuson: false };
+let reportBranding: Branding = { company: "Örnek Ajans", logo: null, accent: null, website: "https://ornekajans.com", footer: "Gizli · yalnızca müşterimiz içindir", hide_octopuson: false };
 
 let sampleReports: ReportRow[] = [
   {
@@ -1291,9 +1646,11 @@ let sampleReports: ReportRow[] = [
     name: "Aylık SEO raporu",
     language: "tr",
     days: 28,
-    widgets: ["summary", "rankings", "competitors", "search_console", "site_audit", "ai_visibility"],
+    widgets: ["summary", "comparison", "rankings", "competitors", "search_console", "site_audit", "ai_visibility", "backlinks"],
     schedule: "monthly",
     recipients: ["musteri@ornekmagaza.com"],
+    design: "clean",
+    colors: { accent: null, accent2: null, cover: null, heading: null, table: null },
     share_token: "demo-paylasim-baglantisi-orneginin-sabit-belirteci",
     share_views: 14,
     last_sent_at: NOW,
@@ -1306,39 +1663,13 @@ function reportsSetup(projectId: number): ReportsSetup {
   return {
     reports: sampleReports.filter((report) => report.project_id === projectId),
     branding: reportBranding,
-    widgets: ["summary", "rankings", "competitors", "search_console", "site_audit", "ai_visibility", "backlinks"],
+    widgets: ["summary", "rankings", "competitors", "search_console", "site_audit", "ai_visibility", "backlinks", "comparison", "comparison_previous", "local", "organic", "link_history", "gap", "keyword_lists", "opportunities"],
+    designs: ["clean", "ocean", "accent", "elegant"],
     can_print: true,
     can_share: true,
     can_email: true,
     public_url: "https://app.octopuson.com",
   };
-}
-
-const escapeHtml = (text: string) => text.replace(/[&<>"']/g, (char) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" })[char]!);
-
-/** A sample report page shaped like the program's. */
-function sampleReportHtml(report: ReportRow): string {
-  const accent = reportBranding.accent ?? "#1e6fd9";
-  const tile = (label: string, value: string, change: string, good: boolean) =>
-    `<div class="tile"><span>${label}</span><strong>${value}</strong><em class="${good ? "good" : "bad"}">${change}</em></div>`;
-  const rows = SAMPLE_QUERIES.slice(0, 8)
-    .map(([query, clicks, impressions, position]) => `<tr><td>${escapeHtml(query)}</td><td class="n">${clicks.toLocaleString("tr-TR")}</td><td class="n">${impressions.toLocaleString("tr-TR")}</td><td class="n">${position.toLocaleString("tr-TR")}</td></tr>`)
-    .join("");
-  const points = [10.8, 11.2, 11.0, 11.9, 12.4, 12.1, 12.9, 13.4];
-  const path = points.map((value, index) => `${index ? "L" : "M"}${46 + index * 89},${170 - value * 9}`).join(" ");
-  return `<!doctype html><html lang="tr"><head><meta charset="utf-8"><meta http-equiv="Content-Security-Policy" content="default-src 'none'; img-src data:; style-src 'unsafe-inline'"><style>
-:root{--accent:${accent}}*{box-sizing:border-box}body{margin:0;background:#eef2f7;color:#18202e;font:13px/1.5 -apple-system,"Segoe UI",Roboto,Arial,sans-serif}
-.report{max-width:920px;margin:24px auto;padding:32px 36px;background:#fff;border-radius:14px}.cover{display:flex;justify-content:space-between;gap:20px;border-bottom:3px solid var(--accent);padding-bottom:18px;margin-bottom:22px}
-.cover strong{display:block;font-size:15px}.cover span{color:#5b6476;font-size:12px}.title{text-align:right}.title h1{margin:0 0 4px;font-size:22px}.title p{margin:0;color:#5b6476;font-size:12px}
-h2{margin:0 0 8px;font-size:16px;color:var(--accent)}section{margin-bottom:26px}.tiles{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:10px;margin-bottom:14px}
-.tile{padding:10px 12px;border:1px solid #e3e8f0;border-radius:10px;background:#f9fbfd}.tile span{display:block;color:#5b6476;font-size:11px;text-transform:uppercase}.tile strong{display:block;font-size:20px}.tile em{font-style:normal;font-size:11px;font-weight:600}
-.good{color:#0f8a5f}.bad{color:#c2410c}table{width:100%;border-collapse:collapse;font-size:11.5px}th{text-align:left;color:#5b6476;border-bottom:1px solid #d7dde7;padding:5px 6px}td{border-bottom:1px solid #eef1f6;padding:5px 6px}.n{text-align:right}
-footer{margin-top:18px;padding-top:10px;border-top:1px solid #e3e8f0;color:#6b7385;font-size:11px;display:flex;justify-content:space-between}</style></head><body><main class="report">
-<header class="cover"><div><strong>${escapeHtml(reportBranding.company ?? "")}</strong><span>ornekajans.com</span></div><div class="title"><h1>${escapeHtml(report.name)}</h1><p>Örnek Mağaza · ornekmagaza.com</p><p>Dönem: ${isoDay(report.days + 2)} – ${isoDay(3)}</p></div></header>
-<section><h2>Özet</h2><div class="tiles">${tile("Görünürlük", "%13", "+1,6", true)}${tile("Ortalama sıra", "8,2", "-0,7", true)}${tile("Tıklama", "4.212", "+%9,7", true)}${tile("Gösterim", "169.208", "+%9,1", true)}${tile("Sağlık", "82,5", "+4,5", true)}${tile("Anılma oranı", "%51", "+6,3", true)}</div></section>
-<section><h2>Sıralamalar</h2><svg viewBox="0 0 680 190" width="100%"><line x1="46" x2="672" y1="170" y2="170" stroke="#e6ebf2"/><line x1="46" x2="672" y1="89" y2="89" stroke="#e6ebf2"/><path d="${path}" fill="none" stroke="${accent}" stroke-width="2.2"/></svg></section>
-<section><h2>Search Console</h2><table><thead><tr><th>Sorgu</th><th class="n">Tıklama</th><th class="n">Gösterim</th><th class="n">Sıra</th></tr></thead><tbody>${rows}</tbody></table></section>
-<footer><span>${escapeHtml(reportBranding.footer ?? "")}</span><span>OctopusOn SEO ile hazırlandı</span></footer></main></body></html>`;
 }
 
 const providers: ProviderInfo[] = [
@@ -1411,6 +1742,20 @@ const providers: ProviderInfo[] = [
     budget_usd: null,
     spent_usd: 0,
     signup_url: "https://www.perplexity.ai/account/api",
+  },
+  {
+    id: "google-api",
+    name: "Google PageSpeed & CrUX",
+    modules: ["audit"],
+    keys: [{ name: "api_key", state: "saved" }],
+    mode: "auto",
+    via: "own",
+    own_ready: true,
+    credit_connector: null,
+    credits_per_usd: null,
+    budget_usd: null,
+    spent_usd: 0,
+    signup_url: "https://console.cloud.google.com/apis/credentials",
   },
 ];
 
@@ -1505,16 +1850,129 @@ export async function demo(command: string, args: Record<string, unknown>): Prom
       return { usd, credits: usd * 1350, via: "credit", kept: { fetched_at: NOW, fresh: true }, blocked: null } satisfies Estimate;
     }
     case "get_overview":
-    case "fetch_overview":
-      return { data: report(String(args.report ?? "summary"), domainOf(args)), fetched_at: NOW, fresh: true, cached: true, spent_usd: 0, via: "credit" } satisfies Fetched<unknown>;
+    case "fetch_overview": {
+      const data = report(String(args.report ?? "summary"), domainOf(args), args);
+      if (args.report === "keywords") {
+        // Sample rows stand for the many DataForSEO holds: filters and pages run over them.
+        const list = keywordSet(data as RankedKeywords, String(args.set ?? "organic"), domainOf(args));
+        const query = args.query as ListQuery | undefined;
+        const asked = runQuery(list.keywords, query, typeof args.limit === "number" ? args.limit : 100, RANKED_KEYWORD_ACCESSORS);
+        const total = isEmptyQuery(query) ? list.total : asked.total;
+        return { data: { total, keywords: asked.rows }, fetched_at: NOW, fresh: true, cached: true, spent_usd: 0, via: "credit", total } satisfies Fetched<RankedKeywords>;
+      }
+      return { data, fetched_at: NOW, fresh: true, cached: true, spent_usd: 0, via: "credit" } satisfies Fetched<unknown>;
+    }
+    case "research_estimate": {
+      const usd = args.report === "serp_metrics" ? 0.0612 : args.report === "countries" ? 0.1212 : args.report === "serp_history" ? 0.00288 : 0.01212;
+      return { usd, credits: usd * 1350, via: "credit", kept: { fetched_at: NOW, fresh: true }, blocked: null } satisfies Estimate;
+    }
+    case "get_research":
+    case "fetch_research":
+      return { data: research(String(args.report ?? "history"), args), fetched_at: NOW, fresh: true, cached: true, spent_usd: 0, via: "credit" } satisfies Fetched<unknown>;
+    case "serp_cluster_estimate": {
+      const total = listEntries[Number(args.list_id)]?.length ?? 0;
+      return { keywords: total, kept: total, estimate: null } satisfies ClusterEstimate;
+    }
+    case "start_serp_clustering":
+      throw new CallError({ code: "unsupported", message: "Sample data: open the program to fetch result pages." });
+    case "serp_clusters": {
+      // Sample groups: keywords sharing their first word share a page.
+      const entries = listEntries[Number(args.list_id)] ?? [];
+      const byWord = new Map<string, ListKeyword[]>();
+      for (const entry of entries) byWord.set(entry.keyword.split(" ")[0] ?? entry.keyword, [...(byWord.get(entry.keyword.split(" ")[0] ?? entry.keyword) ?? []), entry]);
+      const groups = [...byWord.values()].map((members) => {
+        const sorted = [...members].sort((left, right) => (right.data.volume ?? 0) - (left.data.volume ?? 0));
+        return {
+          pillar: sorted[0]!.keyword,
+          volume: sorted.reduce((sum, entry) => sum + (entry.data.volume ?? 0), 0),
+          difficulty: sorted[0]!.data.difficulty ?? null,
+          intent: sorted[0]!.data.intent ?? null,
+          pages: DEMO_SERP_DOMAINS.slice(0, 3).map((domain) => `https://www.${domain}/${sorted[0]!.keyword.replace(/\s+/g, "-")}`),
+          keywords: sorted.map((entry, index) => ({ keyword: entry.keyword, volume: entry.data.volume ?? null, difficulty: entry.data.difficulty ?? null, intent: entry.data.intent ?? null, shared: index === 0 ? 10 : 6 - (index % 3) })),
+        };
+      });
+      return { groups: groups.sort((left, right) => right.volume - left.volume), without_page: [] } satisfies SerpGroups;
+    }
+    case "link_decisions":
+      return linkDecisions;
+    case "decide_links": {
+      const domains = (args.domains as string[]).map((domain) => domain.replace(/^www\./, "").toLowerCase());
+      linkDecisions = linkDecisions.filter((decision) => !domains.includes(decision.domain));
+      if (args.decision) linkDecisions = [...linkDecisions, ...domains.map((domain) => ({ domain, decision: args.decision as LinkDecision["decision"], note: (args.note as string | undefined) ?? null, decided_at: NOW }))];
+      return linkDecisions.sort((left, right) => left.domain.localeCompare(right.domain));
+    }
+    case "disavow_file": {
+      const domains = linkDecisions.filter((decision) => decision.decision === "disavow").map((decision) => decision.domain);
+      return { file_name: "disavow-ornekmagaza.com.txt", text: `# Disavow file for ornekmagaza.com\n# Made by OctopusOn GEO-SEO Platform on ${NOW.slice(0, 10)}\n# ${domains.length} domains\n${domains.map((domain) => `domain:${domain}\n`).join("")}`, domains: domains.length } satisfies DisavowFile;
+    }
+    case "link_prospects":
+      return linkProspects;
+    case "save_link_prospect": {
+      const prospect = args.prospect as LinkProspect;
+      const domain = prospect.domain.replace(/^www\./, "").toLowerCase();
+      const known = linkProspects.find((entry) => entry.domain === domain);
+      const saved = { ...known, ...prospect, domain, source: known?.source ?? prospect.source, url: prospect.url ?? known?.url ?? null, added_at: known?.added_at ?? NOW, updated_at: NOW };
+      linkProspects = [saved, ...linkProspects.filter((entry) => entry.domain !== domain)];
+      return saved;
+    }
+    case "remove_link_prospect":
+      linkProspects = linkProspects.filter((entry) => entry.domain !== args.domain);
+      return null;
+    case "audit_outbound": {
+      const rows = [
+        ["https://www.instagram.com/ornekmagaza", "200", "", "48"],
+        ["https://www.facebook.com/ornekmagaza", "200", "", "48"],
+        ["https://kargotakip.example.com/sorgu", "404", "", "12"],
+        ["https://eski-blog.ornek.org/kampanya-2019", "410", "", "3"],
+        ["https://www.youtube.com/@ornekmagaza", "200", "", "6"],
+        ["https://partner.example.net/indirim", "", "timed out", "2"],
+      ].filter((row) => !args.status_class || row[1]!.startsWith(String(args.status_class)));
+      return { audit_id: 1, checked: true, total: rows.length, offset: 0, columns: ["address", "status_code", "error", "inlinks"], rows } satisfies Outbound;
+    }
+    case "get_category_names":
+    case "fetch_category_names":
+      return [
+        { code: 10021, name: "Apparel", parent: null },
+        { code: 10178, name: "Footwear", parent: 10021 },
+        { code: 10885, name: "Athletic Shoes", parent: 10178 },
+        { code: 10886, name: "Boots", parent: 10178 },
+        { code: 10019, name: "Sports & Fitness", parent: null },
+        { code: 10094, name: "Running & Walking", parent: 10019 },
+      ] satisfies CategoryName[];
+    case "list_ads":
+      return [
+        { domain: domainOf(args), title: "Spor Ayakkabıda %40'a Varan İndirim", description: "Binlerce model, ücretsiz kargo ve 30 gün kolay iade. Hemen keşfedin.", breadcrumb: `www.${domainOf(args)}/kampanya`, url: `https://www.${domainOf(args)}/kampanya`, keywords: ["spor ayakkabı", "koşu ayakkabısı", "kadın sneaker", "spor ayakkabı indirim", "sneaker kampanya", "erkek spor ayakkabı", "ayakkabı fırsatları"], first_seen: "2026-08-12T09:00:00Z", last_seen: "2026-10-21T09:00:00Z" },
+        { domain: domainOf(args), title: "Yeni Sezon Koşu Ayakkabıları", description: "Hafif, nefes alan modeller. Aynı gün kargo.", breadcrumb: `www.${domainOf(args)}/kosu`, url: `https://www.${domainOf(args)}/kosu`, keywords: ["koşu ayakkabısı", "maraton ayakkabısı"], first_seen: "2026-09-30T09:00:00Z", last_seen: "2026-10-21T09:00:00Z" },
+        { domain: domainOf(args), title: "Kışlık Botlarda Sezon Fırsatı", description: "Deri ve su geçirmez botlar, sınırlı stok.", breadcrumb: `www.${domainOf(args)}/bot`, url: null, keywords: ["deri bot"], first_seen: "2026-01-04T09:00:00Z", last_seen: "2026-02-20T09:00:00Z" },
+      ] satisfies AdCopy[];
+    case "metric_history": {
+      // A point a week for two months: what the sample project's own fetches left.
+      const domain = String(args.target ?? "ornekmagaza.com");
+      return Array.from({ length: 9 }, (_, index) => {
+        const day = new Date(Date.UTC(2026, 7, 28 + index * 7)).toISOString().slice(0, 10);
+        const growth = 1 + index * 0.03;
+        const metrics =
+          args.kind === "backlinks"
+            ? { rank: 41 + Math.floor(index / 3), backlinks: Math.round(8_200 * growth), referring_domains: Math.round(410 * growth), spam_score: 6 }
+            : { organic: { keywords: Math.round(17_000 * growth), traffic: Math.round(68_000 * growth), traffic_value_usd: Math.round(31_000 * growth) } };
+        return { target: domain, kind: args.kind === "backlinks" ? "backlinks" : "domain", market: args.kind === "backlinks" ? "" : String(args.market ?? "tr-tr"), day, metrics, taken_at: `${day}T09:00:00Z` } satisfies MetricPoint;
+      });
+    }
     case "keywords_estimate": {
       const rows = typeof args.limit === "number" ? args.limit : Array.isArray(args.keywords) ? args.keywords.length : 1;
       const usd = args.report === "serp" ? 0.002 : 0.012 + 0.00012 * rows;
       return { usd, credits: usd * 1350, via: "credit", kept: { fetched_at: NOW, fresh: true }, blocked: null } satisfies Estimate;
     }
     case "get_keywords":
-    case "fetch_keywords":
-      return { data: keywordReport(String(args.report ?? "overview"), args), fetched_at: NOW, fresh: true, cached: true, spent_usd: 0, via: "credit" } satisfies Fetched<unknown>;
+    case "fetch_keywords": {
+      const data = keywordReport(String(args.report ?? "overview"), args);
+      if (["ideas", "related", "suggestions"].includes(String(args.report)) && !isEmptyQuery(args.query as ListQuery | undefined)) {
+        const list = data as KeywordList;
+        const asked = runQuery(list.keywords, args.query as ListQuery, typeof args.limit === "number" ? args.limit : 100, KEYWORD_ACCESSORS);
+        return { data: { ...list, total: asked.total, keywords: asked.rows }, fetched_at: NOW, fresh: true, cached: true, spent_usd: 0, via: "credit", total: asked.total } satisfies Fetched<KeywordList>;
+      }
+      return { data, fetched_at: NOW, fresh: true, cached: true, spent_usd: 0, via: "credit" } satisfies Fetched<unknown>;
+    }
     case "keyword_autocomplete":
       return ["", " kadın", " erkek", " indirim", " nike", " beyaz", " çocuk"].map((suffix) => `${String(args.seed)}${suffix}`);
     case "keyword_lists":
@@ -1555,11 +2013,30 @@ export async function demo(command: string, args: Record<string, unknown>): Prom
       return { usd, credits: usd * 1350, via: "credit", kept: { fetched_at: NOW, fresh: true }, blocked: null } satisfies Estimate;
     }
     case "get_backlinks":
-    case "fetch_backlinks":
-      return { data: backlinkReport(String(args.report ?? "summary"), args), fetched_at: NOW, fresh: true, cached: true, spent_usd: 0, via: "credit" } satisfies Fetched<unknown>;
+    case "fetch_backlinks": {
+      const data = backlinkReport(String(args.report ?? "summary"), args);
+      const query = args.query as ListQuery | undefined;
+      const limit = typeof args.limit === "number" ? args.limit : 100;
+      // The sample lists stand for longer ones, so pages and filters have something to do.
+      if (args.report === "backlinks") {
+        const asked = runQuery(data as BacklinkRow[], query, limit, BACKLINK_ACCESSORS);
+        return { data: asked.rows, fetched_at: NOW, fresh: true, cached: true, spent_usd: 0, via: "credit", total: isEmptyQuery(query) ? 2_480 : asked.total } satisfies Fetched<BacklinkRow[]>;
+      }
+      if (args.report === "referring_domains") {
+        const asked = runQuery(data as ReferringDomainRow[], query, limit, REFERRING_DOMAIN_ACCESSORS);
+        return { data: asked.rows, fetched_at: NOW, fresh: true, cached: true, spent_usd: 0, via: "credit", total: isEmptyQuery(query) ? 412 : asked.total } satisfies Fetched<ReferringDomainRow[]>;
+      }
+      return { data, fetched_at: NOW, fresh: true, cached: true, spent_usd: 0, via: "credit" } satisfies Fetched<unknown>;
+    }
     case "gap_estimate": {
-      const parts = args.report === "bulk" ? 2 : Array.isArray(args.competitors) ? Math.max(1, args.competitors.length) : 2;
-      const usd = (0.012 + 0.00012 * (typeof args.limit === "number" ? args.limit : 100)) * parts;
+      const competitors = Array.isArray(args.competitors) ? Math.max(1, args.competitors.length) : 2;
+      const rows = typeof args.limit === "number" ? args.limit : 100;
+      const usd =
+        args.report === "share" ? 0.12 + 0.0012 * (competitors + 1)
+        : args.report === "players" ? 0.12 + 0.0012 * 50
+        : args.report === "categories" ? 0.012 + 0.00012 * 50
+        : args.report === "pages" ? 0.012 + 0.00012 * rows
+        : (0.012 + 0.00012 * rows) * (args.report === "bulk" ? 2 : args.report === "keywords" ? competitors + 1 : competitors);
       return { usd, credits: usd * 1350, via: "credit", kept: { fetched_at: NOW, fresh: true }, blocked: null } satisfies Estimate;
     }
     case "get_gap":
@@ -1626,13 +2103,17 @@ export async function demo(command: string, args: Record<string, unknown>): Prom
       const checks = state.keywords.length * state.trackers.length;
       const each = 0.002 * Math.ceil(state.settings.depth / 10) + (state.settings.ai_overview ? 0.002 : 0);
       const usd = checks * each;
+      // Scheduled runs through the standard queue: $0.0006 a page and for the late AI Overview.
+      const scheduled = checks * (0.0006 * Math.ceil(state.settings.depth / 10) + (state.settings.ai_overview ? 0.0006 : 0));
       const runs = state.settings.schedule === "daily" ? 30 : state.settings.schedule === "weekly" ? 4 : 0;
       return {
         checks,
         run: { usd, credits: usd * 1350, via: "credit", kept: null, blocked: null },
+        queued: true,
+        scheduled_usd: scheduled,
         runs_per_month: runs,
-        month_usd: usd * runs,
-        month_credits: usd * 1350 * runs,
+        month_usd: scheduled * runs,
+        month_credits: scheduled * 1350 * runs,
       } satisfies RankEstimate;
     }
     case "start_rank_check":
@@ -1640,7 +2121,9 @@ export async function demo(command: string, args: Record<string, unknown>): Prom
     case "rank_runs":
       return Number(args.project_id) === 1 ? rankRuns : [];
     case "rank_report":
-      return rankReport(Number(args.project_id), typeof args.tracker_id === "number" ? args.tracker_id : null, Number(args.days ?? 90));
+      return rankReport(Number(args.project_id), typeof args.tracker_id === "number" ? args.tracker_id : null, Number(args.days ?? 90), typeof args.compare === "string" ? args.compare : null);
+    case "rank_places":
+      return rankPlaces(Number(args.project_id), Number(args.days ?? 90));
     case "rank_keyword":
       return rankKeyword(Number(args.project_id), Number(args.keyword_id), Number(args.tracker_id));
     case "rank_volumes_estimate":
@@ -1663,7 +2146,7 @@ export async function demo(command: string, args: Record<string, unknown>): Prom
     }
     case "save_audit_settings": {
       const projectId = Number(args.project_id);
-      auditSettings = { ...auditSettings, [projectId]: { schedule: args.schedule as AuditSchedule, max_pages: Number(args.max_pages), last_run_at: auditSettings[projectId]?.last_run_at ?? null } };
+      auditSettings = { ...auditSettings, [projectId]: { schedule: args.schedule as AuditSchedule, max_pages: Number(args.max_pages), last_run_at: auditSettings[projectId]?.last_run_at ?? null, check_outbound: Boolean(args.check_outbound) } };
       return demo("audit_setup", { project_id: projectId });
     }
     case "start_audit":
@@ -1770,6 +2253,7 @@ export async function demo(command: string, args: Record<string, unknown>): Prom
         days: Number(args.days),
         schedule: args.schedule as GscSchedule,
         last_sync_at: gscSettingsOf(projectId).last_sync_at,
+        compare: args.compare === "year" ? "year" : "previous",
       };
       return gscSetup(projectId);
     }
@@ -1783,6 +2267,20 @@ export async function demo(command: string, args: Record<string, unknown>): Prom
       if (shared) return shared.pages.map((row) => ({ query: shared.query, ...row }));
       const row = report?.queries.find((entry) => entry.query === args.query);
       return row ? [{ query: row.query, page: "https://ornekmagaza.com/", clicks: row.clicks, impressions: row.impressions, position: row.position }] : [];
+    }
+    case "gsc_export": {
+      const report = gscReport(Number(args.project_id));
+      if (!report) return { columns: [], rows: [] };
+      if (args.kind === "pages") {
+        return { columns: ["page", "clicks", "impressions", "ctr", "position", "clicks_before"], rows: report.pages.map((row) => [row.page, row.clicks, row.impressions, row.ctr, row.position, row.clicks - (row.clicks_change ?? 0)]) };
+      }
+      if (args.kind === "query_pages") {
+        return { columns: ["query", "page", "clicks", "impressions", "position"], rows: report.cannibalised.flatMap((entry) => entry.pages.map((row) => [entry.query, row.page, row.clicks, row.impressions, row.position])) };
+      }
+      return {
+        columns: ["query", "clicks", "impressions", "ctr", "position", "clicks_before", "position_before", "brand"],
+        rows: report.queries.map((row) => [row.query, row.clicks, row.impressions, row.ctr, row.position, row.clicks - (row.clicks_change ?? 0), row.position + (row.position_change ?? 0), row.brand]),
+      };
     }
     case "reports_setup":
       return reportsSetup(Number(args.project_id));
@@ -1802,6 +2300,8 @@ export async function demo(command: string, args: Record<string, unknown>): Prom
         widgets: spec.widgets,
         schedule: spec.schedule,
         recipients: spec.recipients,
+        design: spec.design,
+        colors: spec.colors,
         share_token: previous?.share_token ?? null,
         share_views: previous?.share_views ?? 0,
         last_sent_at: previous?.last_sent_at ?? null,
@@ -1816,7 +2316,11 @@ export async function demo(command: string, args: Record<string, unknown>): Prom
       return null;
     case "report_html": {
       const report = sampleReports.find((row) => row.id === args.report_id) ?? sampleReports[0]!;
-      return { name: "aylik-seo-raporu.html", html: sampleReportHtml(report) };
+      return { name: "aylik-seo-raporu.html", html: demoReportHtml(report.design, report.colors) };
+    }
+    case "report_preview": {
+      const spec = args as unknown as ReportSpec;
+      return { name: "aylik-seo-raporu.html", html: demoReportHtml(spec.design, spec.colors) };
     }
     case "report_deliveries":
       return [{ id: 1, report_id: 1, project_id: 1, scheduled: true, status: "sent", recipients: 1, error: null, sent_at: NOW }];
@@ -1836,7 +2340,20 @@ export async function demo(command: string, args: Record<string, unknown>): Prom
       return null;
     case "start_account_login":
       throw new CallError({ code: "unsupported", message: "Sample data: open the program to connect your account." });
-    default:
+    default: {
+      const snapshot = snapshotDemo(command, args);
+      if (snapshot !== undefined) return snapshot;
+      const local = localDemo(command, args);
+      if (local !== undefined) return local;
+      const content = contentDemo(command, args);
+      if (content !== undefined) return content;
+      const audit = auditDemo(command, args);
+      if (audit !== undefined) return audit;
+      const dashboard = projectDemo(command, args, projects);
+      if (dashboard !== undefined) return dashboard;
+      const alerts = alertsDemo(command, args, projects);
+      if (alerts !== undefined) return alerts;
       throw new CallError({ code: "not_found", message: `unknown command \`${command}\`` });
+    }
   }
 }

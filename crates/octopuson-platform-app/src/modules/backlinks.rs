@@ -7,6 +7,7 @@
 
 use octopuson_dataforseo::Client;
 use octopuson_dataforseo::backlinks::{self as api, BacklinkQuery, LinkStatus};
+use octopuson_dataforseo::query::{BACKLINK_FIELDS, FieldSpec, ListQuery, REFERRING_DOMAIN_FIELDS};
 use octopuson_platform::CacheClass;
 use serde::Deserialize;
 use serde_json::Value;
@@ -43,6 +44,10 @@ enum Report {
     NewLost,
     /// The authority of several sites.
     Bulk,
+    /// The link profile month by month since 2019.
+    History,
+    /// Each linking site judged by the toxic-link rules, the riskiest first.
+    Audit,
 }
 
 #[derive(Debug, Deserialize)]
@@ -68,27 +73,42 @@ struct Ask {
     /// Sites to rank (bulk report); the project's domain and competitors when empty.
     #[serde(default)]
     targets: Vec<String>,
+    /// Filters, order and the first row of a list report, asked of DataForSEO.
+    #[serde(default)]
+    query: Option<ListQuery>,
     /// Pay for fresh data even while the kept answer is fresh.
     #[serde(default)]
     force: bool,
 }
 
+impl Report {
+    /// The fields a list report filters and sorts by on DataForSEO's side.
+    fn fields(self) -> Option<&'static [FieldSpec]> {
+        match self {
+            Self::Backlinks => Some(BACKLINK_FIELDS),
+            Self::ReferringDomains => Some(REFERRING_DOMAIN_FIELDS),
+            _ => None,
+        }
+    }
+}
+
 struct Question {
     report: Report,
+    target: String,
     paid: Paid<'static>,
 }
 
 fn question(workspace: &Workspace, ask: &Ask) -> Result<Question, AppError> {
     let project = workspace.store()?.project(ask.project_id)?;
-    let target = ask
-        .target
-        .as_deref()
-        .map(str::trim)
-        .filter(|target| !target.is_empty())
-        .unwrap_or(&project.domain)
-        .to_owned();
+    let target = api::target(
+        ask.target
+            .as_deref()
+            .map(str::trim)
+            .filter(|target| !target.is_empty())
+            .unwrap_or(&project.domain),
+    )?;
     let rows = octopuson_dataforseo::site::rows(ask.limit.unwrap_or(DEFAULT_ROWS));
-    let (endpoint, task, estimate_usd) = match ask.report {
+    let (endpoint, mut task, estimate_usd) = match ask.report {
         Report::Summary => (api::SUMMARY, api::summary_task(&target)?, api::estimate(1)),
         Report::Backlinks => {
             let query = BacklinkQuery {
@@ -122,6 +142,22 @@ fn question(workspace: &Workspace, ask: &Ask) -> Result<Question, AppError> {
             api::new_lost_task(&target)?,
             api::estimate(NEW_LOST_MONTHS),
         ),
+        Report::Audit => {
+            let rows = octopuson_dataforseo::site::rows(ask.limit.unwrap_or(api::AUDIT_ROWS));
+            (
+                api::BACKLINKS,
+                api::audit_task(&target, rows)?,
+                api::estimate(rows),
+            )
+        }
+        Report::History => {
+            let (year, month) = crate::this_month();
+            (
+                api::HISTORY,
+                api::history_task(&target, api::HISTORY_START)?,
+                api::estimate(api::history_months(year, month)),
+            )
+        }
         Report::Bulk => {
             let targets = if ask.targets.is_empty() {
                 let mut targets = vec![project.domain.clone()];
@@ -139,9 +175,12 @@ fn question(workspace: &Workspace, ask: &Ask) -> Result<Question, AppError> {
             (api::BULK_RANKS, task, api::estimate(count))
         }
     };
+    let travels = super::queried(&mut task, ask.query.as_ref(), ask.report.fields())?;
     Ok(Question {
         report: ask.report,
+        target,
         paid: Paid {
+            travels,
             module: MODULE,
             provider: octopuson_dataforseo::ID,
             endpoint,
@@ -165,6 +204,10 @@ fn read(report: Report, result: &[Value]) -> Value {
         Report::Pages => serde_json::to_value(api::pages_from_result(result)),
         Report::NewLost => serde_json::to_value(api::new_lost_from_result(result)),
         Report::Bulk => serde_json::to_value(api::bulk_ranks_from_result(result)),
+        Report::History => serde_json::to_value(api::history_from_result(result)),
+        Report::Audit => serde_json::to_value(octopuson_dataforseo::link_audit::assess(
+            &api::backlinks_from_result(result),
+        )),
     };
     value.unwrap_or(Value::Null)
 }
@@ -183,8 +226,12 @@ fn get_backlinks(context: &Context<'_>, ask: Ask) -> Result<Option<Fetched<Value
 }
 
 fn fetch_backlinks(context: &Context<'_>, ask: Ask) -> Result<Fetched<Value>, AppError> {
-    let Question { report, paid } = question(context.workspace, &ask)?;
-    context.workspace.fetch(
+    let Question {
+        report,
+        target,
+        paid,
+    } = question(context.workspace, &ask)?;
+    let fetched = context.workspace.fetch(
         &paid,
         ask.force,
         |route| {
@@ -193,7 +240,11 @@ fn fetch_backlinks(context: &Context<'_>, ask: Ask) -> Result<Fetched<Value>, Ap
             Ok(client.post(paid.endpoint, &paid.task)?.into())
         },
         |result| read(report, result),
-    )
+    )?;
+    if report == Report::Summary {
+        super::history::note_links(context.workspace, ask.project_id, &target, &fetched);
+    }
+    Ok(fetched)
 }
 
 /// Adds the commands.

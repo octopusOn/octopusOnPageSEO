@@ -230,6 +230,7 @@ pub(crate) async fn post(
         if answer.changed {
             schedule::note(&worker, &user_id, &account.platform);
             account.platform.announce_sync();
+            account.platform.look_for_alerts();
         }
         sync::encode(&answer.response).map_err(|error| app_refusal(&error))
     })

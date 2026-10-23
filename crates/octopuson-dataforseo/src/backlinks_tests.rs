@@ -175,3 +175,35 @@ fn backlink_lists_filter_by_state_and_follow() {
     assert_eq!(new_lost["group_range"], "month");
     assert_eq!(new_lost.get("date_from"), None);
 }
+
+#[test]
+fn link_history_starts_in_2019_and_reads_oldest_first() {
+    assert_eq!(
+        history_task("https://www.example.com/page", "2018-05-01").unwrap(),
+        json!({ "target": "example.com", "date_from": "2019-01-01", "rank_scale": "one_hundred" })
+    );
+    assert_eq!(
+        history_task("example.com", "2025-10-01").unwrap()["date_from"],
+        "2025-10-01"
+    );
+    assert!(matches!(
+        history_task("", HISTORY_START),
+        Err(DfsError::Config(_))
+    ));
+    assert_eq!(history_months(2019, 1), 1);
+    assert_eq!(history_months(2026, 10), 94);
+    let points = history_from_result(&result(include_str!(
+        "../tests/fixtures/backlinks_history.json"
+    )));
+    assert_eq!(
+        points
+            .iter()
+            .map(|point| point.month.as_str())
+            .collect::<Vec<_>>(),
+        ["2019-01", "2026-09", "2026-10"]
+    );
+    assert_eq!(points[2].rank, Some(45));
+    assert_eq!(points[2].referring_domains, 440);
+    assert_eq!(points[2].new_backlinks, 210);
+    assert_eq!(points[0].new_backlinks, 0);
+}

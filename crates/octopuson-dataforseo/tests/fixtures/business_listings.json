@@ -1,0 +1,55 @@
+{
+  "version": "0.1.20260801",
+  "status_code": 20000,
+  "status_message": "Ok.",
+  "cost": 0.0109,
+  "tasks_count": 1,
+  "tasks": [
+    {
+      "id": "10231202-1535-0139-0000-2d2d4e0b6c1c",
+      "status_code": 20000,
+      "status_message": "Ok.",
+      "cost": 0.0109,
+      "data": { "api": "business_data", "function": "search", "categories": ["Kafe"], "location_coordinate": "40.9901,29.0291,3", "limit": 3 },
+      "result": [
+        {
+          "total_count": 214,
+          "count": 3,
+          "offset": 0,
+          "items": [
+            {
+              "type": "business_listing", "title": "Zincir Coffee", "category": "Kafe", "category_ids": ["cafe"], "additional_categories": null,
+              "cid": "444444444444444444", "feature_id": "0x4:0x4", "place_id": "ChIJzincir",
+              "address": "Rıhtım Cd. 9, Kadıköy/İstanbul", "address_info": { "city": "İstanbul", "zip": "34716", "region": "İstanbul", "country_code": "TR" },
+              "latitude": 40.9933, "longitude": 29.024, "is_claimed": true,
+              "rating": { "rating_type": "Max5", "value": 4.0, "votes_count": 3100, "rating_max": 5 },
+              "rating_distribution": { "1": 200, "2": 150, "3": 400, "4": 900, "5": 1450 },
+              "domain": "zincir.com.tr", "url": "https://zincir.com.tr/", "phone": null, "work_time": null,
+              "last_updated_time": "2026-10-01 10:00:00 +00:00", "first_seen": "2023-02-01 10:00:00 +00:00"
+            },
+            {
+              "type": "business_listing", "title": "Rakip Kahve", "category": "Kafe", "category_ids": ["cafe"], "additional_categories": ["Kahve dükkanı"],
+              "cid": "111111111111111111", "feature_id": "0x1:0x1", "place_id": "ChIJrakip",
+              "address": "Moda Cd. 1, Kadıköy/İstanbul", "address_info": { "city": "İstanbul", "zip": "34710", "region": "İstanbul", "country_code": "TR" },
+              "latitude": 40.9871, "longitude": 29.0262, "is_claimed": true,
+              "rating": { "rating_type": "Max5", "value": 4.7, "votes_count": 1820, "rating_max": 5 },
+              "rating_distribution": null,
+              "domain": "rakipkahve.com", "url": "https://rakipkahve.com/", "phone": "+90 216 000 00 01", "work_time": null,
+              "last_updated_time": "2026-10-01 10:00:00 +00:00", "first_seen": "2022-05-01 10:00:00 +00:00"
+            },
+            {
+              "type": "business_listing", "title": "Örnek Kahve Kadıköy", "category": "Kafe", "category_ids": ["cafe"], "additional_categories": null,
+              "cid": "222222222222222222", "feature_id": "0x2:0x2", "place_id": "ChIJornek",
+              "address": "Bahariye Cd. 20, Kadıköy/İstanbul", "address_info": { "city": "İstanbul", "zip": "34714", "region": "İstanbul", "country_code": "TR" },
+              "latitude": 40.9901, "longitude": 29.0291, "is_claimed": true,
+              "rating": { "rating_type": "Max5", "value": 4.5, "votes_count": 640, "rating_max": 5 },
+              "rating_distribution": null,
+              "domain": "www.ornekkahve.com", "url": "https://www.ornekkahve.com/kadikoy", "phone": "+90 216 000 00 02", "work_time": null,
+              "last_updated_time": "2026-10-01 10:00:00 +00:00", "first_seen": "2021-03-01 10:00:00 +00:00"
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

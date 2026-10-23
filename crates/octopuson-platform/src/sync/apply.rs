@@ -339,6 +339,7 @@ impl PlatformStore {
     }
 
     /// Carries out a deletion that arrived, as the program itself deletes.
+    #[allow(clippy::too_many_lines)] // one arm per kind of removal
     fn remove(
         &self,
         kind: &Kind,
@@ -400,6 +401,11 @@ impl PlatformStore {
                     )?;
                     self.connection
                         .execute("DELETE FROM reports WHERE id = ?", params![id])?;
+                }
+            }
+            Removal::Brief => {
+                if let Some(id) = by_uid("content_briefs")? {
+                    self.delete_content_brief(id)?;
                 }
             }
             Removal::Audit => {

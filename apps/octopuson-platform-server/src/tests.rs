@@ -121,6 +121,8 @@ async fn health_and_security_headers() {
     assert_eq!(response.status(), StatusCode::OK);
     let policy = header_of(&response, header::CONTENT_SECURITY_POLICY).remove(0);
     assert!(policy.contains("frame-ancestors 'none'"));
+    // The map's tiles, and nothing else from outside.
+    assert!(policy.contains("connect-src 'self' https://tiles.openfreemap.org;"));
     assert_eq!(header_of(&response, header::X_FRAME_OPTIONS), ["DENY"]);
     assert_eq!(
         header_of(&response, header::X_CONTENT_TYPE_OPTIONS),
@@ -530,7 +532,12 @@ async fn scheduled_rank_checks_are_noted_and_started_by_the_tick() {
     assert_eq!(runs[0]["scheduled"], true);
     assert_eq!(runs[0]["status"], "failed");
     assert!(runs[0]["error"].as_str().unwrap().contains("credits"));
-    // Not due again until tomorrow.
+    // While a run may still be posting checks to the queue the account is looked at again a
+    // minute later; with none waiting, it is not due again until tomorrow.
+    let worker = Arc::clone(&state);
+    tokio::task::spawn_blocking(move || crate::schedule::tick(&worker, now + 120))
+        .await
+        .unwrap();
     assert_eq!(
         state.store.due_accounts(now + 3_600, 10).unwrap(),
         Vec::<String>::new()
@@ -949,6 +956,8 @@ fn greeting(changes: Vec<octopuson_platform::SyncChange>) -> Vec<u8> {
         last: true,
         pull: true,
         replace: false,
+        resend: Vec::new(),
+        resend_after: 0,
     })
     .unwrap()
 }

@@ -23,7 +23,11 @@ Answer in the user's language. Keyword data costs money: plan the calls, price t
 5. Group keywords that one page can answer (same intent, same results). For a close call, look at the live
    results with `serp_overview` (paid): if two keywords show mostly the same pages, they belong together.
 6. Prioritise each group: volume, difficulty against the site's authority (`domain_overview` summary),
-   business value, and whether the site already ranks (`rank_report`, `search_console`, free).
+   business value, and whether the site already ranks (`rank_report`, `search_console`, free). The
+   user's saved lists (`keyword_lists`, free) are a good start or a place to compare with.
+7. When the user agrees, follow up: `track_keywords` (free) adds the main keywords to the rank tracker,
+   and `create_content_brief` makes a writing brief for a group's main keyword (paid unless its result
+   page is kept; it gives the price first).
 
 ## Answer
 

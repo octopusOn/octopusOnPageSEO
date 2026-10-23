@@ -1,5 +1,6 @@
 //! Rank tracking: the keywords a project tracks, where (engine, country, device, city), how
-//! often, every run and every check with what the result page showed.
+//! often, every run and every check with what the result page showed, and the checks still
+//! waiting in the provider's queue.
 
 use duckdb::{Row, params};
 use serde::{Deserialize, Serialize};
@@ -29,6 +30,10 @@ const DEVICES: &[&str] = &["desktop", "mobile"];
 
 /// Schedules of a project.
 const SCHEDULES: &[&str] = &["daily", "weekly", "manual"];
+
+/// How an element type the site holds is noted among a check's element types: the list keeps
+/// its shape on every copy, and copies that do not know the mark show it as one more element.
+const OWN: &str = "own:";
 
 /// How a project's keywords are checked.
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
@@ -135,6 +140,9 @@ pub struct RankRunRow {
     pub started_at: String,
     /// RFC 3339.
     pub finished_at: Option<String>,
+    /// Checks still waiting in the provider's queue (on the copy that posted them).
+    #[serde(default)]
+    pub waiting: u32,
 }
 
 /// An organic result kept with a check.
@@ -178,10 +186,40 @@ pub struct RankCheckRow {
     pub ai_cited: bool,
     /// The site held the featured snippet.
     pub snippet: bool,
+    /// Element types that showed the site.
+    #[serde(default)]
+    pub owned: Vec<String>,
     /// The first organic results.
     pub results: Vec<CheckResult>,
     /// Why the check failed.
     pub error: Option<String>,
+}
+
+/// A check waiting in the provider's standard queue.
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+pub struct RankTaskRow {
+    /// Row id (0 for a new one).
+    pub id: i64,
+    /// The run.
+    pub run_id: i64,
+    /// The project.
+    pub project_id: i64,
+    /// The keyword.
+    pub keyword_id: i64,
+    /// The tracker.
+    pub tracker_id: i64,
+    /// `google`, `bing` or `yandex`.
+    pub engine: String,
+    /// The provider's id of the task.
+    pub task_id: String,
+    /// How it was paid (`own` or `credit`): its answer is read the same way.
+    pub via: String,
+    /// RFC 3339.
+    pub posted_at: String,
+    /// Times its answer was asked for.
+    pub tries: u32,
+    /// When to ask next, seconds since the Unix epoch.
+    pub next_try_at: i64,
 }
 
 /// A project's schedule with what it would check.
@@ -265,7 +303,8 @@ fn tracker(row: &Row<'_>) -> duckdb::Result<TrackerRow> {
     })
 }
 
-const RUN_COLUMNS: &str = "id, project_id, scheduled, status, total, checked, failed, cost_usd, error, started_at, finished_at";
+const RUN_COLUMNS: &str = "id, project_id, scheduled, status, total, checked, failed, cost_usd, error, started_at, finished_at,
+    (SELECT count(*) FROM rank_tasks q WHERE q.run_id = rank_runs.id)::UINTEGER";
 
 fn run(row: &Row<'_>) -> duckdb::Result<RankRunRow> {
     Ok(RankRunRow {
@@ -280,7 +319,46 @@ fn run(row: &Row<'_>) -> duckdb::Result<RankRunRow> {
         error: row.get(8)?,
         started_at: row.get(9)?,
         finished_at: row.get(10)?,
+        waiting: row.get(11)?,
     })
+}
+
+const TASK_COLUMNS: &str = "id, run_id, project_id, keyword_id, tracker_id, engine, task_id, via, posted_at, tries, next_try_at";
+
+fn task(row: &Row<'_>) -> duckdb::Result<RankTaskRow> {
+    Ok(RankTaskRow {
+        id: row.get(0)?,
+        run_id: row.get(1)?,
+        project_id: row.get(2)?,
+        keyword_id: row.get(3)?,
+        tracker_id: row.get(4)?,
+        engine: row.get(5)?,
+        task_id: row.get(6)?,
+        via: row.get(7)?,
+        posted_at: row.get(8)?,
+        tries: row.get(9)?,
+        next_try_at: row.get(10)?,
+    })
+}
+
+/// A check's element types with those the site holds marked.
+fn features_json(check: &RankCheckRow) -> String {
+    let mut features = check.features.clone();
+    features.extend(check.owned.iter().map(|kind| format!("{OWN}{kind}")));
+    list_json(&features)
+}
+
+/// Element types and those the site holds, from the stored list.
+fn split_features(list: Vec<String>) -> (Vec<String>, Vec<String>) {
+    let mut features = Vec::new();
+    let mut owned = Vec::new();
+    for entry in list {
+        match entry.strip_prefix(OWN) {
+            Some(kind) => owned.push(kind.to_owned()),
+            None => features.push(entry),
+        }
+    }
+    (features, owned)
 }
 
 /// How a run ended, for [`PlatformStore::finish_rank_run`].
@@ -472,10 +550,12 @@ impl PlatformStore {
         project_id: i64,
         tracker_id: i64,
     ) -> Result<(), PlatformStoreError> {
-        self.connection.execute(
-            "DELETE FROM rank_checks WHERE project_id = ? AND tracker_id = ?",
-            params![project_id, tracker_id],
-        )?;
+        for table in ["rank_checks", "rank_tasks"] {
+            self.connection.execute(
+                &format!("DELETE FROM {table} WHERE project_id = ? AND tracker_id = ?"),
+                params![project_id, tracker_id],
+            )?;
+        }
         let removed = self.connection.execute(
             "DELETE FROM rank_trackers WHERE project_id = ? AND id = ?",
             params![project_id, tracker_id],
@@ -591,10 +671,12 @@ impl PlatformStore {
     ) -> Result<usize, PlatformStoreError> {
         let transaction = self.connection.unchecked_transaction()?;
         for id in keyword_ids {
-            transaction.execute(
-                "DELETE FROM rank_checks WHERE project_id = ? AND keyword_id = ?",
-                params![project_id, id],
-            )?;
+            for table in ["rank_checks", "rank_tasks"] {
+                transaction.execute(
+                    &format!("DELETE FROM {table} WHERE project_id = ? AND keyword_id = ?"),
+                    params![project_id, id],
+                )?;
+            }
             transaction.execute(
                 "DELETE FROM tracked_keywords WHERE project_id = ? AND id = ?",
                 params![project_id, id],
@@ -645,7 +727,7 @@ impl PlatformStore {
     }
 
     /// Starts a run of `total` checks at `now`; a run of the project left running by a program
-    /// that stopped becomes `interrupted`.
+    /// that stopped becomes `interrupted`, unless checks of it still wait in the queue.
     ///
     /// # Errors
     /// Database errors.
@@ -658,7 +740,8 @@ impl PlatformStore {
     ) -> Result<i64, PlatformStoreError> {
         self.connection.execute(
             "UPDATE rank_runs SET status = 'interrupted', finished_at = ?
-             WHERE project_id = ? AND status = 'running'",
+             WHERE project_id = ? AND status = 'running'
+               AND id NOT IN (SELECT run_id FROM rank_tasks)",
             params![now, project_id],
         )?;
         Ok(self.connection.query_row(
@@ -695,6 +778,142 @@ impl PlatformStore {
         Ok(())
     }
 
+    /// Notes what a run whose checks wait in the queue has failed and paid so far; it keeps
+    /// running until their answers are read.
+    ///
+    /// # Errors
+    /// Database errors.
+    pub fn queue_rank_run(
+        &self,
+        run_id: i64,
+        failed: u32,
+        cost_usd: f64,
+    ) -> Result<(), PlatformStoreError> {
+        self.connection.execute(
+            "UPDATE rank_runs SET failed = ?, cost_usd = ? WHERE id = ?",
+            params![failed, cost_usd, run_id],
+        )?;
+        Ok(())
+    }
+
+    /// One run.
+    ///
+    /// # Errors
+    /// Database errors.
+    pub fn rank_run(&self, run_id: i64) -> Result<Option<RankRunRow>, PlatformStoreError> {
+        let mut statement = self
+            .connection
+            .prepare(&format!("SELECT {RUN_COLUMNS} FROM rank_runs WHERE id = ?"))?;
+        let mut rows = statement.query_map(params![run_id], run)?;
+        Ok(rows.next().transpose()?)
+    }
+
+    /// A run's checks that read a page and those that failed.
+    ///
+    /// # Errors
+    /// Database errors.
+    pub fn rank_run_tally(&self, run_id: i64) -> Result<(u32, u32), PlatformStoreError> {
+        Ok(self.connection.query_row(
+            "SELECT count(*) FILTER (WHERE error IS NULL)::UINTEGER,
+                    count(*) FILTER (WHERE error IS NOT NULL)::UINTEGER
+             FROM rank_checks WHERE run_id = ?",
+            params![run_id],
+            |row| Ok((row.get(0)?, row.get(1)?)),
+        )?)
+    }
+
+    /// Keeps checks posted to the provider's queue.
+    ///
+    /// # Errors
+    /// Database errors.
+    pub fn queue_rank_tasks(&self, tasks: &[RankTaskRow]) -> Result<(), PlatformStoreError> {
+        let transaction = self.connection.unchecked_transaction()?;
+        for task in tasks {
+            transaction.execute(
+                "INSERT INTO rank_tasks (run_id, project_id, keyword_id, tracker_id, engine, task_id,
+                 via, posted_at, tries, next_try_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
+                params![
+                    task.run_id,
+                    task.project_id,
+                    task.keyword_id,
+                    task.tracker_id,
+                    task.engine,
+                    task.task_id,
+                    task.via,
+                    task.posted_at,
+                    task.tries,
+                    task.next_try_at
+                ],
+            )?;
+        }
+        transaction.commit()?;
+        Ok(())
+    }
+
+    /// Queued checks whose answer may be asked for at `now` (seconds since the Unix epoch),
+    /// those waiting longest first.
+    ///
+    /// # Errors
+    /// Database errors.
+    pub fn due_rank_tasks(
+        &self,
+        now: i64,
+        limit: u32,
+    ) -> Result<Vec<RankTaskRow>, PlatformStoreError> {
+        let mut statement = self.connection.prepare(&format!(
+            "SELECT {TASK_COLUMNS} FROM rank_tasks WHERE next_try_at <= ?
+             ORDER BY next_try_at, id LIMIT ?"
+        ))?;
+        let rows = statement.query_map(params![now, limit], task)?;
+        Ok(rows.collect::<Result<_, _>>()?)
+    }
+
+    /// Asks for a queued check's answer again at `next_try_at`.
+    ///
+    /// # Errors
+    /// Database errors.
+    pub fn delay_rank_task(&self, id: i64, next_try_at: i64) -> Result<(), PlatformStoreError> {
+        self.connection.execute(
+            "UPDATE rank_tasks SET tries = tries + 1, next_try_at = ? WHERE id = ?",
+            params![next_try_at, id],
+        )?;
+        Ok(())
+    }
+
+    /// Forgets a queued check once its answer is read (or given up on).
+    ///
+    /// # Errors
+    /// Database errors.
+    pub fn drop_rank_task(&self, id: i64) -> Result<(), PlatformStoreError> {
+        self.connection
+            .execute("DELETE FROM rank_tasks WHERE id = ?", params![id])?;
+        Ok(())
+    }
+
+    /// Checks of a project waiting in the queue.
+    ///
+    /// # Errors
+    /// Database errors.
+    pub fn waiting_rank_tasks(&self, project_id: i64) -> Result<u32, PlatformStoreError> {
+        Ok(self.connection.query_row(
+            "SELECT count(*)::UINTEGER FROM rank_tasks WHERE project_id = ?",
+            params![project_id],
+            |row| row.get(0),
+        )?)
+    }
+
+    /// When the queue is next asked for an answer, seconds since the Unix epoch.
+    ///
+    /// # Errors
+    /// Database errors.
+    pub fn next_rank_task_at(&self) -> Result<Option<i64>, PlatformStoreError> {
+        Ok(self
+            .connection
+            .query_row("SELECT min(next_try_at) FROM rank_tasks", [], |row| {
+                row.get(0)
+            })?)
+    }
+
     /// A project's latest runs, newest first.
     ///
     /// # Errors
@@ -729,7 +948,7 @@ impl PlatformStore {
                 check.position,
                 check.url,
                 json_of(&check.pages),
-                list_json(&check.features),
+                features_json(check),
                 check.ai_overview,
                 check.ai_cited,
                 check.snippet,
@@ -777,6 +996,7 @@ impl PlatformStore {
                         ai_overview: row.get(9)?,
                         ai_cited: row.get(10)?,
                         snippet: row.get(11)?,
+                        owned: Vec::new(),
                         results: Vec::new(),
                         error: row.get(13)?,
                     },
@@ -789,7 +1009,7 @@ impl PlatformStore {
         rows.map(|row| {
             let (mut check, pages, features, results) = row?;
             check.pages = parse(&pages)?;
-            check.features = parse_list(&features)?;
+            (check.features, check.owned) = split_features(parse_list(&features)?);
             check.results = parse(&results)?;
             Ok(check)
         })
@@ -799,6 +1019,7 @@ impl PlatformStore {
     /// Removes everything a project's rank tracking holds.
     pub(crate) fn delete_rank_data(&self, project_id: i64) -> Result<(), PlatformStoreError> {
         for table in [
+            "rank_tasks",
             "rank_checks",
             "rank_runs",
             "tracked_keywords",

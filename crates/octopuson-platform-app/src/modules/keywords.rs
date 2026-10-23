@@ -6,6 +6,7 @@
 //! `report` argument, like the domain overview.
 
 use octopuson_dataforseo::keywords::{self as labs, KeywordData, KeywordList};
+use octopuson_dataforseo::query::{FieldSpec, KEYWORD_FIELDS, ListQuery, RELATED_KEYWORD_FIELDS};
 use octopuson_dataforseo::{Client, Market, prices, serp};
 use octopuson_keyword_sources::suggest::FreeSuggest;
 use octopuson_keyword_sources::wordstat::Wordstat;
@@ -85,14 +86,34 @@ struct Ask {
     /// The mobile result page.
     #[serde(default)]
     mobile: bool,
+    /// Suggestions holding the seed as the whole phrase, in its order (exact match).
+    #[serde(default)]
+    exact: bool,
+    /// Another market than the project's: `country-language`.
+    #[serde(default)]
+    market: Option<String>,
+    /// Filters, order and the first row of an idea report, asked of DataForSEO.
+    #[serde(default)]
+    query: Option<ListQuery>,
     /// Pay for fresh data even while the kept answer is fresh.
     #[serde(default)]
     force: bool,
 }
 
+impl Report {
+    /// The fields an idea report filters and sorts by on DataForSEO's side.
+    fn fields(self) -> Option<&'static [FieldSpec]> {
+        match self {
+            Self::Ideas | Self::Suggestions => Some(KEYWORD_FIELDS),
+            Self::Related => Some(RELATED_KEYWORD_FIELDS),
+            Self::Overview | Self::Serp | Self::Wordstat => None,
+        }
+    }
+}
+
 struct Question {
     report: Report,
-    project: ProjectRow,
+    market: Market,
     seed: String,
     paid: Paid<'static>,
 }
@@ -106,9 +127,10 @@ fn seed_of(ask: &Ask) -> Result<String, AppError> {
         .ok_or_else(|| AppError::Invalid("seed: enter a keyword".to_owned()))
 }
 
+#[allow(clippy::too_many_lines)] // one arm per report
 fn question(workspace: &Workspace, ask: &Ask) -> Result<Question, AppError> {
-    let project = workspace.store()?.project(ask.project_id)?;
-    let market = Market::new(&project.country, &project.language);
+    let project: ProjectRow = workspace.store()?.project(ask.project_id)?;
+    let market = super::market_of(&project, ask.market.as_deref())?;
     let rows = octopuson_dataforseo::site::rows(ask.limit.unwrap_or(DEFAULT_ROWS));
     let words = if ask.keywords.is_empty() {
         vec![seed_of(ask)?]
@@ -116,6 +138,7 @@ fn question(workspace: &Workspace, ask: &Ask) -> Result<Question, AppError> {
         ask.keywords.clone()
     };
     let dataforseo = |endpoint, class, task, estimate_usd| Paid {
+        travels: true,
         module: MODULE,
         provider: octopuson_dataforseo::ID,
         endpoint,
@@ -124,7 +147,7 @@ fn question(workspace: &Workspace, ask: &Ask) -> Result<Question, AppError> {
         task,
         estimate_usd,
     };
-    let (seed, paid) = match ask.report {
+    let (seed, mut paid) = match ask.report {
         Report::Overview => {
             let task = labs::overview_task(&words, &market)?;
             let count = task["keywords"].as_array().map_or(0, Vec::len);
@@ -162,7 +185,7 @@ fn question(workspace: &Workspace, ask: &Ask) -> Result<Question, AppError> {
         }
         Report::Suggestions => {
             let seed = seed_of(ask)?;
-            let task = labs::suggestions_task(&seed, &market, rows)?;
+            let task = labs::suggestions_match_task(&seed, &market, rows, ask.exact)?;
             (
                 seed,
                 dataforseo(
@@ -185,10 +208,11 @@ fn question(workspace: &Workspace, ask: &Ask) -> Result<Question, AppError> {
             let seed = seed_of(ask)?;
             let task = json!({
                 "phrase": seed,
-                "country": project.country,
+                "country": market.country,
                 "phrases": WORDSTAT_PHRASES,
             });
             let paid = Paid {
+                travels: true,
                 module: MODULE,
                 provider: Wordstat::ID,
                 endpoint: WORDSTAT_TOP,
@@ -200,9 +224,10 @@ fn question(workspace: &Workspace, ask: &Ask) -> Result<Question, AppError> {
             (seed, paid)
         }
     };
+    paid.travels = super::queried(&mut paid.task, ask.query.as_ref(), ask.report.fields())?;
     Ok(Question {
         report: ask.report,
-        project,
+        market,
         seed,
         paid,
     })
@@ -258,7 +283,7 @@ fn get_keywords(context: &Context<'_>, ask: Ask) -> Result<Option<Fetched<Value>
 fn fetch_keywords(context: &Context<'_>, ask: Ask) -> Result<Fetched<Value>, AppError> {
     let Question {
         report,
-        project,
+        market,
         seed,
         paid,
     } = question(context.workspace, &ask)?;
@@ -273,7 +298,7 @@ fn fetch_keywords(context: &Context<'_>, ask: Ask) -> Result<Fetched<Value>, App
                     secrets: &secrets,
                 };
                 let market =
-                    octopuson_keyword_sources::Market::new(&project.country, &project.language);
+                    octopuson_keyword_sources::Market::new(&market.country, &market.language);
                 let found = Wordstat::top_requests(&source, &seed, &market, WORDSTAT_PHRASES)?;
                 let charged_usd = route.transport.take_charge_usd();
                 let keywords: Vec<KeywordData> = found.keywords.iter().map(from_wordstat).collect();
@@ -308,9 +333,12 @@ struct Autocomplete {
     project_id: i64,
     seed: String,
     engine: Engine,
+    /// Another market than the project's: `country-language`.
+    #[serde(default)]
+    market: Option<String>,
 }
 
-/// Free autocomplete suggestions of Google or Yandex in the project's market.
+/// Free autocomplete suggestions of Google or Yandex in the project's (or the asked) market.
 fn keyword_autocomplete(context: &Context<'_>, ask: Autocomplete) -> Result<Vec<String>, AppError> {
     let project = context.workspace.store()?.project(ask.project_id)?;
     let seed = ask.seed.split_whitespace().collect::<Vec<_>>().join(" ");
@@ -323,7 +351,8 @@ fn keyword_autocomplete(context: &Context<'_>, ask: Autocomplete) -> Result<Vec<
         transport: &transport,
         secrets: &no_keys,
     };
-    let market = octopuson_keyword_sources::Market::new(&project.country, &project.language);
+    let market = super::market_of(&project, ask.market.as_deref())?;
+    let market = octopuson_keyword_sources::Market::new(&market.country, &market.language);
     let found = match ask.engine {
         Engine::Google => FreeSuggest::google(&source, &seed, &market)?,
         Engine::Yandex => FreeSuggest::yandex(&source, &seed, &market)?,

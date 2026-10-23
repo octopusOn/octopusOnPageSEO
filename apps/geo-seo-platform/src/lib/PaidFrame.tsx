@@ -1,13 +1,14 @@
 import type { ReactNode } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { LifeBuoy, RefreshCw } from "lucide-react";
+import { ChevronLeft, ChevronRight, LifeBuoy, RefreshCw } from "lucide-react";
 import { Button, Empty, Loading, Segmented } from "@octopusseo/ui";
 import { paid, type PaidModule } from "../api/client";
 import type { Estimate, Fetched } from "../api/types";
 import { useI18n } from "../i18n";
 import { useShell } from "./context";
 import { explain } from "./errors";
-import { formatCredits, formatUsd, relativeTime } from "./format";
+import { formatCredits, formatNumber, formatUsd, relativeTime } from "./format";
+import { askedQuery, isEmptyQuery, pageRange, type ListQuery } from "./query";
 
 export const ROW_CHOICES = [100, 500, 1000] as const;
 
@@ -47,10 +48,6 @@ export function refreshSpending(queryClient: ReturnType<typeof useQueryClient>) 
   void queryClient.invalidateQueries({ queryKey: ["usage"] });
 }
 
-/**
- * One paid report: what is kept, what fetching costs, the fetch button and the rows choice; the
- * report's own view renders the data. `ask` is the question as the module's commands take it.
- */
 /** A failure in words, with a retry and, when support can act on it, a report to support. */
 export function ProblemBanner({ error, retry }: { error: unknown; retry?: () => void }) {
   const { t } = useI18n();
@@ -74,6 +71,31 @@ export function ProblemBanner({ error, retry }: { error: unknown; retry?: () => 
   );
 }
 
+/** Pages of a list DataForSEO holds more rows of than one question returns. */
+function ServerPager({ offset, rows, total, onOffset }: { offset: number; rows: number; total: number; onOffset: (offset: number) => void }) {
+  const { t, locale } = useI18n();
+  const { from, to } = pageRange(offset, rows, total);
+  if (total <= rows && offset === 0) return null;
+  return (
+    <nav className="server-pager" aria-label={t("query.pages")}>
+      <span>{t("query.pageOf", { from: formatNumber(from, locale), to: formatNumber(to, locale), total: formatNumber(total, locale) })}</span>
+      <Button small disabled={offset === 0} onClick={() => onOffset(Math.max(0, offset - rows))}>
+        <ChevronLeft size={14} aria-hidden="true" />
+        {t("query.previousRows", { n: formatNumber(rows, locale) })}
+      </Button>
+      <Button small disabled={offset + rows >= total} onClick={() => onOffset(offset + rows)}>
+        {t("query.nextRows", { n: formatNumber(rows, locale) })}
+        <ChevronRight size={14} aria-hidden="true" />
+      </Button>
+    </nav>
+  );
+}
+
+/**
+ * One paid report: what is kept, what fetching costs, the fetch button and the rows choice; the
+ * report's own view renders the data. `ask` is the question as the module's commands take it;
+ * `query` adds a list's filters, order and page, asked of the source.
+ */
 export function PaidFrame<T>({
   module,
   ask,
@@ -82,6 +104,9 @@ export function PaidFrame<T>({
   limit,
   onLimit,
   extra,
+  query,
+  toolbar,
+  onOffset,
   children,
 }: {
   module: PaidModule;
@@ -92,12 +117,18 @@ export function PaidFrame<T>({
   onLimit?: (limit: number) => void;
   /** More controls in the header (device choice …). */
   extra?: ReactNode;
+  /** A list's filters, order and first row, asked of the source. */
+  query?: ListQuery;
+  /** Shown under the header whether or not anything is kept (filters). */
+  toolbar?: ReactNode;
+  /** Pages through every row the source holds; `limit` rows a page. */
+  onOffset?: (offset: number) => void;
   children: (data: T, fetched: Fetched<T>) => ReactNode;
 }) {
   const { t, locale } = useI18n();
   const { notify, go, fail } = useShell();
   const queryClient = useQueryClient();
-  const question = { ...ask, ...(limit ? { limit } : {}) };
+  const question = { ...ask, ...(limit ? { limit } : {}), ...askedQuery(query) };
   const key = [module, JSON.stringify(question)];
   const kept = useQuery({ queryKey: key, queryFn: () => paid.kept<T>(module, question) });
   const estimate = useQuery({ queryKey: [`${module}-estimate`, ...key.slice(1)], queryFn: () => paid.estimate(module, question) });
@@ -107,6 +138,8 @@ export function PaidFrame<T>({
       queryClient.setQueryData(key, fetched);
       void queryClient.invalidateQueries({ queryKey: [`${module}-estimate`] });
       refreshSpending(queryClient);
+      // Paid keywords leave their ads in the ad history.
+      if (module === "overview") void queryClient.invalidateQueries({ queryKey: ["ads"] });
       const saved = fetched.saved_usd ?? 0;
       if (fetched.cached) notify(t("overview.freeFromCache"));
       else if (saved > 0)
@@ -159,15 +192,19 @@ export function PaidFrame<T>({
           </Button>
         </div>
       )}
+      {toolbar}
       {estimate.error && <ProblemBanner error={estimate.error} />}
       {kept.isLoading && <Loading label={t("common.loading")} />}
       {kept.error && !estimate.error && <ProblemBanner error={kept.error} retry={() => void kept.refetch()} />}
       {kept.isSuccess && !fetched && (
-        <Empty title={t("overview.reportNothing")}>
-          <p>{t("overview.reportNothingText")}</p>
+        <Empty title={isEmptyQuery(query) ? t("overview.reportNothing") : t("query.nothing")}>
+          <p>{isEmptyQuery(query) ? t("overview.reportNothingText") : t("query.nothingText")}</p>
         </Empty>
       )}
       {fetched && children(fetched.data, fetched)}
+      {fetched && onOffset && limit && fetched.total !== undefined && (
+        <ServerPager offset={query?.offset ?? 0} rows={limit} total={fetched.total} onOffset={onOffset} />
+      )}
     </section>
   );
 }

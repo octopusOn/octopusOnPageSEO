@@ -10,8 +10,15 @@ use crate::{PlatformStore, PlatformStoreError};
 /// How often a project's numbers are read again.
 pub const GSC_SCHEDULES: &[&str] = &["daily", "weekly", "manual"];
 
-/// Days a sync may cover (each compared with as many days before).
-pub const GSC_DAYS: &[u32] = &[7, 28, 90, 180];
+/// Days a sync may cover (each compared with as many days before, or the same days a year
+/// before); Search Console keeps 16 months.
+pub const GSC_DAYS: &[u32] = &[7, 14, 28, 90, 180, 240];
+
+/// What a period is compared with: as many days before it, or the same days a year before.
+pub const GSC_COMPARE: &[&str] = &["previous", "year"];
+
+/// Longest period compared with the same days a year before.
+pub const GSC_YEAR_DAYS: u32 = 90;
 
 /// Longest property name kept.
 const MAX_PROPERTY: usize = 300;
@@ -35,6 +42,13 @@ pub struct GscSettings {
     /// When the last sync started, RFC 3339.
     #[serde(default)]
     pub last_sync_at: Option<String>,
+    /// `previous` (as many days before) or `year` (the same days a year before).
+    #[serde(default = "previous")]
+    pub compare: String,
+}
+
+fn previous() -> String {
+    "previous".to_owned()
 }
 
 impl Default for GscSettings {
@@ -46,6 +60,7 @@ impl Default for GscSettings {
             days: 28,
             schedule: "weekly".to_owned(),
             last_sync_at: None,
+            compare: previous(),
         }
     }
 }
@@ -238,7 +253,15 @@ fn clean_settings(settings: &GscSettings) -> Result<GscSettings, PlatformStoreEr
         return Err(invalid("schedule: daily, weekly or manual"));
     }
     if !GSC_DAYS.contains(&settings.days) {
-        return Err(invalid("days: 7, 28, 90 or 180"));
+        return Err(invalid("days: 7, 14, 28, 90, 180 or 240"));
+    }
+    if !GSC_COMPARE.contains(&settings.compare.as_str()) {
+        return Err(invalid("compare: previous or year"));
+    }
+    if settings.compare == "year" && settings.days > GSC_YEAR_DAYS {
+        return Err(invalid(
+            "compare: a period of up to 90 days can be compared with a year before",
+        ));
     }
     let property = clean(settings.property.as_ref());
     if property.as_ref().is_some_and(|property| {
@@ -275,6 +298,7 @@ fn clean_settings(settings: &GscSettings) -> Result<GscSettings, PlatformStoreEr
         days: settings.days,
         schedule: settings.schedule.clone(),
         last_sync_at: None,
+        compare: settings.compare.clone(),
     })
 }
 
@@ -304,7 +328,8 @@ impl PlatformStore {
     /// Database errors.
     pub fn gsc_settings(&self, project_id: i64) -> Result<GscSettings, PlatformStoreError> {
         let mut statement = self.connection.prepare(
-            "SELECT property, ga4_property, ga4_name, days, schedule, last_sync_at
+            "SELECT property, ga4_property, ga4_name, days, schedule, last_sync_at,
+                    coalesce(compare, 'previous')
              FROM gsc_settings WHERE project_id = ?",
         )?;
         let mut rows = statement.query_map(params![project_id], |row| {
@@ -315,6 +340,7 @@ impl PlatformStore {
                 days: row.get(3)?,
                 schedule: row.get(4)?,
                 last_sync_at: row.get(5)?,
+                compare: row.get(6)?,
             })
         })?;
         Ok(rows.next().transpose()?.unwrap_or_default())
@@ -333,18 +359,19 @@ impl PlatformStore {
         self.project(project_id)?;
         let clean = clean_settings(settings)?;
         self.connection.execute(
-            "INSERT INTO gsc_settings (project_id, property, ga4_property, ga4_name, days, schedule)
-             VALUES (?, ?, ?, ?, ?, ?)
+            "INSERT INTO gsc_settings (project_id, property, ga4_property, ga4_name, days, schedule,
+             compare) VALUES (?, ?, ?, ?, ?, ?, ?)
              ON CONFLICT (project_id) DO UPDATE SET property = excluded.property,
              ga4_property = excluded.ga4_property, ga4_name = excluded.ga4_name,
-             days = excluded.days, schedule = excluded.schedule",
+             days = excluded.days, schedule = excluded.schedule, compare = excluded.compare",
             params![
                 project_id,
                 clean.property,
                 clean.ga4_property,
                 clean.ga4_name,
                 clean.days,
-                clean.schedule
+                clean.schedule,
+                clean.compare
             ],
         )?;
         self.gsc_settings(project_id)

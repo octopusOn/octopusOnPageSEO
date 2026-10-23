@@ -11,6 +11,7 @@
 //! that high. The sources' monthly budgets apply as everywhere.
 
 mod tools;
+mod work;
 
 use std::io::{self, BufRead, Write};
 use std::sync::Arc;
@@ -39,7 +40,7 @@ Start with list_projects to get project ids. Tools that read stored data (rank_r
 ai_visibility, search_console, spending) are free. Tools that buy data (domain_overview, keyword_research, \
 serp_overview, backlinks, keyword_gap, ai_mentions) answer from kept data when it is fresh; otherwise they \
 return the price (status needs_approval) and must be called again with allow_spend_usd at least that \
-price. Ask the user before spending, state the price, and never raise allow_spend_usd on your own.";
+price. Ask the user before spending, state the price, and never raise allow_spend_usd on your own. Snapshots keep a project's whole state at a moment: list_snapshots and compare_snapshots (where the work began against now, with a written summary) are free; take_snapshot buys its paid parts the same way.";
 
 /// The MCP server of one platform.
 pub struct McpServer {
@@ -113,7 +114,7 @@ impl McpServer {
                         "serverInfo": {
                             "name": self.name,
                             "title": "OctopusOn GEO-SEO Platform",
-                            "version": env!("CARGO_PKG_VERSION"),
+                            "version": env!("PLATFORM_VERSION"),
                         },
                         "instructions": INSTRUCTIONS,
                     }),

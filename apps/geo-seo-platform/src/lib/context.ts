@@ -3,7 +3,7 @@
 import { createContext, useContext } from "react";
 import type { Mode } from "../api/transport";
 import type { Job, ProjectRow } from "../api/types";
-import type { Route } from "./route";
+import type { RouteChange, RouteParams } from "./route";
 
 export interface Shell {
   mode: Mode;
@@ -12,7 +12,9 @@ export interface Shell {
   fail: (thrown: unknown) => void;
   /** Opens the report to support of an error. */
   report: (detail: string) => void;
-  go: (next: Partial<Route>) => void;
+  go: (next: RouteChange) => void;
+  /** What the page looks at, from the address. */
+  params: RouteParams;
   project: ProjectRow | null;
   /** Every job, newest first. */
   jobs: Job[];

@@ -17,6 +17,14 @@ pub const REPORT_WIDGETS: &[&str] = &[
     "site_audit",
     "ai_visibility",
     "backlinks",
+    "comparison",
+    "comparison_previous",
+    "local",
+    "organic",
+    "link_history",
+    "gap",
+    "keyword_lists",
+    "opportunities",
 ];
 
 /// Languages a report is written in.
@@ -25,8 +33,14 @@ pub const REPORT_LANGUAGES: &[&str] = &["tr", "en", "de", "es"];
 /// Days a report covers.
 pub const REPORT_DAYS: &[u32] = &[7, 28, 90];
 
-/// How often a report is e-mailed.
-pub const REPORT_SCHEDULES: &[&str] = &["manual", "weekly", "monthly"];
+/// How a report can look: white, deep sea (the program's own), the agency's colour, elegant.
+pub const REPORT_DESIGNS: &[&str] = &["clean", "ocean", "accent", "elegant"];
+
+/// The design of a report that has none.
+pub const DEFAULT_DESIGN: &str = "clean";
+
+/// How often a report is e-mailed: by hand, weekly, monthly, or after each new snapshot.
+pub const REPORT_SCHEDULES: &[&str] = &["manual", "weekly", "monthly", "snapshot"];
 
 /// Recipients of a report at most.
 pub const MAX_RECIPIENTS: usize = 5;
@@ -81,6 +95,60 @@ pub struct ReportSpec {
     /// Who gets it by e-mail.
     #[serde(default)]
     pub recipients: Vec<String>,
+    /// How it looks: one of [`REPORT_DESIGNS`].
+    #[serde(default = "default_design")]
+    pub design: String,
+    /// Its own colours over the design's.
+    #[serde(default)]
+    pub colors: ReportColors,
+}
+
+fn default_design() -> String {
+    DEFAULT_DESIGN.to_owned()
+}
+
+/// A report's own colours, `#rrggbb`, each over its design's (and the branding's accent).
+#[derive(Debug, Clone, Default, PartialEq, Eq, Serialize, Deserialize)]
+pub struct ReportColors {
+    /// Section numbers, highlights, charts, bars and the contents' numbers.
+    #[serde(default)]
+    pub accent: Option<String>,
+    /// The second colour of gradients and chart lines.
+    #[serde(default)]
+    pub accent2: Option<String>,
+    /// The cover's background; its ink is chosen to read on it.
+    #[serde(default)]
+    pub cover: Option<String>,
+    /// Section, table and chart titles.
+    #[serde(default)]
+    pub heading: Option<String>,
+    /// The background of table heads; their ink is chosen to read on it.
+    #[serde(default)]
+    pub table: Option<String>,
+}
+
+impl ReportColors {
+    /// Whether no colour is its own.
+    pub fn is_empty(&self) -> bool {
+        self == &Self::default()
+    }
+}
+
+/// A colour like `#1e6fd9`, lowercase; `None` stays `None`.
+fn clean_color(value: Option<&String>, field: &str) -> Result<Option<String>, PlatformStoreError> {
+    let Some(value) = value
+        .map(|value| value.trim())
+        .filter(|value| !value.is_empty())
+    else {
+        return Ok(None);
+    };
+    if value.len() != 7
+        || !value.starts_with('#')
+        || !value[1..].bytes().all(|b| b.is_ascii_hexdigit())
+    {
+        return Err(invalid(&format!("colors.{field}: a colour like #1e6fd9")));
+    }
+    Ok(Some(value.to_ascii_lowercase()))
 }
 
 /// A saved report.
@@ -225,7 +293,7 @@ fn clean_spec(spec: &ReportSpec) -> Result<ReportSpec, PlatformStoreError> {
         return Err(invalid("days: 7, 28 or 90"));
     }
     if !REPORT_SCHEDULES.contains(&spec.schedule.as_str()) {
-        return Err(invalid("schedule: manual, weekly or monthly"));
+        return Err(invalid("schedule: manual, weekly, monthly or snapshot"));
     }
     let mut widgets: Vec<String> = Vec::new();
     for widget in &spec.widgets {
@@ -257,6 +325,10 @@ fn clean_spec(spec: &ReportSpec) -> Result<ReportSpec, PlatformStoreError> {
     if recipients.len() > MAX_RECIPIENTS {
         return Err(invalid("recipients: at most 5"));
     }
+    if !REPORT_DESIGNS.contains(&spec.design.as_str()) {
+        return Err(invalid("design: clean, ocean, accent or elegant"));
+    }
+    let colors = &spec.colors;
     Ok(ReportSpec {
         name,
         language: spec.language.clone(),
@@ -264,7 +336,20 @@ fn clean_spec(spec: &ReportSpec) -> Result<ReportSpec, PlatformStoreError> {
         widgets,
         schedule: spec.schedule.clone(),
         recipients,
+        design: spec.design.clone(),
+        colors: ReportColors {
+            accent: clean_color(colors.accent.as_ref(), "accent")?,
+            accent2: clean_color(colors.accent2.as_ref(), "accent2")?,
+            cover: clean_color(colors.cover.as_ref(), "cover")?,
+            heading: clean_color(colors.heading.as_ref(), "heading")?,
+            table: clean_color(colors.table.as_ref(), "table")?,
+        },
     })
+}
+
+/// Colours as stored: JSON, or none when all are the design's.
+fn colors_of(colors: &ReportColors) -> Option<String> {
+    (!colors.is_empty()).then(|| json_of(colors))
 }
 
 fn json_of<T: Serialize>(value: &T) -> String {
@@ -275,7 +360,7 @@ fn parse<T: serde::de::DeserializeOwned>(text: &str) -> Result<T, PlatformStoreE
     serde_json::from_str(text).map_err(|error| PlatformStoreError::Corrupt(error.to_string()))
 }
 
-const REPORT_COLUMNS: &str = "id, project_id, name, language, days, widgets, schedule, recipients, share_token, share_views, last_sent_at, created_at, updated_at";
+const REPORT_COLUMNS: &str = "id, project_id, name, language, days, widgets, schedule, recipients, share_token, share_views, last_sent_at, created_at, updated_at, design, colors";
 
 /// A report row with its lists still as JSON.
 type RawReport = (ReportRow, String, String);
@@ -292,6 +377,16 @@ fn raw_report(row: &Row<'_>) -> duckdb::Result<RawReport> {
                 widgets: Vec::new(),
                 schedule: row.get(6)?,
                 recipients: Vec::new(),
+                // A design this program does not know (or none) reads as the default.
+                design: row
+                    .get::<_, Option<String>>(13)?
+                    .filter(|design| REPORT_DESIGNS.contains(&design.as_str()))
+                    .unwrap_or_else(default_design),
+                // Colours that cannot be read keep the design's.
+                colors: row
+                    .get::<_, Option<String>>(14)?
+                    .and_then(|text| serde_json::from_str(&text).ok())
+                    .unwrap_or_default(),
             },
             share_token: row.get(8)?,
             share_views: row.get::<_, i64>(9)?.try_into().unwrap_or_default(),
@@ -408,7 +503,7 @@ impl PlatformStore {
                 self.report(project_id, id)?;
                 self.connection.execute(
                     "UPDATE reports SET name = ?, language = ?, days = ?, widgets = ?, schedule = ?,
-                     recipients = ?, updated_at = ? WHERE project_id = ? AND id = ?",
+                     recipients = ?, design = ?, colors = ?, updated_at = ? WHERE project_id = ? AND id = ?",
                     params![
                         clean.name,
                         clean.language,
@@ -416,6 +511,8 @@ impl PlatformStore {
                         json_of(&clean.widgets),
                         clean.schedule,
                         json_of(&clean.recipients),
+                        clean.design,
+                        colors_of(&clean.colors),
                         now,
                         project_id,
                         id
@@ -425,7 +522,7 @@ impl PlatformStore {
             }
             None => self.connection.query_row(
                 "INSERT INTO reports (project_id, name, language, days, widgets, schedule, recipients,
-                 created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?) RETURNING id",
+                 design, colors, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?) RETURNING id",
                 params![
                     project_id,
                     clean.name,
@@ -434,6 +531,8 @@ impl PlatformStore {
                     json_of(&clean.widgets),
                     clean.schedule,
                     json_of(&clean.recipients),
+                    clean.design,
+                    colors_of(&clean.colors),
                     now,
                     now
                 ],

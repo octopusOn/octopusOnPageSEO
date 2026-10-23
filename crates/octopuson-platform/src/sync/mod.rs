@@ -283,6 +283,28 @@ impl PlatformStore {
         Ok(noted)
     }
 
+    /// Takes the fingerprints of the kinds named `kinds` as they are now without noting a change:
+    /// after an update gave them new columns, records that only gained those columns are not
+    /// this copy's changes (the hub sends their values again).
+    ///
+    /// # Errors
+    /// Database errors.
+    pub fn sync_rebaseline(&self, kinds: &[String]) -> Result<(), PlatformStoreError> {
+        for kind in kinds.iter().filter_map(|name| kind_named(name)) {
+            self.connection.execute_batch(&format!(
+                "CREATE OR REPLACE TEMP TABLE sync_now AS {}",
+                sql::listing(kind)
+            ))?;
+            self.connection.execute(
+                "UPDATE sync_rows SET hash = n.hash FROM sync_now n
+                 WHERE sync_rows.kind = ? AND sync_rows.key = n.key AND NOT sync_rows.deleted",
+                params![kind.name],
+            )?;
+            self.connection.execute_batch("DROP TABLE sync_now")?;
+        }
+        Ok(())
+    }
+
     fn scan_kind(&self, kind: &Kind, now_ms: i64) -> Result<u64, PlatformStoreError> {
         self.connection.execute_batch(&format!(
             "CREATE OR REPLACE TEMP TABLE sync_now AS {}",
@@ -621,6 +643,39 @@ impl PlatformStore {
             batch.last = batch.last.max(self.sync_head()?);
         }
         Ok(batch)
+    }
+
+    /// Every current record of the kinds named `kinds` after change `after`, oldest first: for a
+    /// copy that learnt these kinds (or their new columns) after it took their records.
+    ///
+    /// # Errors
+    /// Database errors.
+    pub fn sync_kind_records(
+        &self,
+        kinds: &[String],
+        after: i64,
+        max_bytes: usize,
+    ) -> Result<SyncBatch, PlatformStoreError> {
+        // Only names this program knows reach the query, so they can be written into it.
+        let known: Vec<String> = kinds
+            .iter()
+            .filter_map(|name| kind_named(name))
+            .map(|kind| format!("'{}'", kind.name))
+            .collect();
+        if known.is_empty() {
+            return Ok(SyncBatch::default());
+        }
+        self.fill_uids()?;
+        self.batch(
+            &format!(
+                "deleted = false AND seq > ? AND kind IN ({})",
+                known.join(", ")
+            ),
+            &[&after],
+            0,
+            max_bytes,
+            false,
+        )
     }
 
     /// The hub's own versions of records (to send back when a copy's change lost).

@@ -1,0 +1,54 @@
+{
+  "version": "0.1.20260701",
+  "status_code": 20000,
+  "status_message": "Ok.",
+  "time": "0.2 sec.",
+  "cost": 0.020072,
+  "tasks_count": 1,
+  "tasks_error": 0,
+  "tasks": [
+    {
+      "id": "10231300-1535-0387-0000-6f9e1a2c6b11",
+      "status_code": 20000,
+      "status_message": "Ok.",
+      "time": "0.1 sec.",
+      "cost": 0.020072,
+      "result_count": 1,
+      "path": [
+        "v3",
+        "backlinks",
+        "bulk_referring_domains",
+        "live"
+      ],
+      "data": {
+        "api": "backlinks",
+        "function": "bulk_referring_domains",
+        "targets": [
+          "https://www.ornekmagaza.com/spor-ayakkabi",
+          "rakip-magaza.com"
+        ]
+      },
+      "result": [
+        {
+          "items_count": 2,
+          "items": [
+            {
+              "target": "https://www.ornekmagaza.com/spor-ayakkabi",
+              "referring_domains": 48,
+              "referring_domains_nofollow": 6,
+              "referring_main_domains": 45,
+              "referring_main_domains_nofollow": 5
+            },
+            {
+              "target": "rakip-magaza.com",
+              "referring_domains": 3120,
+              "referring_domains_nofollow": 300,
+              "referring_main_domains": 2900,
+              "referring_main_domains_nofollow": 280
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

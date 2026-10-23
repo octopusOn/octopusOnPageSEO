@@ -3,22 +3,31 @@
 //! rank (and compete with each other), the elements of the result page, whether an AI
 //! Overview is shown and cites the site, and the competitors' shares over time.
 //!
-//! A check is always asked fresh (DataForSEO's live result page, on the user's key or on
-//! credits) and only its reading is kept, in the rank history. A run is a job; the schedule
-//! starts runs when due ([`run_due`]): the desktop program asks every minute while it is open,
-//! the web server for every account.
+//! A check is always asked fresh and only its reading is kept, in the rank history. A run is a
+//! job; the schedule starts runs when due ([`run_due`]): the desktop program asks every minute
+//! while it is open, the web server for every account.
+//!
+//! Runs started by hand read DataForSEO's live result pages. Scheduled runs post their checks
+//! to the standard queue instead, for less than a third of the price, wherever it is open (on
+//! the user's own key; on credits once the gateway forwards the queue): the run's job ends
+//! once they are posted, and [`collect_queued`] reads their answers every minute until none is
+//! left, then finishes the run. The posted checks are kept here, so the answers are read after
+//! a restart too; only the copy that posted them can read them.
 
-use std::collections::{BTreeMap, HashMap};
+use std::collections::hash_map::Entry;
+use std::collections::{BTreeMap, BTreeSet, HashMap, HashSet};
 use std::str::FromStr;
 use std::sync::Arc;
+use std::time::{Duration, Instant};
 
+use octopuson_cloud::Via;
 use octopuson_core::Timestamp;
 use octopuson_dataforseo::keywords as labs;
-use octopuson_dataforseo::rank::{self as check, RankQuery};
-use octopuson_dataforseo::{Client, Market};
+use octopuson_dataforseo::rank::{self as check, RankCheck, RankQuery};
+use octopuson_dataforseo::{Client, DfsError, Market};
 use octopuson_platform::{
-    CacheClass, CheckResult, ProjectRow, RankCheckRow, RankPlan, RankRunRow, RankSettings, RunEnd,
-    TrackedKeyword, TrackerRow, TrackerSpec, unix_now,
+    CacheClass, CheckResult, ProjectRow, RankCheckRow, RankPlan, RankRunRow, RankSettings,
+    RankTaskRow, RunEnd, TrackedKeyword, TrackerRow, TrackerSpec, unix_now,
 };
 use octopuson_serp::{Device, Engine, registrable_domain};
 use octopuson_serp_score::rank::{
@@ -26,7 +35,7 @@ use octopuson_serp_score::rank::{
 };
 use serde::{Deserialize, Serialize};
 
-use crate::fetch::{Estimate, Paid};
+use crate::fetch::{Estimate, Paid, PaidRun, via_name};
 use crate::jobs::{JobControl, JobDone, JobManager, JobStatus};
 use crate::router::{Context, ErrorCode, Router};
 use crate::{AppError, Workspace, now};
@@ -37,6 +46,9 @@ const MODULE: &str = "rank";
 /// Kind of the job of a run.
 pub const JOB_KIND: &str = "rank-check";
 
+/// Kind of the note pages get when answers were read from the queue (not a job of its own).
+pub const QUEUE_KIND: &str = "rank-queue";
+
 /// Days of history a report shows unless asked otherwise.
 const DEFAULT_DAYS: u32 = 90;
 
@@ -45,6 +57,23 @@ const MAX_DAYS: u32 = 365;
 
 /// Runs listed.
 const RUNS_SHOWN: u32 = 20;
+
+/// Seconds before a queued check's answer is first asked for; the wait doubles after each ask
+/// that finds it unfinished, up to [`LONGEST_WAIT`].
+pub(crate) const FIRST_WAIT: i64 = 60;
+
+/// Longest wait between two asks for a queued check's answer, seconds.
+pub(crate) const LONGEST_WAIT: i64 = 900;
+
+/// Seconds after which a queued check that never answered is given up on.
+pub(crate) const GIVE_UP: i64 = 86_400;
+
+/// Answers read from the queue in one round at most, and for how long.
+pub(crate) const COLLECT_LIMIT: u32 = 500;
+pub(crate) const COLLECT_TIME: Duration = Duration::from_secs(40);
+
+/// Seconds between two rounds of reading the queue while checks wait in it.
+pub const COLLECT_EVERY: i64 = 60;
 
 /// Commands after which the schedule may be due at another time (the web server notes it).
 const SCHEDULE_COMMANDS: &[&str] = &[
@@ -90,13 +119,22 @@ fn due_at(plan: &RankPlan) -> Option<i64> {
     )
 }
 
-/// The checks of one run and their list price.
-fn plan_cost(trackers: &[TrackerRow], keywords: usize, settings: &RankSettings) -> (u32, f64) {
+/// The checks of one run and their list price, live or through the standard queue.
+fn plan_cost(
+    trackers: &[TrackerRow],
+    keywords: usize,
+    settings: &RankSettings,
+    queued: bool,
+) -> (u32, f64) {
     let mut checks = 0_u32;
     let mut usd = 0.0;
     for tracker in trackers {
         let engine = engine_of(tracker).unwrap_or(Engine::Google);
-        let each = check::estimate(engine, settings.depth, settings.ai_overview);
+        let each = if queued {
+            check::queue_estimate(engine, settings.depth, settings.ai_overview)
+        } else {
+            check::estimate(engine, settings.depth, settings.ai_overview)
+        };
         let count = u32::try_from(keywords).unwrap_or(u32::MAX);
         checks = checks.saturating_add(count);
         usd += each * f64::from(count);
@@ -323,13 +361,37 @@ fn set_keyword_tags(context: &Context<'_>, ask: TagsAsk) -> Result<(), AppError>
 
 // ----- Runs --------------------------------------------------------------------------------
 
+/// Whether a run's checks can go through the standard queue: on the user's own key always, on
+/// credits once the gateway forwards the queue's requests for every engine tracked.
+fn queue_open(workspace: &Workspace, via: Via, trackers: &[TrackerRow]) -> bool {
+    match via {
+        Via::Own => true,
+        Via::Credit => trackers.iter().all(|tracker| {
+            let engine = engine_of(tracker).unwrap_or(Engine::Google);
+            workspace.credit_allows(
+                octopuson_dataforseo::ID,
+                "POST",
+                &format!("/v3/{}", check::queue_post(engine)),
+            ) && workspace.credit_allows(
+                octopuson_dataforseo::ID,
+                "GET",
+                &format!("/v3/{}", check::queue_get(engine, "id")),
+            )
+        }),
+    }
+}
+
 /// What a run and a month of runs cost.
 #[derive(Debug, Serialize)]
 struct RankEstimate {
     /// Checks of one run (keywords × places).
     checks: u32,
-    /// One run, now.
+    /// One run started by hand, now (live result pages).
     run: Estimate,
+    /// Scheduled runs go through the standard queue.
+    queued: bool,
+    /// List price of one scheduled run, US dollars.
+    scheduled_usd: f64,
     /// Runs in thirty days on the schedule.
     runs_per_month: u32,
     /// List price of thirty days, US dollars.
@@ -345,18 +407,26 @@ fn rank_estimate(context: &Context<'_>, ask: ProjectAsk) -> Result<RankEstimate,
     let trackers = store.rank_trackers(ask.project_id)?;
     let keywords = store.tracked_keywords(ask.project_id)?.len();
     drop(store);
-    let (checks, usd) = plan_cost(&trackers, keywords, &settings);
+    let (checks, usd) = plan_cost(&trackers, keywords, &settings, false);
     let run = context
         .workspace
         .estimate_spend(octopuson_dataforseo::ID, usd)?;
+    let queued = run
+        .via
+        .is_some_and(|via| queue_open(context.workspace, via, &trackers));
+    let (_, scheduled_usd) = plan_cost(&trackers, keywords, &settings, queued);
     let runs_per_month = Schedule::parse(&settings.schedule).per_month();
+    let month_usd = scheduled_usd * f64::from(runs_per_month);
     Ok(RankEstimate {
         checks,
-        month_usd: usd * f64::from(runs_per_month),
         month_credits: run
             .credits
-            .map(|credits| credits * f64::from(runs_per_month)),
+            .filter(|_| usd > 0.0)
+            .map(|credits| credits / usd * month_usd),
+        month_usd,
         runs_per_month,
+        queued,
+        scheduled_usd,
         run,
     })
 }
@@ -372,6 +442,12 @@ fn start(
         return Ok(id);
     }
     let store = workspace.store()?;
+    // The schedule waits while the last run's checks are still in the queue.
+    if scheduled && store.waiting_rank_tasks(project.id)? > 0 {
+        return Err(AppError::Busy(
+            "the last scheduled run is still waiting for its answers".to_owned(),
+        ));
+    }
     let keywords = store.tracked_keywords(project.id)?.len();
     let trackers = store.rank_trackers(project.id)?.len();
     if keywords == 0 || trackers == 0 {
@@ -387,7 +463,7 @@ fn start(
     let workspace = Arc::clone(workspace);
     let project_id = project.id;
     jobs.start(JOB_KIND, &project.name, Some(project.id), move |control| {
-        run_checks(&workspace, project_id, run_id, control)
+        run_checks(&workspace, project_id, run_id, scheduled, control)
     })
 }
 
@@ -415,7 +491,7 @@ fn start_rank_check(context: &Context<'_>, ask: ProjectAsk) -> Result<String, Ap
 
 /// Whether a failed check stops the run: everything but a provider's answer about this one
 /// keyword or a passing outage.
-const fn stops(error: &AppError) -> bool {
+pub(crate) const fn stops(error: &AppError) -> bool {
     !matches!(
         error,
         AppError::Provider(_) | AppError::Unavailable(_) | AppError::Busy(_)
@@ -428,7 +504,70 @@ struct RunSummary {
     run_id: i64,
     checked: u32,
     failed: u32,
+    /// Checks posted to the standard queue, read later.
+    queued: u32,
     cost_usd: f64,
+}
+
+/// A check's row before it is read.
+fn blank_row(run_id: i64, project_id: i64, keyword_id: i64, tracker_id: i64) -> RankCheckRow {
+    RankCheckRow {
+        run_id,
+        project_id,
+        keyword_id,
+        tracker_id,
+        checked_at: now(),
+        position: None,
+        url: None,
+        pages: Vec::new(),
+        features: Vec::new(),
+        ai_overview: false,
+        ai_cited: false,
+        snippet: false,
+        owned: Vec::new(),
+        results: Vec::new(),
+        error: None,
+    }
+}
+
+/// Fills a check's row with what its result page showed.
+fn read_into(row: &mut RankCheckRow, found: RankCheck) {
+    row.position = found.position;
+    row.url = found.url;
+    row.pages = found.pages;
+    row.features = found.features;
+    row.ai_overview = found.ai_overview;
+    row.ai_cited = found.ai_cited;
+    row.snippet = found.snippet;
+    row.owned = found.owned;
+    row.results = found
+        .results
+        .into_iter()
+        .map(|result| CheckResult {
+            position: result.position,
+            domain: result.domain,
+            url: result.url,
+            title: result.title,
+        })
+        .collect();
+}
+
+/// How a run ended, from its counts.
+pub(crate) const fn end_status(
+    cancelled: bool,
+    checked: u32,
+    failed: u32,
+    stopped: bool,
+) -> &'static str {
+    if cancelled {
+        "cancelled"
+    } else if checked == 0 && (stopped || failed > 0) {
+        "failed"
+    } else if failed > 0 || stopped {
+        "partial"
+    } else {
+        "done"
+    }
 }
 
 #[allow(clippy::too_many_lines)] // one loop with its bookkeeping
@@ -436,6 +575,7 @@ fn run_checks(
     workspace: &Workspace,
     project_id: i64,
     run_id: i64,
+    scheduled: bool,
     control: &JobControl,
 ) -> Result<JobDone, AppError> {
     let (project, settings, trackers, keywords) = {
@@ -456,6 +596,16 @@ fn run_checks(
     let mut done = 0_u64;
     match workspace.paid_run(octopuson_dataforseo::ID) {
         Err(error) => stopped = Some(error),
+        Ok(session) if scheduled && queue_open(workspace, session.via(), &trackers) => {
+            let queued = Queued {
+                project: &project,
+                settings: &settings,
+                trackers: &trackers,
+                keywords: &keywords,
+                run_id,
+            };
+            return post_queued(workspace, &session, &queued, control);
+        }
         Ok(session) => {
             'places: for tracker in &trackers {
                 let engine = engine_of(tracker)?;
@@ -478,6 +628,7 @@ fn run_checks(
                         .map_err(AppError::from)
                         .and_then(|task| {
                             let paid = Paid {
+                                travels: true,
                                 module: MODULE,
                                 provider: octopuson_dataforseo::ID,
                                 endpoint: check::endpoint(engine),
@@ -497,43 +648,14 @@ fn run_checks(
                             })
                         });
                     done += 1;
-                    let mut row = RankCheckRow {
-                        run_id,
-                        project_id,
-                        keyword_id: keyword.id,
-                        tracker_id: tracker.id,
-                        checked_at: now(),
-                        position: None,
-                        url: None,
-                        pages: Vec::new(),
-                        features: Vec::new(),
-                        ai_overview: false,
-                        ai_cited: false,
-                        snippet: false,
-                        results: Vec::new(),
-                        error: None,
-                    };
+                    let mut row = blank_row(run_id, project_id, keyword.id, tracker.id);
                     let stop = match outcome {
                         Ok(answered) => {
-                            let found = check::rank_from_result(&answered.result, &project.domain);
+                            read_into(
+                                &mut row,
+                                check::rank_from_result(&answered.result, &project.domain),
+                            );
                             row.checked_at = answered.fetched_at;
-                            row.position = found.position;
-                            row.url = found.url;
-                            row.pages = found.pages;
-                            row.features = found.features;
-                            row.ai_overview = found.ai_overview;
-                            row.ai_cited = found.ai_cited;
-                            row.snippet = found.snippet;
-                            row.results = found
-                                .results
-                                .into_iter()
-                                .map(|result| CheckResult {
-                                    position: result.position,
-                                    domain: result.domain,
-                                    url: result.url,
-                                    title: result.title,
-                                })
-                                .collect();
                             summary.checked += 1;
                             summary.cost_usd += answered.spent_usd;
                             control.spent(answered.spent_usd);
@@ -556,15 +678,12 @@ fn run_checks(
     }
     control.progress("", done, total);
     let cancelled = control.cancelled();
-    let status = if cancelled {
-        "cancelled"
-    } else if summary.checked == 0 && (stopped.is_some() || summary.failed > 0) {
-        "failed"
-    } else if summary.failed > 0 || stopped.is_some() {
-        "partial"
-    } else {
-        "done"
-    };
+    let status = end_status(
+        cancelled,
+        summary.checked,
+        summary.failed,
+        stopped.is_some(),
+    );
     let message = stopped.as_ref().map(ToString::to_string);
     workspace.store()?.finish_rank_run(
         run_id,
@@ -589,6 +708,383 @@ fn run_checks(
             JobStatus::Partial
         },
         result: serde_json::to_value(&summary).ok(),
+    })
+}
+
+/// A run whose checks go through the standard queue.
+struct Queued<'a> {
+    project: &'a ProjectRow,
+    settings: &'a RankSettings,
+    trackers: &'a [TrackerRow],
+    keywords: &'a [TrackedKeyword],
+    run_id: i64,
+}
+
+/// The tag a queued check is posted with, naming its keyword and place.
+fn tag_of(keyword_id: i64, tracker_id: i64) -> String {
+    format!("{keyword_id}|{tracker_id}")
+}
+
+/// Posts a run's checks to the standard queue, a hundred a request, each request paid within
+/// the month's budget. The run keeps running until [`collect_queued`] has read every answer;
+/// checks the queue refused are noted as failed at once.
+#[allow(clippy::too_many_lines)] // one loop with its bookkeeping
+fn post_queued(
+    workspace: &Workspace,
+    session: &PaidRun<'_>,
+    run: &Queued<'_>,
+    control: &JobControl,
+) -> Result<JobDone, AppError> {
+    let project_id = run.project.id;
+    let total = (run.trackers.len() * run.keywords.len()) as u64;
+    let via = via_name(session.via());
+    let mut summary = RunSummary {
+        run_id: run.run_id,
+        ..RunSummary::default()
+    };
+    let mut stopped: Option<AppError> = None;
+    let mut done = 0_u64;
+    let fail = |keyword_id: i64, tracker_id: i64, error: &str| -> Result<(), AppError> {
+        let mut row = blank_row(run.run_id, project_id, keyword_id, tracker_id);
+        row.error = Some(error.to_owned());
+        Ok(workspace.store()?.add_rank_check(&row)?)
+    };
+    'places: for tracker in run.trackers {
+        let engine = engine_of(tracker)?;
+        let market = Market::new(&tracker.country, &tracker.language);
+        for batch in run.keywords.chunks(check::QUEUE_BATCH) {
+            if control.cancelled() {
+                break 'places;
+            }
+            control.progress(&batch[0].keyword, done, total);
+            let mut tasks = Vec::with_capacity(batch.len());
+            let mut sent: Vec<&TrackedKeyword> = Vec::with_capacity(batch.len());
+            for keyword in batch {
+                let query = RankQuery {
+                    keyword: &keyword.keyword,
+                    engine,
+                    market: &market,
+                    location: tracker.location.as_deref(),
+                    device: device_of(tracker),
+                    depth: run.settings.depth,
+                    ai_overview: run.settings.ai_overview,
+                };
+                match check::queued_task(&query, &tag_of(keyword.id, tracker.id)) {
+                    Ok(task) => {
+                        tasks.push(task);
+                        sent.push(keyword);
+                    }
+                    Err(error) => {
+                        fail(keyword.id, tracker.id, &AppError::from(error).to_string())?;
+                        summary.failed += 1;
+                    }
+                }
+            }
+            done += batch.len() as u64;
+            if tasks.is_empty() {
+                continue;
+            }
+            #[allow(clippy::cast_precision_loss)] // at most a hundred tasks
+            let paid = Paid {
+                travels: true,
+                module: MODULE,
+                provider: octopuson_dataforseo::ID,
+                endpoint: check::queue_post(engine),
+                class: CacheClass::Serp,
+                project_id: Some(project_id),
+                task: serde_json::Value::Null,
+                estimate_usd: check::queue_estimate(
+                    engine,
+                    run.settings.depth,
+                    run.settings.ai_overview,
+                ) * tasks.len() as f64,
+            };
+            let outcome = session.ask(&paid, |route| {
+                let credentials = route.key(octopuson_dataforseo::SECRET)?;
+                let client = Client::new(route.transport, &credentials)?;
+                Ok(client.post_tasks(paid.endpoint, &tasks)?.into())
+            });
+            match outcome {
+                Ok(answered) => {
+                    summary.cost_usd += answered.spent_usd;
+                    control.spent(answered.spent_usd);
+                    let posted: HashMap<String, check::Posted> =
+                        check::posted_from_tasks(&answered.result)
+                            .into_iter()
+                            .map(|posted| (posted.tag.clone(), posted))
+                            .collect();
+                    let first_try = unix_now() + FIRST_WAIT;
+                    let mut waiting = Vec::with_capacity(sent.len());
+                    for keyword in sent {
+                        match posted.get(&tag_of(keyword.id, tracker.id)) {
+                            Some(check::Posted { id: Some(id), .. }) => {
+                                waiting.push(RankTaskRow {
+                                    id: 0,
+                                    run_id: run.run_id,
+                                    project_id,
+                                    keyword_id: keyword.id,
+                                    tracker_id: tracker.id,
+                                    engine: engine.as_str().to_owned(),
+                                    task_id: id.clone(),
+                                    via: via.to_owned(),
+                                    posted_at: answered.fetched_at.clone(),
+                                    tries: 0,
+                                    next_try_at: first_try,
+                                });
+                            }
+                            other => {
+                                let error = other
+                                    .and_then(|posted| posted.error.clone())
+                                    .unwrap_or_else(|| "the queue did not take it".to_owned());
+                                fail(keyword.id, tracker.id, &format!("DataForSEO: {error}"))?;
+                                summary.failed += 1;
+                            }
+                        }
+                    }
+                    summary.queued += u32::try_from(waiting.len()).unwrap_or(u32::MAX);
+                    workspace.store()?.queue_rank_tasks(&waiting)?;
+                }
+                Err(error) => {
+                    for keyword in &sent {
+                        fail(keyword.id, tracker.id, &error.to_string())?;
+                    }
+                    summary.failed += u32::try_from(sent.len()).unwrap_or(u32::MAX);
+                    if stops(&error) {
+                        stopped = Some(error);
+                        break 'places;
+                    }
+                }
+            }
+        }
+    }
+    control.progress("", done, total);
+    let message = stopped.as_ref().map(ToString::to_string);
+    if summary.queued == 0 {
+        // Nothing waits: the run ends now.
+        let status = end_status(control.cancelled(), 0, summary.failed, stopped.is_some());
+        workspace.store()?.finish_rank_run(
+            run.run_id,
+            &RunEnd {
+                status,
+                checked: 0,
+                failed: summary.failed,
+                cost_usd: summary.cost_usd,
+                error: message.as_deref(),
+            },
+            &now(),
+        )?;
+        if status == "failed"
+            && let Some(error) = stopped
+        {
+            return Err(error);
+        }
+    } else {
+        workspace
+            .store()?
+            .queue_rank_run(run.run_id, summary.failed, summary.cost_usd)?;
+    }
+    Ok(JobDone {
+        status: if summary.failed == 0 && stopped.is_none() {
+            JobStatus::Done
+        } else {
+            JobStatus::Partial
+        },
+        result: serde_json::to_value(&summary).ok(),
+    })
+}
+
+/// Seconds before asking again for a queued answer asked for `tries` times: the wait doubles
+/// from [`FIRST_WAIT`] up to [`LONGEST_WAIT`].
+pub(crate) fn wait_after(tries: u32) -> i64 {
+    FIRST_WAIT
+        .saturating_mul(1_i64 << tries.min(10))
+        .min(LONGEST_WAIT)
+}
+
+/// What a round of reading the queue did.
+#[derive(Debug, Default, Clone, Copy, Serialize)]
+pub struct Collected {
+    /// Answers read and kept.
+    pub read: u32,
+    /// Checks still unfinished, asked again later.
+    pub waiting: u32,
+    /// Checks given up on or refused.
+    pub failed: u32,
+    /// Runs finished by this round.
+    pub finished: u32,
+}
+
+/// Whether a failure to read a queued answer is final: the provider refused it (an unknown or
+/// expired task). Anything else is asked again until [`GIVE_UP`].
+pub(crate) const fn is_final(error: &AppError) -> bool {
+    matches!(error, AppError::Provider(_) | AppError::Invalid(_))
+}
+
+/// A project's site and the keywords and places it still tracks, for reading its answers.
+struct Watched {
+    project: ProjectRow,
+    keywords: HashSet<i64>,
+    trackers: HashSet<i64>,
+}
+
+/// Reads the answers of queued checks that are due, keeps them as checks of their run, and
+/// finishes the runs with nothing left in the queue. Hosts call it every minute (the desktop
+/// program while it is open, even while the web runs the schedule: only this copy can read
+/// what it posted; the web server for each account with checks waiting). A round reads at most
+/// [`COLLECT_LIMIT`] answers for [`COLLECT_TIME`]; a round already reading makes this one
+/// return at once.
+///
+/// # Errors
+/// Storage errors.
+#[allow(clippy::too_many_lines)] // one loop with its bookkeeping
+pub fn collect_queued(workspace: &Workspace) -> Result<Collected, AppError> {
+    let Ok(_reading) = workspace.collecting.try_lock() else {
+        return Ok(Collected::default());
+    };
+    let started = Instant::now();
+    let now_secs = unix_now();
+    let due = workspace.store()?.due_rank_tasks(now_secs, COLLECT_LIMIT)?;
+    let mut collected = Collected::default();
+    if due.is_empty() {
+        return Ok(collected);
+    }
+    let session = workspace.paid_run(octopuson_dataforseo::ID);
+    let mut projects: HashMap<i64, Option<Watched>> = HashMap::new();
+    let mut runs: BTreeSet<i64> = BTreeSet::new();
+    for task in due {
+        if started.elapsed() > COLLECT_TIME {
+            break;
+        }
+        runs.insert(task.run_id);
+        if let Entry::Vacant(slot) = projects.entry(task.project_id) {
+            let store = workspace.store()?;
+            let tracked = match store.project(task.project_id) {
+                Ok(project) => Some(Watched {
+                    keywords: store
+                        .tracked_keywords(project.id)?
+                        .iter()
+                        .map(|keyword| keyword.id)
+                        .collect(),
+                    trackers: store
+                        .rank_trackers(project.id)?
+                        .iter()
+                        .map(|tracker| tracker.id)
+                        .collect(),
+                    project,
+                }),
+                Err(_) => None,
+            };
+            slot.insert(tracked);
+        }
+        // Its keyword, place or project went meanwhile: nothing to keep.
+        let Some(tracked) = projects
+            .get(&task.project_id)
+            .and_then(Option::as_ref)
+            .filter(|tracked| {
+                tracked.keywords.contains(&task.keyword_id)
+                    && tracked.trackers.contains(&task.tracker_id)
+            })
+        else {
+            workspace.store()?.drop_rank_task(task.id)?;
+            continue;
+        };
+        let engine = Engine::from_str(&task.engine)
+            .map_err(|error| AppError::Internal(error.to_string()))?;
+        let answer: Result<Option<Vec<serde_json::Value>>, AppError> = match &session {
+            Ok(session) if via_name(session.via()) == task.via => {
+                session.free(octopuson_dataforseo::ID, |route| {
+                    let credentials = route.key(octopuson_dataforseo::SECRET)?;
+                    let client = Client::new(route.transport, &credentials)?;
+                    match client.get(&check::queue_get(engine, &task.task_id)) {
+                        Ok(answer) => Ok(Some(answer.result)),
+                        Err(DfsError::NotReady) => Ok(None),
+                        Err(error) => Err(error.into()),
+                    }
+                })
+            }
+            Ok(_) => Err(AppError::NoSource(
+                "DataForSEO is paid another way than when the check was posted".to_owned(),
+            )),
+            Err(error) => Err(AppError::NoSource(error.to_string())),
+        };
+        let expired =
+            measure::seconds_of(&task.posted_at).is_some_and(|posted| now_secs - posted > GIVE_UP);
+        let mut row = blank_row(
+            task.run_id,
+            task.project_id,
+            task.keyword_id,
+            task.tracker_id,
+        );
+        match answer {
+            Ok(Some(result)) => {
+                read_into(
+                    &mut row,
+                    check::rank_from_result(&result, &tracked.project.domain),
+                );
+                collected.read += 1;
+            }
+            Err(error) if is_final(&error) || expired => {
+                row.error = Some(error.to_string());
+                collected.failed += 1;
+            }
+            Ok(None) if expired => {
+                row.error = Some("DataForSEO: the queue did not answer within a day".to_owned());
+                collected.failed += 1;
+            }
+            Ok(None) | Err(_) => {
+                workspace
+                    .store()?
+                    .delay_rank_task(task.id, now_secs + wait_after(task.tries))?;
+                collected.waiting += 1;
+                continue;
+            }
+        }
+        let store = workspace.store()?;
+        store.add_rank_check(&row)?;
+        store.drop_rank_task(task.id)?;
+    }
+    for run_id in runs {
+        let store = workspace.store()?;
+        let Some(run) = store.rank_run(run_id)? else {
+            continue;
+        };
+        if run.status != "running" || run.waiting > 0 {
+            continue;
+        }
+        let (checked, failed) = store.rank_run_tally(run_id)?;
+        store.finish_rank_run(
+            run_id,
+            &RunEnd {
+                status: end_status(false, checked, failed, false),
+                checked,
+                failed,
+                cost_usd: run.cost_usd,
+                error: None,
+            },
+            &now(),
+        )?;
+        collected.finished += 1;
+    }
+    Ok(collected)
+}
+
+/// When the queue should be read next, seconds since the Unix epoch: when a waiting check is
+/// due, or in a minute while a run is posting checks; `None` with nothing in the queue.
+///
+/// # Errors
+/// Storage errors.
+pub fn next_collect(workspace: &Workspace, jobs: &JobManager) -> Result<Option<i64>, AppError> {
+    let waiting = workspace.store()?.next_rank_task_at()?;
+    let posting = jobs
+        .list()
+        .iter()
+        .any(|job| job.kind == JOB_KIND && job.status == JobStatus::Running);
+    Ok(if posting {
+        Some(waiting.map_or(unix_now() + COLLECT_EVERY, |at| {
+            at.min(unix_now() + COLLECT_EVERY)
+        }))
+    } else {
+        waiting
     })
 }
 
@@ -651,6 +1147,18 @@ struct ReportAsk {
     /// Days of history (7–365).
     #[serde(default)]
     days: Option<u32>,
+    /// A day (`yyyy-mm-dd`) to compare the latest positions with.
+    #[serde(default)]
+    compare: Option<String>,
+}
+
+/// A keyword's position on the compared day.
+#[derive(Debug, Serialize)]
+struct Compared {
+    /// The site's position at the last check on or before the day.
+    position: Option<u16>,
+    /// When that check was made, RFC 3339.
+    checked_at: String,
 }
 
 /// A keyword's ranks on one place.
@@ -669,6 +1177,36 @@ struct KeywordRank {
     ai_overview: bool,
     ai_cited: bool,
     snippet: bool,
+    /// Elements of the latest result page that show the site.
+    owned: Vec<String>,
+    /// Estimated monthly visits: its searches × the click share of its position.
+    traffic: Option<f64>,
+    /// The listed competitors' positions on the latest result page (first 20 results).
+    rivals: BTreeMap<String, Option<u16>>,
+    /// Its position on the compared day, when one was asked for and checked by then.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    compared: Option<Compared>,
+}
+
+/// How often an element shows on the tracked keywords' pages, and shows the site.
+#[derive(Debug, Serialize)]
+struct FeatureCount {
+    feature: String,
+    /// Keywords whose latest page shows it.
+    shown: u32,
+    /// Of those, keywords where it shows the site.
+    owned: u32,
+}
+
+/// A page of the site and the tracked keywords it ranks for.
+#[derive(Debug, Serialize)]
+struct LandingPage {
+    url: String,
+    /// Keywords it is the site's best page for.
+    keywords: u32,
+    best_position: u16,
+    /// Estimated monthly visits from them.
+    traffic: f64,
 }
 
 /// The report's figures.
@@ -693,6 +1231,10 @@ struct RankSummary {
     ai_cited: u32,
     snippets: u32,
     cannibalised: u32,
+    /// Estimated monthly visits from the tracked keywords.
+    traffic: f64,
+    /// Elements of the latest pages, most shown first.
+    features: Vec<FeatureCount>,
 }
 
 /// Shares of the site and its competitors on one day.
@@ -709,10 +1251,24 @@ struct RankReport {
     summary: RankSummary,
     visibility: Vec<VisibilityPoint>,
     competitors: Vec<CompetitorShare>,
+    /// Estimated monthly visits of the site and each competitor from the tracked keywords.
+    traffic: BTreeMap<String, f64>,
+    /// The site's pages that rank, most visits first.
+    landing_pages: Vec<LandingPage>,
     share_history: Vec<SharePoint>,
     last_run: Option<RankRunRow>,
     /// Start of the history shown, RFC 3339.
     since: String,
+    /// The day compared with, when asked.
+    compare: Option<String>,
+}
+
+/// Estimated monthly visits from a keyword at a position.
+#[allow(clippy::cast_precision_loss)] // volumes
+fn visits(volume: Option<u64>, position: Option<u16>) -> Option<f64> {
+    volume
+        .zip(position)
+        .map(|(volume, position)| (volume as f64 * measure::ctr(position)).round())
 }
 
 fn view(check: &RankCheckRow) -> Check<'_> {
@@ -752,6 +1308,63 @@ fn page_of(check: &RankCheckRow, weight: f64, label: &dyn Fn(&str) -> String) ->
     }
 }
 
+/// The elements of the latest pages: how many keywords show each, and show the site in it.
+fn feature_counts(rows: &[KeywordRank]) -> Vec<FeatureCount> {
+    let mut counts: BTreeMap<&str, (u32, u32)> = BTreeMap::new();
+    for row in rows {
+        for feature in &row.features {
+            counts.entry(feature).or_default().0 += 1;
+        }
+        for feature in &row.owned {
+            let entry = counts.entry(feature).or_default();
+            entry.1 += 1;
+            entry.0 = entry.0.max(entry.1);
+        }
+    }
+    let mut features: Vec<FeatureCount> = counts
+        .into_iter()
+        .filter(|(feature, _)| *feature != "organic")
+        .map(|(feature, (shown, owned))| FeatureCount {
+            feature: feature.to_owned(),
+            shown,
+            owned,
+        })
+        .collect();
+    features.sort_by(|a, b| {
+        b.shown
+            .cmp(&a.shown)
+            .then_with(|| a.feature.cmp(&b.feature))
+    });
+    features
+}
+
+/// The site's best pages for the keywords, with how many keywords and visits each brings.
+fn landing_pages(rows: &[KeywordRank]) -> Vec<LandingPage> {
+    let mut pages: HashMap<&str, LandingPage> = HashMap::new();
+    for row in rows {
+        let (Some(url), Some(position)) = (row.trend.url.as_deref(), row.trend.position) else {
+            continue;
+        };
+        let page = pages.entry(url).or_insert_with(|| LandingPage {
+            url: url.to_owned(),
+            keywords: 0,
+            best_position: position,
+            traffic: 0.0,
+        });
+        page.keywords += 1;
+        page.best_position = page.best_position.min(position);
+        page.traffic += row.traffic.unwrap_or_default();
+    }
+    let mut pages: Vec<LandingPage> = pages.into_values().collect();
+    pages.sort_by(|a, b| {
+        b.traffic
+            .total_cmp(&a.traffic)
+            .then_with(|| b.keywords.cmp(&a.keywords))
+            .then_with(|| a.url.cmp(&b.url))
+    });
+    pages
+}
+
 #[allow(clippy::cast_precision_loss)] // keyword counts
 fn summarize(rows: &[KeywordRank], visibility: &[VisibilityPoint]) -> RankSummary {
     let count = |test: &dyn Fn(&KeywordRank) -> bool| {
@@ -787,13 +1400,30 @@ fn summarize(rows: &[KeywordRank], visibility: &[VisibilityPoint]) -> RankSummar
         ai_cited: count(&|row| row.ai_cited),
         snippets: count(&|row| row.snippet),
         cannibalised: count(&|row| row.trend.cannibalised),
+        traffic: rows.iter().filter_map(|row| row.traffic).sum(),
+        features: feature_counts(rows),
     }
 }
 
-#[allow(clippy::cast_precision_loss)] // volumes
+#[allow(clippy::cast_precision_loss, clippy::too_many_lines)] // volumes; one report
 fn rank_report(context: &Context<'_>, ask: ReportAsk) -> Result<RankReport, AppError> {
     let days = ask.days.unwrap_or(DEFAULT_DAYS).clamp(7, MAX_DAYS);
     let since = rfc3339(unix_now() - i64::from(days) * 86_400);
+    let compare = ask
+        .compare
+        .as_deref()
+        .map(str::trim)
+        .filter(|day| {
+            day.len() == 10
+                && day.chars().enumerate().all(|(at, c)| {
+                    if at == 4 || at == 7 {
+                        c == '-'
+                    } else {
+                        c.is_ascii_digit()
+                    }
+                })
+        })
+        .map(str::to_owned);
     let store = context.workspace.store()?;
     let project = store.project(ask.project_id)?;
     let trackers = store.rank_trackers(project.id)?;
@@ -812,6 +1442,32 @@ fn rank_report(context: &Context<'_>, ask: ReportAsk) -> Result<RankReport, AppE
         Some(tracker) => store.rank_checks(project.id, tracker.id, None, Some(&since))?,
         None => Vec::new(),
     };
+    // The last check of each keyword on or before the compared day, within the four months
+    // before it.
+    let mut then: HashMap<i64, Compared> = HashMap::new();
+    if let (Some(tracker), Some(day)) = (&tracker, &compare) {
+        let from = measure::seconds_of(&format!("{day}T00:00:00Z"))
+            .map(|start| rfc3339(start - 120 * 86_400));
+        for check in store
+            .rank_checks(project.id, tracker.id, None, from.as_deref())?
+            .into_iter()
+            .filter(|check| check.error.is_none())
+            .filter(|check| {
+                check
+                    .checked_at
+                    .get(..10)
+                    .is_some_and(|date| date <= day.as_str())
+            })
+        {
+            then.insert(
+                check.keyword_id,
+                Compared {
+                    position: check.position,
+                    checked_at: check.checked_at,
+                },
+            );
+        }
+    }
     let last_run = store.rank_runs(project.id, 1)?.into_iter().next();
     drop(store);
 
@@ -827,19 +1483,44 @@ fn rank_report(context: &Context<'_>, ask: ReportAsk) -> Result<RankReport, AppE
     let label = labeler(&project);
     let mut rows = Vec::with_capacity(keywords.len());
     let mut pages = Vec::new();
+    // Visits of each domain: only keywords with a known volume bring any.
+    let mut visits_of: HashMap<String, f64> = HashMap::new();
     for keyword in &keywords {
         let own: &[&RankCheckRow] = by_keyword.get(&keyword.id).map_or(&[], Vec::as_slice);
         let views: Vec<Check<'_>> = own.iter().map(|check| view(check)).collect();
         let latest = own.iter().rev().find(|check| check.error.is_none());
+        let mut rivals: BTreeMap<String, Option<u16>> = project
+            .competitors
+            .iter()
+            .map(|competitor| (competitor.clone(), None))
+            .collect();
         if let Some(latest) = latest {
-            pages.push(page_of(latest, weight(&keyword.id), &label));
+            let page = page_of(latest, weight(&keyword.id), &label);
+            let mut seen: HashSet<&str> = HashSet::new();
+            for (position, domain) in &page.domains {
+                if !seen.insert(domain) {
+                    continue;
+                }
+                if let Some(slot) = rivals.get_mut(domain) {
+                    *slot = Some(*position);
+                }
+                if let Some(visits) = visits(keyword.volume, Some(*position)) {
+                    *visits_of.entry(domain.clone()).or_default() += visits;
+                }
+            }
+            pages.push(page);
         }
+        let trend = measure::trend(&views);
         rows.push(KeywordRank {
             keyword_id: keyword.id,
             keyword: keyword.keyword.clone(),
             tags: keyword.tags.clone(),
             volume: keyword.volume,
-            trend: measure::trend(&views),
+            traffic: visits(keyword.volume, trend.position),
+            owned: latest.map(|check| check.owned.clone()).unwrap_or_default(),
+            rivals,
+            compared: then.remove(&keyword.id),
+            trend,
             pages: latest.map(|check| check.pages.clone()).unwrap_or_default(),
             features: latest
                 .map(|check| check.features.clone())
@@ -881,15 +1562,155 @@ fn rank_report(context: &Context<'_>, ask: ReportAsk) -> Result<RankReport, AppE
             }
         })
         .collect();
+    let traffic = competitors
+        .iter()
+        .map(|share| {
+            (
+                share.domain.clone(),
+                visits_of.get(&share.domain).copied().unwrap_or_default(),
+            )
+        })
+        .collect();
     Ok(RankReport {
         summary: summarize(&rows, &visibility),
+        landing_pages: landing_pages(&rows),
         tracker,
         rows,
         visibility,
         competitors,
+        traffic,
         share_history,
         last_run,
         since,
+        compare,
+    })
+}
+
+#[derive(Debug, Deserialize)]
+struct PlacesAsk {
+    project_id: i64,
+    /// Days of history the changes are read over (7–365).
+    #[serde(default)]
+    days: Option<u32>,
+}
+
+/// A keyword's latest rank on one place.
+#[derive(Debug, Serialize)]
+struct PlaceRank {
+    tracker_id: i64,
+    position: Option<u16>,
+    /// Places gained since the check before.
+    change: Option<i32>,
+    url: Option<String>,
+    checked_at: Option<String>,
+    error: Option<String>,
+}
+
+/// A keyword on every place.
+#[derive(Debug, Serialize)]
+struct KeywordPlaces {
+    keyword_id: i64,
+    keyword: String,
+    tags: Vec<String>,
+    volume: Option<u64>,
+    /// In the order of the places.
+    places: Vec<PlaceRank>,
+}
+
+/// A place's headline figures.
+#[derive(Debug, Serialize)]
+struct PlaceSummary {
+    tracker_id: i64,
+    /// Latest visibility (0–100).
+    visibility: Option<f64>,
+    average_position: Option<f64>,
+    top10: u32,
+    ranked: u32,
+}
+
+#[derive(Debug, Serialize)]
+struct PlacesReport {
+    trackers: Vec<TrackerRow>,
+    rows: Vec<KeywordPlaces>,
+    summaries: Vec<PlaceSummary>,
+}
+
+/// Every tracked keyword on every place side by side: where the site ranks in each country,
+/// city and device at once.
+#[allow(clippy::cast_precision_loss)] // volumes and counts
+fn rank_places(context: &Context<'_>, ask: PlacesAsk) -> Result<PlacesReport, AppError> {
+    let days = ask.days.unwrap_or(DEFAULT_DAYS).clamp(7, MAX_DAYS);
+    let since = rfc3339(unix_now() - i64::from(days) * 86_400);
+    let store = context.workspace.store()?;
+    let project = store.project(ask.project_id)?;
+    let trackers = store.rank_trackers(project.id)?;
+    let keywords = store.tracked_keywords(project.id)?;
+    let mut checks = Vec::with_capacity(trackers.len());
+    for tracker in &trackers {
+        checks.push(store.rank_checks(project.id, tracker.id, None, Some(&since))?);
+    }
+    drop(store);
+    let weights: HashMap<i64, f64> = keywords
+        .iter()
+        .map(|keyword| (keyword.id, keyword.volume.unwrap_or(1).max(1) as f64))
+        .collect();
+    let weight = |id: &i64| weights.get(id).copied().unwrap_or(1.0);
+    let mut rows: Vec<KeywordPlaces> = keywords
+        .iter()
+        .map(|keyword| KeywordPlaces {
+            keyword_id: keyword.id,
+            keyword: keyword.keyword.clone(),
+            tags: keyword.tags.clone(),
+            volume: keyword.volume,
+            places: Vec::with_capacity(trackers.len()),
+        })
+        .collect();
+    let mut summaries = Vec::with_capacity(trackers.len());
+    for (tracker, checks) in trackers.iter().zip(&checks) {
+        let mut by_keyword: HashMap<i64, Vec<Check<'_>>> = HashMap::new();
+        for check in checks {
+            by_keyword
+                .entry(check.keyword_id)
+                .or_default()
+                .push(view(check));
+        }
+        let mut positions: Vec<f64> = Vec::new();
+        let mut top10 = 0_u32;
+        for row in &mut rows {
+            let trend = measure::trend(by_keyword.get(&row.keyword_id).map_or(&[], Vec::as_slice));
+            if let Some(position) = trend.position {
+                positions.push(f64::from(position));
+                if position <= 10 {
+                    top10 += 1;
+                }
+            }
+            row.places.push(PlaceRank {
+                tracker_id: tracker.id,
+                position: trend.position,
+                change: trend.change,
+                url: trend.url,
+                checked_at: trend.checked_at,
+                error: trend.error,
+            });
+        }
+        let visibility = measure::visibility(
+            checks.iter().map(|check| (check.keyword_id, view(check))),
+            &weight,
+        );
+        summaries.push(PlaceSummary {
+            tracker_id: tracker.id,
+            visibility: visibility.last().map(|point| point.visibility),
+            average_position: (!positions.is_empty()).then(|| {
+                (positions.iter().sum::<f64>() / positions.len() as f64 * 10.0).round() / 10.0
+            }),
+            top10,
+            ranked: u32::try_from(positions.len()).unwrap_or(u32::MAX),
+        });
+    }
+    Ok(PlacesReport {
+        trackers,
+        rows,
+        summaries,
     })
 }
 
@@ -1011,6 +1832,7 @@ fn volume_parts(
             let task = labs::overview_task(chunk, &market)?;
             let count = task["keywords"].as_array().map_or(0, Vec::len);
             Ok(Paid {
+                travels: true,
                 module: MODULE,
                 provider: octopuson_dataforseo::ID,
                 endpoint: labs::OVERVIEW,
@@ -1079,6 +1901,7 @@ pub fn register(router: &mut Router) {
     router.add("start_rank_check", start_rank_check);
     router.add("rank_runs", rank_runs);
     router.add("rank_report", rank_report);
+    router.add("rank_places", rank_places);
     router.add("rank_keyword", rank_keyword);
     router.add("rank_volumes_estimate", rank_volumes_estimate);
     router.add("fetch_rank_volumes", fetch_rank_volumes);

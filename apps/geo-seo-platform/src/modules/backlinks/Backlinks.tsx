@@ -1,6 +1,6 @@
-import { useMemo, useState, type FormEvent } from "react";
-import { Download, Link2, Search } from "lucide-react";
-import { Button, DataTable, Segmented, Stat, type Column } from "@octopusseo/ui";
+import { useEffect, useMemo, useState, type FormEvent } from "react";
+import { Download, Link2, Search, X } from "lucide-react";
+import { Button, DataTable, Segmented, Stat, type Column, type SortDirection } from "@octopusseo/ui";
 import type {
   AnchorRow,
   BacklinkReport,
@@ -15,13 +15,26 @@ import type {
   Share,
 } from "../../api/types";
 import { useI18n } from "../../i18n";
+import { useGlossary } from "../../lib/glossary";
+import { useShell } from "../../lib/context";
+import { domainOf, Entity, isPage } from "../../lib/Entity";
+import type { RouteParams } from "../../lib/route";
 import { axisStyle, EChart, useChartTokens, type ChartOption } from "../../lib/EChart";
 import { formatCompact, formatNumber } from "../../lib/format";
+import { FilterBar, type FilterPreset } from "../../lib/FilterBar";
+import { ListSeen } from "../../lib/ListSeen";
 import { PaidFrame } from "../../lib/PaidFrame";
+import { BACKLINK_ACCESSORS, BACKLINK_FILTERS, filterRows, REFERRING_DOMAIN_ACCESSORS, REFERRING_DOMAIN_FILTERS, type QueryOrder } from "../../lib/query";
+import { useListQuery } from "../../lib/useListQuery";
+import { LinkAuditTab } from "./LinkAudit";
+import { LinkHistory } from "./LinkHistory";
+import { redirectFor } from "./links";
+import { OutboundTab } from "./Outbound";
+import { ProspectButton, ProspectsTab } from "./Prospects";
 import { download, fold, toCsv } from "../../lib/report";
 import { shortUrl, tableLabels } from "../../lib/tables";
 
-const TABS = ["summary", "backlinks", "referring_domains", "anchors", "pages", "bulk"] as const;
+const TABS = ["summary", "backlinks", "referring_domains", "anchors", "pages", "audit", "prospects", "outbound", "bulk"] as const;
 type Tab = (typeof TABS)[number];
 
 /** Share of links passing authority, in percent, from the referring domains. */
@@ -86,6 +99,7 @@ function NewLostChart({ points }: { points: NewLostPoint[] }) {
 
 function SummaryTab({ projectId, target }: { projectId: number; target: string | undefined }) {
   const { t, locale } = useI18n();
+  const gloss = useGlossary();
   const regions = new Intl.DisplayNames([locale], { type: "region" });
   const country = (code: string) => {
     if (!code) return "—";
@@ -102,9 +116,9 @@ function SummaryTab({ projectId, target }: { projectId: number; target: string |
         {(summary) => (
           <div className="page-stack">
             <div className="oc-stats">
-              <Stat label={t("backlinks.authority")} value={<Authority rank={summary.rank} />} hint={t("backlinks.authorityHint")} />
-              <Stat label={t("backlinks.backlinks")} value={formatCompact(summary.backlinks, locale)} hint={formatNumber(summary.backlinks, locale)} />
-              <Stat label={t("backlinks.referringDomains")} value={formatCompact(summary.referring_domains, locale)} hint={t("backlinks.followShare", { share: followShare(summary) ?? "—" })} />
+              <Stat label={t("backlinks.authority")} help={gloss("oa")} value={<Authority rank={summary.rank} />} hint={t("backlinks.authorityHint")} />
+              <Stat label={t("backlinks.backlinks")} help={gloss("backlinks")} value={formatCompact(summary.backlinks, locale)} hint={formatNumber(summary.backlinks, locale)} />
+              <Stat label={t("backlinks.referringDomains")} help={gloss("referring_domains")} value={formatCompact(summary.referring_domains, locale)} hint={t("backlinks.followShare", { share: followShare(summary) ?? "—" })} />
               <Stat label={t("backlinks.broken")} value={formatNumber(summary.broken_backlinks, locale)} hint={t("backlinks.brokenPages", { n: formatNumber(summary.broken_pages, locale) })} tone={summary.broken_backlinks > 0 ? "bad" : undefined} />
             </div>
             <div className="share-grid">
@@ -123,11 +137,30 @@ function SummaryTab({ projectId, target }: { projectId: number; target: string |
           </div>
         )}
       </PaidFrame>
+      <LinkHistory projectId={projectId} domain={target} />
       <PaidFrame<NewLostPoint[]> module="backlinks" ask={{ ...ask, report: "new_lost" }} title={t("backlinks.newLostTitle")} hint={t("backlinks.newLostHint")}>
         {(points) => <NewLostChart points={points} />}
       </PaidFrame>
     </div>
   );
+}
+
+/** The table column a sorting field reads, else the given default. */
+function tableSort(order: readonly QueryOrder[], columns: Record<string, string>, fallback: { key: string; direction: SortDirection }): { key: string; direction: SortDirection } {
+  const first = order[0];
+  return first ? { key: columns[first.field] ?? first.field, direction: first.direction } : fallback;
+}
+
+const BACKLINK_COLUMNS: Record<string, string> = { rank: "page_rank", domain: "from", url: "from", target: "to", first_seen: "seen" };
+const DOMAIN_COLUMNS: Record<string, string> = { first_seen: "seen" };
+
+/** Ready filters of links and linking sites; authority is on the 0–100 scale shown. */
+function linkPresets(t: (key: string) => string, rank: string): FilterPreset[] {
+  return [
+    { id: "strong", label: t("backlinks.presetStrong"), filters: [{ field: rank, op: "ge", value: 50 }] },
+    { id: "clean", label: t("backlinks.presetClean"), filters: [{ field: "spam", op: "le", value: 10 }] },
+    { id: "risky", label: t("backlinks.presetRisky"), filters: [{ field: "spam", op: "ge", value: 50 }] },
+  ];
 }
 
 function linkState(row: BacklinkRow, t: (key: string) => string): string {
@@ -139,11 +172,20 @@ function linkState(row: BacklinkRow, t: (key: string) => string): string {
 
 function BacklinksTab({ projectId, target, fileName }: { projectId: number; target: string | undefined; fileName: string }) {
   const { t, locale } = useI18n();
+  const gloss = useGlossary();
+  const { params, go } = useShell();
+  // One linking site's links: the referring domains tab names it in the address.
+  const source = params.source;
   const [status, setStatus] = useState<LinkStatus>("live");
   const [dofollow, setDofollow] = useState(false);
   const [onePerDomain, setOnePerDomain] = useState(true);
   const [limit, setLimit] = useState(100);
   const [query, setQuery] = useState("");
+  const list = useListQuery(JSON.stringify([projectId, target, status, dofollow, onePerDomain, limit, source]));
+  const asked = source ? { ...list.asked, filters: [{ field: "domain", op: "eq" as const, value: source }, ...list.asked.filters] } : list.asked;
+  // Who to win links from: sites linking to another site, or links lost or broken.
+  const prospectSource = status === "lost" ? "lost" : status === "broken" ? "broken" : target ? "competitor_page" : null;
+  const presets = useMemo(() => linkPresets(t, "domain_rank"), [t]);
   const columns: Column<BacklinkRow>[] = [
     {
       key: "from",
@@ -151,15 +193,15 @@ function BacklinksTab({ projectId, target, fileName }: { projectId: number; targ
       render: (row) => (
         <span className="link-cell">
           <strong>{row.title ?? row.domain_from}</strong>
-          <span className="cell-url" title={row.url_from}>
-            {row.url_from}
-          </span>
+          <Entity kind="url" value={row.url_from}>
+            <span className="cell-url">{row.url_from}</span>
+          </Entity>
         </span>
       ),
       sort: (row) => row.domain_from,
     },
-    { key: "page_rank", label: t("backlinks.colPageRank"), render: (row) => <Authority rank={row.page_rank} />, sort: (row) => row.page_rank, numeric: true },
-    { key: "domain_rank", label: t("backlinks.colDomainRank"), render: (row) => <Authority rank={row.domain_rank} />, sort: (row) => row.domain_rank, numeric: true },
+    { key: "page_rank", label: t("backlinks.colPageRank"), help: gloss("oa"), render: (row) => <Authority rank={row.page_rank} />, sort: (row) => row.page_rank, numeric: true },
+    { key: "domain_rank", label: t("backlinks.colDomainRank"), help: gloss("oa"), render: (row) => <Authority rank={row.domain_rank} />, sort: (row) => row.domain_rank, numeric: true },
     {
       key: "anchor",
       label: t("backlinks.colAnchor"),
@@ -171,9 +213,25 @@ function BacklinksTab({ projectId, target, fileName }: { projectId: number; targ
       ),
       sort: (row) => row.anchor,
     },
-    { key: "to", label: t("backlinks.colTo"), render: (row) => <span className="cell-url" title={row.url_to ?? ""}>{shortUrl(row.url_to)}{row.url_to_status && row.url_to_status >= 400 ? ` (${row.url_to_status})` : ""}</span>, sort: (row) => row.url_to },
+    { key: "to", label: t("backlinks.colTo"), render: (row) =>
+        row.url_to ? (
+          <Entity kind="url" value={row.url_to}>
+            <span className="cell-url">
+              {shortUrl(row.url_to)}
+              {row.url_to_status && row.url_to_status >= 400 ? ` (${row.url_to_status})` : ""}
+            </span>
+          </Entity>
+        ) : (
+          ""
+        ), sort: (row) => row.url_to },
     { key: "seen", label: t("backlinks.colFirstSeen"), render: (row) => (row.first_seen ?? "").slice(0, 10), sort: (row) => row.first_seen },
+    { key: "last_seen", label: t("backlinks.colLastSeen"), optional: true, defaultHidden: true, render: (row) => (row.last_seen ?? "").slice(0, 10), sort: (row) => row.last_seen },
+    { key: "spam", label: t("backlinks.colSpam"), help: gloss("spam_score"), optional: true, render: (row) => row.spam_score ?? "—", sort: (row) => row.spam_score, numeric: true },
+    { key: "country", label: t("query.fieldCountry"), optional: true, defaultHidden: true, render: (row) => row.country ?? "—", sort: (row) => row.country },
     { key: "state", label: "", render: (row) => linkState(row, t) && <span className={`oc-badge ${row.is_new ? "success" : "warning"} small-badge`}>{linkState(row, t)}</span> },
+    ...(prospectSource
+      ? [{ key: "prospect", label: "", render: (row: BacklinkRow) => <ProspectButton projectId={projectId} domain={row.domain_from} url={row.url_from} source={prospectSource} /> }]
+      : []),
   ];
   return (
     <PaidFrame<BacklinkRow[]>
@@ -183,6 +241,22 @@ function BacklinksTab({ projectId, target, fileName }: { projectId: number; targ
       hint={t("backlinks.listHint")}
       limit={limit}
       onLimit={setLimit}
+      query={asked}
+      onOffset={list.setOffset}
+      toolbar={
+        <>
+          {source && (
+            <div className="oc-banner" role="status">
+              <span>{t("backlinks.fromSite", { domain: source })}</span>
+              <Button small className="ghost" onClick={() => go({ params: { ...params, source: undefined } })}>
+                <X size={14} aria-hidden="true" />
+                {t("backlinks.allSites")}
+              </Button>
+            </div>
+          )}
+          <FilterBar fields={BACKLINK_FILTERS} query={list.applied} onChange={list.change} scope={list.scope} presets={presets} />
+        </>
+      }
       extra={
         <Segmented<LinkStatus>
           label={t("backlinks.status")}
@@ -192,86 +266,159 @@ function BacklinksTab({ projectId, target, fileName }: { projectId: number; targ
         />
       }
     >
-      {(rows) => {
+      {(rows, fetched) => {
         const needle = fold(query.trim());
-        const shown = needle ? rows.filter((row) => fold(`${row.url_from} ${row.anchor ?? ""}`).includes(needle)) : rows;
+        const barred = filterRows(rows, list.local, BACKLINK_ACCESSORS);
+        const shown = needle ? barred.filter((row) => fold(`${row.url_from} ${row.anchor ?? ""}`).includes(needle)) : barred;
         return (
-          <div className="page-stack">
-            <div className="filters">
-              <label className="filter-search">
-                <Search size={15} aria-hidden="true" />
-                <span className="sr-only">{t("backlinks.filterSearch")}</span>
-                <input className="oc-input" value={query} placeholder={t("backlinks.filterSearch")} onChange={(event) => setQuery(event.target.value)} />
-              </label>
-              <label className="oc-check">
-                <input type="checkbox" checked={dofollow} onChange={(event) => setDofollow(event.target.checked)} />
-                <span>{t("backlinks.dofollowOnly")}</span>
-              </label>
-              <label className="oc-check">
-                <input type="checkbox" checked={onePerDomain} onChange={(event) => setOnePerDomain(event.target.checked)} />
-                <span>{t("backlinks.onePerDomain")}</span>
-              </label>
-              <Button
-                small
-                disabled={shown.length === 0}
-                onClick={() =>
-                  download(
-                    `${fileName}-backlinks.csv`,
-                    toCsv(
-                      [t("backlinks.colFrom"), t("backlinks.colPageRank"), t("backlinks.colDomainRank"), t("backlinks.colAnchor"), "dofollow", t("backlinks.colTo"), t("backlinks.colFirstSeen")],
-                      shown.map((row) => [row.url_from, row.page_rank, row.domain_rank, row.anchor, row.dofollow ? "yes" : "no", row.url_to, row.first_seen]),
-                    ),
-                  )
-                }
-              >
-                <Download size={14} />
-                {t("overview.export")}
-              </Button>
+          <ListSeen seen={list.seen} rows={rows.length} total={fetched.total}>
+            <div className="page-stack">
+              <div className="filters">
+                <label className="filter-search">
+                  <Search size={15} aria-hidden="true" />
+                  <span className="sr-only">{t("backlinks.filterSearch")}</span>
+                  <input className="oc-input" value={query} placeholder={t("backlinks.filterSearch")} onChange={(event) => setQuery(event.target.value)} />
+                </label>
+                <label className="oc-check">
+                  <input type="checkbox" checked={dofollow} onChange={(event) => setDofollow(event.target.checked)} />
+                  <span>{t("backlinks.dofollowOnly")}</span>
+                </label>
+                <label className="oc-check">
+                  <input type="checkbox" checked={onePerDomain} onChange={(event) => setOnePerDomain(event.target.checked)} />
+                  <span>{t("backlinks.onePerDomain")}</span>
+                </label>
+                <Button
+                  small
+                  disabled={shown.length === 0}
+                  onClick={() =>
+                    download(
+                      `${fileName}-backlinks.csv`,
+                      toCsv(
+                        [t("backlinks.colFrom"), t("backlinks.colPageRank"), t("backlinks.colDomainRank"), t("backlinks.colAnchor"), "dofollow", t("backlinks.colTo"), t("backlinks.colFirstSeen"), t("backlinks.colLastSeen"), t("backlinks.colSpam"), t("query.fieldCountry")],
+                        shown.map((row) => [row.url_from, row.page_rank, row.domain_rank, row.anchor, row.dofollow ? "yes" : "no", row.url_to, row.first_seen, row.last_seen, row.spam_score, row.country]),
+                      ),
+                    )
+                  }
+                >
+                  <Download size={14} />
+                  {t("overview.export")}
+                </Button>
+              </div>
+              <DataTable
+                key={JSON.stringify(list.applied.order)}
+                rows={shown}
+                columns={columns}
+                rowKey={(row) => `${row.url_from}|${row.url_to ?? ""}|${row.anchor ?? ""}`}
+                initialSort={tableSort(list.applied.order, BACKLINK_COLUMNS, { key: "page_rank", direction: "desc" })}
+                empty={t("overview.emptyRows")}
+                labels={tableLabels(t, locale)}
+              />
             </div>
-            <DataTable rows={shown} columns={columns} rowKey={(row) => `${row.url_from}|${row.url_to ?? ""}|${row.anchor ?? ""}`} initialSort={{ key: "page_rank", direction: "desc" }} empty={t("overview.emptyRows")} labels={tableLabels(t, locale)} />
-          </div>
+          </ListSeen>
         );
       }}
     </PaidFrame>
   );
 }
 
-function DomainsTab({ projectId, target }: { projectId: number; target: string | undefined }) {
+function DomainsTab({ projectId, target, fileName }: { projectId: number; target: string | undefined; fileName: string }) {
   const { t, locale } = useI18n();
+  const gloss = useGlossary();
+  const { params, go } = useShell();
   const [limit, setLimit] = useState(100);
+  const list = useListQuery(JSON.stringify([projectId, target, limit]));
+  const presets = useMemo(() => linkPresets(t, "rank"), [t]);
   const columns: Column<ReferringDomainRow>[] = [
-    { key: "domain", label: t("overview.colDomain"), render: (row) => <strong className="cell-main">{row.domain}</strong>, sort: (row) => row.domain },
-    { key: "rank", label: "OA", render: (row) => <Authority rank={row.rank} />, sort: (row) => row.rank, numeric: true },
-    { key: "backlinks", label: t("backlinks.backlinks"), render: (row) => formatNumber(row.backlinks, locale), sort: (row) => row.backlinks, numeric: true },
-    { key: "follow", label: t("backlinks.colFollow"), render: (row) => (row.nofollow_only ? "nofollow" : "dofollow"), sort: (row) => (row.nofollow_only ? 0 : 1) },
-    { key: "spam", label: t("backlinks.colSpam"), render: (row) => row.spam_score ?? "—", sort: (row) => row.spam_score, numeric: true },
+    { key: "domain", label: t("overview.colDomain"), render: (row) => (
+        <Entity kind="domain" value={row.domain}>
+          <strong className="cell-main">{row.domain}</strong>
+        </Entity>
+      ), sort: (row) => row.domain },
+    { key: "rank", label: "OA", help: gloss("oa"), render: (row) => <Authority rank={row.rank} />, sort: (row) => row.rank, numeric: true },
+    { key: "backlinks", label: t("backlinks.backlinks"), help: gloss("backlinks"), render: (row) => formatNumber(row.backlinks, locale), sort: (row) => row.backlinks, numeric: true },
+    { key: "follow", label: t("backlinks.colFollow"), help: gloss("dofollow"), render: (row) => (row.nofollow_only ? "nofollow" : "dofollow"), sort: (row) => (row.nofollow_only ? 0 : 1) },
+    { key: "spam", label: t("backlinks.colSpam"), help: gloss("spam_score"), render: (row) => row.spam_score ?? "—", sort: (row) => row.spam_score, numeric: true },
     { key: "seen", label: t("backlinks.colFirstSeen"), render: (row) => (row.first_seen ?? "").slice(0, 10), sort: (row) => row.first_seen },
+    {
+      key: "links",
+      label: "",
+      render: (row) => (
+        <Button small className="ghost" onClick={() => go({ params: { ...params, tab: "backlinks", source: row.domain } })}>
+          {t("backlinks.seeLinks")}
+        </Button>
+      ),
+    },
   ];
   return (
-    <PaidFrame<ReferringDomainRow[]> module="backlinks" ask={{ project_id: projectId, report: "referring_domains", ...(target ? { target } : {}) }} title={t("backlinks.domainsTitle")} hint={t("backlinks.domainsHint")} limit={limit} onLimit={setLimit}>
-      {(rows) => <DataTable rows={rows} columns={columns} rowKey={(row) => row.domain} initialSort={{ key: "rank", direction: "desc" }} empty={t("overview.emptyRows")} labels={tableLabels(t, locale)} />}
+    <PaidFrame<ReferringDomainRow[]>
+      module="backlinks"
+      ask={{ project_id: projectId, report: "referring_domains", ...(target ? { target } : {}) }}
+      title={t("backlinks.domainsTitle")}
+      hint={t("backlinks.domainsHint")}
+      limit={limit}
+      onLimit={setLimit}
+      query={list.asked}
+      onOffset={list.setOffset}
+      toolbar={<FilterBar fields={REFERRING_DOMAIN_FILTERS} query={list.applied} onChange={list.change} scope={list.scope} presets={presets} />}
+    >
+      {(rows, fetched) => {
+        const shown = filterRows(rows, list.local, REFERRING_DOMAIN_ACCESSORS);
+        return (
+          <ListSeen seen={list.seen} rows={rows.length} total={fetched.total}>
+            <div className="page-stack">
+              <div className="filters">
+                <Button small disabled={shown.length === 0} onClick={() => download(`${fileName}-referring-domains.csv`, toCsv([t("overview.colDomain"), "OA", t("backlinks.backlinks"), t("backlinks.colFollow"), t("backlinks.colSpam"), t("backlinks.colFirstSeen")], shown.map((row) => [row.domain, row.rank, row.backlinks, row.nofollow_only ? "nofollow" : "dofollow", row.spam_score, row.first_seen])))}>
+                  <Download size={14} />
+                  {t("overview.export")}
+                </Button>
+              </div>
+              <DataTable
+                key={JSON.stringify(list.applied.order)}
+                rows={shown}
+                columns={columns}
+                rowKey={(row) => row.domain}
+                initialSort={tableSort(list.applied.order, DOMAIN_COLUMNS, { key: "rank", direction: "desc" })}
+                empty={t("overview.emptyRows")}
+                labels={tableLabels(t, locale)}
+              />
+            </div>
+          </ListSeen>
+        );
+      }}
     </PaidFrame>
   );
 }
 
-function AnchorsTab({ projectId, target }: { projectId: number; target: string | undefined }) {
+function AnchorsTab({ projectId, target, fileName }: { projectId: number; target: string | undefined; fileName: string }) {
   const { t, locale } = useI18n();
+  const gloss = useGlossary();
   const [limit, setLimit] = useState(100);
   const columns: Column<AnchorRow>[] = [
-    { key: "anchor", label: t("backlinks.colAnchor"), render: (row) => (row.anchor ? <strong className="cell-main">{row.anchor}</strong> : <span className="faint">{t("backlinks.noAnchor")}</span>), sort: (row) => row.anchor },
-    { key: "domains", label: t("backlinks.referringDomains"), render: (row) => formatNumber(row.referring_domains, locale), sort: (row) => row.referring_domains, numeric: true },
-    { key: "backlinks", label: t("backlinks.backlinks"), render: (row) => formatNumber(row.backlinks, locale), sort: (row) => row.backlinks, numeric: true },
+    { key: "anchor", label: t("backlinks.colAnchor"), help: gloss("anchor"), render: (row) => (row.anchor ? <strong className="cell-main">{row.anchor}</strong> : <span className="faint">{t("backlinks.noAnchor")}</span>), sort: (row) => row.anchor },
+    { key: "domains", label: t("backlinks.referringDomains"), help: gloss("referring_domains"), render: (row) => formatNumber(row.referring_domains, locale), sort: (row) => row.referring_domains, numeric: true },
+    { key: "backlinks", label: t("backlinks.backlinks"), help: gloss("backlinks"), render: (row) => formatNumber(row.backlinks, locale), sort: (row) => row.backlinks, numeric: true },
     { key: "nofollow", label: t("backlinks.colNofollowDomains"), render: (row) => formatNumber(row.referring_domains_nofollow, locale), sort: (row) => row.referring_domains_nofollow, numeric: true },
   ];
   return (
     <PaidFrame<AnchorRow[]> module="backlinks" ask={{ project_id: projectId, report: "anchors", ...(target ? { target } : {}) }} title={t("backlinks.anchorsTitle")} hint={t("backlinks.anchorsHint")} limit={limit} onLimit={setLimit}>
-      {(rows) => <DataTable rows={rows} columns={columns} rowKey={(row) => row.anchor || "(empty)"} initialSort={{ key: "domains", direction: "desc" }} empty={t("overview.emptyRows")} labels={tableLabels(t, locale)} />}
+      {(rows) => (
+        <div className="page-stack">
+          <div className="filters">
+            <Button small disabled={rows.length === 0} onClick={() => download(`${fileName}-anchors.csv`, toCsv([t("backlinks.colAnchor"), t("backlinks.referringDomains"), t("backlinks.backlinks"), t("backlinks.colNofollowDomains")], rows.map((row) => [row.anchor, row.referring_domains, row.backlinks, row.referring_domains_nofollow])))}>
+              <Download size={14} />
+              {t("overview.export")}
+            </Button>
+          </div>
+          <DataTable rows={rows} columns={columns} rowKey={(row) => row.anchor || "(empty)"} initialSort={{ key: "domains", direction: "desc" }} empty={t("overview.emptyRows")} labels={tableLabels(t, locale)} />
+        </div>
+      )}
     </PaidFrame>
   );
 }
 
-function PagesTab({ projectId, target }: { projectId: number; target: string | undefined }) {
+function PagesTab({ projectId, target, fileName }: { projectId: number; target: string | undefined; fileName: string }) {
   const { t, locale } = useI18n();
+  const gloss = useGlossary();
   const [limit, setLimit] = useState(100);
   const columns: Column<LinkedPageRow>[] = [
     {
@@ -280,22 +427,56 @@ function PagesTab({ projectId, target }: { projectId: number; target: string | u
       render: (row) => (
         <span className="link-cell">
           <strong>{row.title ?? shortUrl(row.url)}</strong>
-          <span className="cell-url" title={row.url}>
-            {shortUrl(row.url)}
-            {row.status && row.status >= 400 ? ` (${row.status})` : ""}
-          </span>
+          <Entity kind="url" value={row.url}>
+            <span className="cell-url">
+              {shortUrl(row.url)}
+              {row.status && row.status >= 400 ? ` (${row.status})` : ""}
+            </span>
+          </Entity>
         </span>
       ),
       sort: (row) => row.url,
     },
-    { key: "domains", label: t("backlinks.referringDomains"), render: (row) => formatNumber(row.referring_domains, locale), sort: (row) => row.referring_domains, numeric: true },
-    { key: "backlinks", label: t("backlinks.backlinks"), render: (row) => formatNumber(row.backlinks, locale), sort: (row) => row.backlinks, numeric: true },
-    { key: "rank", label: "OA", render: (row) => <Authority rank={row.rank} />, sort: (row) => row.rank, numeric: true },
+    { key: "domains", label: t("backlinks.referringDomains"), help: gloss("referring_domains"), render: (row) => formatNumber(row.referring_domains, locale), sort: (row) => row.referring_domains, numeric: true },
+    { key: "backlinks", label: t("backlinks.backlinks"), help: gloss("backlinks"), render: (row) => formatNumber(row.backlinks, locale), sort: (row) => row.backlinks, numeric: true },
+    { key: "rank", label: "OA", help: gloss("oa"), render: (row) => <Authority rank={row.rank} />, sort: (row) => row.rank, numeric: true },
     { key: "broken", label: t("backlinks.broken"), render: (row) => formatNumber(row.broken_backlinks, locale), sort: (row) => row.broken_backlinks, numeric: true },
   ];
   return (
     <PaidFrame<LinkedPageRow[]> module="backlinks" ask={{ project_id: projectId, report: "pages", ...(target ? { target } : {}) }} title={t("backlinks.pagesTitle")} hint={t("backlinks.pagesHint")} limit={limit} onLimit={setLimit}>
-      {(rows) => <DataTable rows={rows} columns={columns} rowKey={(row) => row.url} initialSort={{ key: "domains", direction: "desc" }} empty={t("overview.emptyRows")} labels={tableLabels(t, locale)} />}
+      {(rows) => {
+        // Gone pages that still get links: where each should redirect.
+        const live = rows.filter((row) => (row.status ?? 200) < 400).map((row) => row.url);
+        const broken = rows.filter((row) => (row.status ?? 200) >= 400 && row.referring_domains > 0);
+        const redirects = new Map(broken.map((row) => [row.url, redirectFor(row.url, live)]));
+        const withRedirect: Column<LinkedPageRow>[] = [
+          ...columns,
+          {
+            key: "redirect",
+            label: t("backlinks.colRedirect"),
+            render: (row) =>
+              redirects.has(row.url) ? (
+                <span className="small" title={t("backlinks.redirectHint")}>
+                  → <Entity kind="url" value={redirects.get(row.url)!}><span className="cell-url">{shortUrl(redirects.get(row.url)!)}</span></Entity>
+                </span>
+              ) : (
+                ""
+              ),
+          },
+        ];
+        return (
+          <div className="page-stack">
+            {broken.length > 0 && <div className="oc-banner warning" role="status">{t("backlinks.brokenPagesNote", { n: broken.length, links: formatNumber(broken.reduce((sum, row) => sum + row.referring_domains, 0), locale) })}</div>}
+            <div className="filters">
+              <Button small disabled={rows.length === 0} onClick={() => download(`${fileName}-linked-pages.csv`, toCsv([t("overview.colPage"), t("backlinks.referringDomains"), t("backlinks.backlinks"), "OA", "HTTP", t("backlinks.colRedirect")], rows.map((row) => [row.url, row.referring_domains, row.backlinks, row.rank, row.status, redirects.get(row.url) ?? ""])))}>
+                <Download size={14} />
+                {t("overview.export")}
+              </Button>
+            </div>
+            <DataTable rows={rows} columns={withRedirect} rowKey={(row) => row.url} initialSort={{ key: "domains", direction: "desc" }} empty={t("overview.emptyRows")} labels={tableLabels(t, locale)} />
+          </div>
+        );
+      }}
     </PaidFrame>
   );
 }
@@ -346,9 +527,22 @@ function BulkTab({ project }: { project: ProjectRow }) {
 
 export function Backlinks({ project }: { project: ProjectRow }) {
   const { t } = useI18n();
-  const [input, setInput] = useState("");
-  const [target, setTarget] = useState<string | undefined>(undefined);
-  const [tab, setTab] = useState<Tab>("summary");
+  const { params, go } = useShell();
+  // The target (a domain or a page) and the tab live in the address.
+  const asked = params.url?.trim() || (params.domain ? domainOf(params.domain) : "");
+  const target = asked && asked !== project.domain ? asked : undefined;
+  const tab: Tab = (TABS as readonly string[]).includes(params.tab ?? "") ? (params.tab as Tab) : "summary";
+  const setTab = (next: Tab) => go({ params: { ...params, tab: next } });
+  const [input, setInput] = useState(target ?? "");
+  useEffect(() => setInput(target ?? ""), [target]);
+  const setTarget = (value: string | undefined) => {
+    const next: RouteParams = { ...params, domain: undefined, url: undefined };
+    if (value) {
+      if (isPage(value)) next.url = value;
+      else next.domain = domainOf(value);
+    }
+    go({ params: next });
+  };
   const shown = target ?? project.domain;
   const labels: Record<Tab, string> = {
     summary: t("backlinks.tabSummary"),
@@ -356,6 +550,9 @@ export function Backlinks({ project }: { project: ProjectRow }) {
     referring_domains: t("backlinks.tabDomains"),
     anchors: t("backlinks.tabAnchors"),
     pages: t("backlinks.tabPages"),
+    audit: t("backlinks.tabAudit"),
+    prospects: t("backlinks.tabProspects"),
+    outbound: t("backlinks.tabOutbound"),
     bulk: t("backlinks.tabBulk"),
   };
   const submit = (event: FormEvent) => {
@@ -363,10 +560,12 @@ export function Backlinks({ project }: { project: ProjectRow }) {
     const value = input.trim();
     setTarget(value && value !== project.domain ? value : undefined);
   };
-  const report: Record<Tab, BacklinkReport> = { summary: "summary", backlinks: "backlinks", referring_domains: "referring_domains", anchors: "anchors", pages: "pages", bulk: "bulk" };
+  const report: Record<Tab, BacklinkReport | null> = { summary: "summary", backlinks: "backlinks", referring_domains: "referring_domains", anchors: "anchors", pages: "pages", audit: "audit", prospects: null, outbound: null, bulk: "bulk" };
+  // These belong to the project, not to the target looked at.
+  const ownTab = tab === "bulk" || tab === "prospects" || tab === "outbound";
   return (
     <div className="page-stack">
-      {tab !== "bulk" && (
+      {!ownTab && (
         <form className="oc-card domain-bar" onSubmit={submit}>
           <label className="domain-input">
             <span className="sr-only">{t("backlinks.targetLabel")}</span>
@@ -397,12 +596,15 @@ export function Backlinks({ project }: { project: ProjectRow }) {
           </button>
         ))}
       </div>
-      <div role="tabpanel" data-report={report[tab]}>
+      <div role="tabpanel" data-report={report[tab] ?? tab}>
         {tab === "summary" && <SummaryTab key={shown} projectId={project.id} target={target} />}
         {tab === "backlinks" && <BacklinksTab key={shown} projectId={project.id} target={target} fileName={shown} />}
-        {tab === "referring_domains" && <DomainsTab key={shown} projectId={project.id} target={target} />}
-        {tab === "anchors" && <AnchorsTab key={shown} projectId={project.id} target={target} />}
-        {tab === "pages" && <PagesTab key={shown} projectId={project.id} target={target} />}
+        {tab === "referring_domains" && <DomainsTab key={shown} projectId={project.id} target={target} fileName={shown} />}
+        {tab === "anchors" && <AnchorsTab key={shown} projectId={project.id} target={target} fileName={shown} />}
+        {tab === "pages" && <PagesTab key={shown} projectId={project.id} target={target} fileName={shown} />}
+        {tab === "audit" && <LinkAuditTab key={shown} projectId={project.id} target={target} />}
+        {tab === "prospects" && <ProspectsTab project={project} />}
+        {tab === "outbound" && <OutboundTab project={project} />}
         {tab === "bulk" && <BulkTab project={project} />}
       </div>
     </div>

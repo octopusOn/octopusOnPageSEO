@@ -22,7 +22,7 @@
   "byEngine": "Asistanlara göre",
   "byEngineHint": "Her sorunun her asistandaki son yanıtı",
   "engineLine": "{answers} yanıt, kaynak gösterme {cited}",
-  "history": "Ölçümden ölçüme anılma oranı",
+  "history": "Ölçümden ölçüme",
   "allEngines": "Tümü",
   "oneRun": "Grafik ikinci ölçümden sonra çizilir.",
   "shareTitle": "Ses payı ve kaynaklar",
@@ -134,5 +134,10 @@
   "selectShown": "Görünen {n} soruyu seç",
   "cell_rival": "Yerine rakip",
   "cellRivalTitle": "Siz yoksunuz; {rival} {n}. sırada.",
-  "cellPlaceTitle": "{state} · {n}. sırada"
+  "cellPlaceTitle": "{state} · {n}. sırada",
+  "metric": "Gösterilen",
+  "metricMention": "Anılma",
+  "metricCitation": "Alıntılanma",
+  "metricVoice": "Ses payı",
+  "topPages": "En çok alıntılanan sayfalar"
 }

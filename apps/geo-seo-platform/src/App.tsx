@@ -22,11 +22,20 @@ import { SiteAudit } from "./modules/audit/SiteAudit";
 import { AiVisibility } from "./modules/ai/AiVisibility";
 import { SearchConsole } from "./modules/gsc/SearchConsole";
 import { Reports } from "./modules/reports/Reports";
+import { Snapshots } from "./modules/snapshots/Snapshots";
+import { LocalSeo } from "./modules/local/LocalSeo";
+import { Content } from "./modules/content/Content";
+import { ProjectPage } from "./modules/project/ProjectPage";
+import { AlertBell } from "./modules/alerts/AlertBell";
 import { moduleOf } from "./modules/registry";
+import { GlobalSearch } from "./modules/shell/GlobalSearch";
 import { Sidebar } from "./modules/shell/Sidebar";
 import { Settings } from "./modules/settings/Settings";
 import { SyncChoiceDialog } from "./modules/settings/SyncCard";
 import { Sources } from "./modules/sources/Sources";
+
+/** Wait after a job ends before alerts are read again (they are looked for once it settles). */
+const ALERTS_AFTER_JOB = 6000;
 
 export function App({ mode }: { mode: Mode }) {
   const { t } = useI18n();
@@ -56,7 +65,7 @@ export function App({ mode }: { mode: Mode }) {
   const scroller = useRef<HTMLDivElement>(null);
   useEffect(() => {
     scroller.current?.scrollTo({ top: 0 });
-  }, [route.page, route.project]);
+  }, [route.page, route.project, route.params.domain, route.params.keyword, route.params.url]);
 
   const info = useQuery({ queryKey: ["info"], queryFn: api.info });
   const projects = useQuery({ queryKey: ["projects"], queryFn: api.projects });
@@ -74,8 +83,23 @@ export function App({ mode }: { mode: Mode }) {
         void queryClient.invalidateQueries();
         return;
       }
+      // Answers of scheduled checks were read from the provider's queue.
+      if (job.kind === "rank-queue") {
+        void queryClient.invalidateQueries({ queryKey: ["rank"] });
+        return;
+      }
+      // Grid points or reviews were read from the queue.
+      if (job.kind === "local-queue") {
+        void queryClient.invalidateQueries({ queryKey: ["local"] });
+        return;
+      }
       queryClient.setQueryData<Job[]>(["jobs"], (old) => mergeJob(old ?? [], job));
       if (job.status === "running") return;
+      // Any finished work can change what is worth doing next.
+      void queryClient.invalidateQueries({ queryKey: ["opportunities"] });
+      void queryClient.invalidateQueries({ queryKey: ["project-dashboard"] });
+      // Alerts are looked for a moment after work ends.
+      setTimeout(() => void queryClient.invalidateQueries({ queryKey: ["alerts"] }), ALERTS_AFTER_JOB);
       if (job.kind === "account-login") {
         void queryClient.invalidateQueries({ queryKey: ["account"] });
         void queryClient.invalidateQueries({ queryKey: ["providers"] });
@@ -84,7 +108,15 @@ export function App({ mode }: { mode: Mode }) {
         void queryClient.invalidateQueries({ queryKey: ["rank"] });
         refreshSpending(queryClient);
       }
-      if (job.kind === "site-audit") {
+      if (job.kind === "local-grid") {
+        void queryClient.invalidateQueries({ queryKey: ["local"] });
+        refreshSpending(queryClient);
+      }
+      if (job.kind === "content-brief" || job.kind === "content-writing") {
+        void queryClient.invalidateQueries({ queryKey: ["content"] });
+        refreshSpending(queryClient);
+      }
+      if (job.kind === "site-audit" || job.kind === "web-vitals") {
         void queryClient.invalidateQueries({ queryKey: ["audit"] });
         refreshSpending(queryClient);
       }
@@ -94,6 +126,18 @@ export function App({ mode }: { mode: Mode }) {
       }
       if (job.kind === "search-console" || job.kind === "google-login") {
         void queryClient.invalidateQueries({ queryKey: ["gsc"] });
+      }
+      if (job.kind === "snapshot") {
+        void queryClient.invalidateQueries({ queryKey: ["snapshots"] });
+        void queryClient.invalidateQueries({ queryKey: ["snapshot-progress"] });
+        // What the snapshot bought is kept for the modules' pages too.
+        void queryClient.invalidateQueries({ queryKey: ["overview"] });
+        void queryClient.invalidateQueries({ queryKey: ["backlinks"] });
+        refreshSpending(queryClient);
+      }
+      if (job.kind === "link-watch") {
+        void queryClient.invalidateQueries({ queryKey: ["backlinks"] });
+        refreshSpending(queryClient);
       }
       if (job.kind === "report-email") {
         void queryClient.invalidateQueries({ queryKey: ["reports"] });
@@ -117,7 +161,7 @@ export function App({ mode }: { mode: Mode }) {
   }, [projects.data, route.project]);
   const entry = moduleOf(route.page);
   const jobList = jobs.data ?? [];
-  const shell: Shell = { mode, notify, fail, report: setReporting, go, project, jobs: jobList };
+  const shell: Shell = { mode, notify, fail, report: setReporting, go, params: route.params, project, jobs: jobList };
 
   let content: React.ReactNode;
   if (!entry.ready) {
@@ -139,6 +183,8 @@ export function App({ mode }: { mode: Mode }) {
         </Empty>
       </div>
     );
+  } else if (route.page === "project" && project) {
+    content = <ProjectPage key={project.id} project={project} />;
   } else if (route.page === "overview" && project) {
     content = <Overview key={project.id} project={project} />;
   } else if (route.page === "keywords" && project) {
@@ -147,14 +193,20 @@ export function App({ mode }: { mode: Mode }) {
     content = <Backlinks key={project.id} project={project} />;
   } else if (route.page === "gap" && project) {
     content = <Gap key={project.id} project={project} />;
+  } else if (route.page === "content" && project) {
+    content = <Content key={project.id} project={project} />;
   } else if (route.page === "rank" && project) {
     content = <RankTracker key={project.id} project={project} />;
+  } else if (route.page === "local" && project) {
+    content = <LocalSeo key={project.id} project={project} />;
   } else if (route.page === "audit" && project) {
     content = <SiteAudit key={project.id} project={project} />;
   } else if (route.page === "ai" && project) {
     content = <AiVisibility key={project.id} project={project} />;
   } else if (route.page === "gsc" && project) {
     content = <SearchConsole key={project.id} project={project} />;
+  } else if (route.page === "snapshots" && project) {
+    content = <Snapshots key={project.id} project={project} />;
   } else if (route.page === "reports" && project) {
     content = <Reports key={project.id} project={project} />;
   } else if (route.page === "sources") {
@@ -178,6 +230,8 @@ export function App({ mode }: { mode: Mode }) {
           web={mode === "web"}
           version={info.data?.version}
           onPage={(page) => go({ page, project: project?.id ?? null })}
+          projects={projects.data ?? []}
+          onProject={(id) => go({ page: entry.project ? route.page : "dashboard", project: id, params: route.params.tab ? { tab: route.params.tab } : {} })}
         />
         <main className="oc-work" id="main">
           <div className="oc-titlebar top-titlebar" data-tauri-drag-region>
@@ -190,6 +244,10 @@ export function App({ mode }: { mode: Mode }) {
                 </>
               )}
             </span>
+            <div className="titlebar-tools">
+              <GlobalSearch />
+              <AlertBell />
+            </div>
           </div>
           <div className="page-scroll" ref={scroller}>
             <header className="oc-pagehead">

@@ -8,7 +8,7 @@
 use serde::{Deserialize, Serialize};
 use serde_json::{Value, json};
 
-use crate::{DfsError, Market, count, items_of, number, target_domain};
+use crate::{DfsError, Market, count, items_of, number, prices, target_domain};
 
 /// Endpoint of Google AI Mode answers.
 pub const AI_MODE: &str = "serp/google/ai_mode/live/advanced";
@@ -19,14 +19,6 @@ pub const MENTIONS_SEARCH: &str = "ai_optimization/llm_mentions/search_mentions/
 
 /// Longest question LLM Responses take.
 pub const MAX_PROMPT: usize = 500;
-
-/// Base price of an LLM Responses task, US dollars.
-const LLM_TASK_USD: f64 = 0.0006;
-/// Price of an AI Mode task, US dollars.
-const AI_MODE_USD: f64 = 0.004;
-/// LLM Mentions: a task, then a row, US dollars.
-const MENTIONS_TASK_USD: f64 = 0.10;
-const MENTIONS_ROW_USD: f64 = 0.001;
 
 /// The LLM Responses endpoint of an assistant (`chatgpt`, `claude`, `gemini`, `perplexity`).
 pub fn llm_endpoint(engine: &str) -> Option<&'static str> {
@@ -51,7 +43,7 @@ pub fn default_model(engine: &str) -> &'static str {
 
 /// A rough price of one answer through DataForSEO: the task and the model's charge.
 pub fn llm_estimate(engine: &str) -> f64 {
-    LLM_TASK_USD
+    prices::LLM_TASK
         + match engine {
             "chatgpt" => 0.03,
             "claude" => 0.04,
@@ -62,12 +54,12 @@ pub fn llm_estimate(engine: &str) -> f64 {
 
 /// The price of an AI Mode answer.
 pub const fn ai_mode_estimate() -> f64 {
-    AI_MODE_USD
+    prices::AI_MODE
 }
 
 /// The price of a mentions question returning `rows` rows.
 pub fn mentions_estimate(rows: u32) -> f64 {
-    MENTIONS_TASK_USD + MENTIONS_ROW_USD * f64::from(rows)
+    prices::mentions(rows)
 }
 
 /// The task of one `engine`'s answer with web search, favouring `country` (two letters) where

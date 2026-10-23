@@ -11,6 +11,7 @@ import { formatNumber, relativeTime } from "../../lib/format";
 import { refreshSpending } from "../../lib/PaidFrame";
 import { download, downloadBase64 } from "../../lib/report";
 import { BrandingDialog, ReportDialog } from "./ReportDialogs";
+import { ScaledPage } from "./ScaledPage";
 import { shareUrl } from "./report";
 
 /** The report as its page: the same page the PDF and the link show. */
@@ -21,7 +22,7 @@ function Preview({ project, report }: { project: ProjectRow; report: ReportRow }
   if (page.error || !page.data) {
     return <ErrorState title={t("common.loadFailed")} message={explain(page.error, t).message} retry={() => void page.refetch()} retryLabel={t("common.retry")} />;
   }
-  return <iframe className="report-preview" title={t("reports.previewTitle", { name: report.name })} sandbox="" srcDoc={page.data.html} />;
+  return <ScaledPage title={t("reports.previewTitle", { name: report.name })} html={page.data.html} />;
 }
 
 function ShareBox({ project, setup, report }: { project: ProjectRow; setup: ReportsSetup; report: ReportRow }) {
@@ -139,7 +140,7 @@ function ReportCard({ project, setup, report, selected, onSelect, onEdit }: { pr
         <span className="report-card-title">
           <strong>{report.name}</strong>
           <small className="faint">
-            {language} · {t("reports.daysOption", { n: report.days })} · {t("reports.partsCount", { n: report.widgets.length })}
+            {language} · {t("reports.daysOption", { n: report.days })} · {t("reports.partsCount", { n: report.widgets.length })} · {t(`reports.design_${report.design}`)}
           </small>
         </span>
         {report.schedule !== "manual" && (

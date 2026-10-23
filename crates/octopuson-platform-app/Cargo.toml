@@ -20,6 +20,7 @@ octopuson-crawl.workspace = true
 octopuson-crawl-store.workspace = true
 octopuson-dataforseo.workspace = true
 octopuson-google.workspace = true
+octopuson-html.workspace = true
 octopuson-keyword-sources.workspace = true
 octopuson-keywords.workspace = true
 octopuson-llm.workspace = true

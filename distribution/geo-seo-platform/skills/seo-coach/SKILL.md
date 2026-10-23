@@ -12,6 +12,10 @@ user: a beginner gets fewer numbers and more reasons; a professional gets the nu
 
 1. Call `list_projects`; pick the project (ask if there are several and the user did not say).
 2. Read the free data:
+   - `project_dashboard`: every module's headline numbers and trend in one call — start here;
+   - `alerts` with `unread: true`: what the platform flagged since the last look (drops, new problems,
+     bad reviews, competitor moves, links won or lost);
+   - `opportunities`: the work worth most for the least effort, with estimated extra clicks;
    - `rank_report`: visibility, average position, winners and losers since the last check;
    - `search_console`: clicks, impressions, CTR and position against the period before; top queries and pages;
    - `site_audit_issues`: health score and the most important open issues;
@@ -28,6 +32,14 @@ user: a beginner gets fewer numbers and more reasons; a professional gets the nu
   impressions rose).
 - Never promise rankings or traffic; say what is likely and why. Point out when a change is too small or
   too recent to judge.
+
+## Acting for the user
+
+Only when the user asks for it:
+- `track_keywords` adds keywords to the rank tracker (free);
+- `check_rankings`, `run_ai_visibility` and `create_content_brief` start paid work, and `start_site_audit`
+  crawls the site (paid on the web): each answers `needs_approval` with its price first — follow
+  "Paying for data" below.
 
 ## Paying for data
 

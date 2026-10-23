@@ -138,3 +138,85 @@ fn link_gaps_count_backlinks_per_competitor() {
     assert_eq!(rows[0].backlinks["rival.com"], 12);
     assert_eq!(rows[0].backlinks["other.com.tr"], 3);
 }
+
+#[test]
+fn every_keyword_falls_in_semrush_s_groups() {
+    let groups = |own: Option<u32>, theirs: &[Option<u32>]| gap_groups(own, theirs);
+    assert_eq!(groups(Some(3), &[Some(1), Some(2)]), ["shared", "weak"]);
+    assert_eq!(groups(Some(1), &[Some(4), Some(2)]), ["shared", "strong"]);
+    assert_eq!(groups(Some(2), &[Some(1), Some(5)]), ["shared"]);
+    assert_eq!(groups(Some(2), &[Some(5), None]), ["strong"]);
+    assert_eq!(groups(Some(2), &[None, None]), ["unique"]);
+    assert_eq!(groups(None, &[Some(1), Some(9)]), ["missing"]);
+    assert_eq!(groups(None, &[Some(1), None]), ["untapped"]);
+    assert_eq!(groups(None, &[None, None]).len(), 0);
+}
+
+#[test]
+fn the_matrix_joins_each_domain_s_keywords() {
+    let own = result(include_str!("../tests/fixtures/ranked_keywords.json"));
+    // The competitor ranks third for the site's first keyword and has one of its own.
+    let mut theirs: Value =
+        serde_json::from_str(include_str!("../tests/fixtures/ranked_keywords.json")).unwrap();
+    let items = theirs["tasks"][0]["result"][0]["items"]
+        .as_array_mut()
+        .unwrap();
+    items.truncate(1);
+    items[0]["ranked_serp_element"]["serp_item"]["rank_group"] = serde_json::json!(3);
+    let mut extra = items[0].clone();
+    extra["keyword_data"]["keyword"] = serde_json::json!("rakip özel kelime");
+    items.push(extra);
+    let theirs = theirs["tasks"][0]["result"].as_array().unwrap().clone();
+    let gap = matrix(
+        "www.example.com",
+        &["rival.com".to_owned()],
+        &[own, theirs],
+        100,
+    );
+    assert_eq!(gap.own, "example.com");
+    assert_eq!(gap.competitors, ["rival.com"]);
+    assert_eq!(gap.keywords_per_domain, [3, 2]);
+    let find = |keyword: &str| {
+        gap.keywords
+            .iter()
+            .find(|row| row.keyword == keyword)
+            .unwrap()
+    };
+    let shared = find("örnek ayakkabı");
+    assert_eq!(shared.groups, ["shared", "strong"]);
+    assert_eq!(shared.rankings[1].as_ref().unwrap().position, Some(3));
+    assert_eq!(find("rakip özel kelime").groups, ["missing"]);
+    assert_eq!(gap.counts["unique"], 2);
+    assert_eq!(gap.counts["missing"], 1);
+}
+
+#[test]
+fn a_page_gap_asks_the_competitor_s_page_without_the_site_s() {
+    let task = page_gap_task(
+        "https://www.rival.com/kosu",
+        "https://www.example.com/kosu",
+        &Market::new("tr", "tr"),
+        100,
+    )
+    .unwrap();
+    assert_eq!(task["pages"]["1"], "https://www.rival.com/kosu");
+    assert_eq!(
+        task["exclude_pages"],
+        serde_json::json!(["https://www.example.com/kosu"])
+    );
+    assert!(
+        page_gap_task(
+            "rival.com/kosu",
+            "https://www.example.com/",
+            &Market::new("tr", "tr"),
+            100
+        )
+        .is_err()
+    );
+    let rows = page_gap_from_result(&result(include_str!(
+        "../tests/fixtures/page_intersection.json"
+    )));
+    assert_eq!(rows[0].keyword, "kadın koşu ayakkabısı");
+    assert_eq!(rows[0].position, Some(3));
+    assert!((rows[1].traffic - 38.0).abs() < 1e-9);
+}

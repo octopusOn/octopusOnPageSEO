@@ -2,16 +2,21 @@
 //! (rank tracking, Search Console, the site audit, AI visibility, kept domain and backlink
 //! answers) into tiles, a chart, bars and tables, in the report's language. [`html`] writes it
 //! as one self-contained page (shown, shared and printed to PDF), [`xlsx`] its tables as a
-//! workbook. Nothing is asked of a paid source: a report shows what the modules already have.
+//! workbook. Nothing is asked of a paid source: a report shows what the modules already have,
+//! and its before/after part ([`comparison`]) what the project's snapshots keep.
 
+pub(crate) mod comparison;
 pub(crate) mod html;
+pub(crate) mod research;
 pub(crate) mod texts;
 pub(crate) mod xlsx;
 
-use octopuson_platform::{Branding, ProjectRow, ReportRow};
+use octopuson_platform::{Branding, ProjectRow, ReportColors, ReportRow};
 use serde::Serialize;
 use serde_json::Value;
 
+use crate::modules::snapshots::Compared;
+use crate::snapshot::summary::Sentence;
 use texts::{number, percent, text};
 
 /// The modules' reports a report is drawn from; `None` where a module has nothing yet.
@@ -25,6 +30,24 @@ pub(crate) struct Sources {
     pub(crate) overview: Option<Value>,
     /// A kept backlink summary (`Fetched`).
     pub(crate) backlinks: Option<Value>,
+    /// The first snapshot against the latest.
+    pub(crate) comparison: Option<Compared>,
+    /// The snapshot before the latest against the latest.
+    pub(crate) comparison_previous: Option<Compared>,
+    /// Local SEO: `{ setup, grid, reviews }` as the module answers them.
+    pub(crate) local: Option<Value>,
+    /// Organic search: `{ summary, fetched_at, keywords, lost, history, points }`, the kept
+    /// answers' data and the program's own metric points.
+    pub(crate) organic: Option<Value>,
+    /// Backlinks over time: `{ summary, fetched_at, history, new_lost, audit, points,
+    /// decisions, prospects }`.
+    pub(crate) links: Option<Value>,
+    /// The kept keyword gap matrix.
+    pub(crate) gap: Option<Value>,
+    /// Keyword lists: `[{ name, keywords }]`.
+    pub(crate) lists: Option<Value>,
+    /// Opportunities as the module lists them.
+    pub(crate) opportunities: Option<Value>,
 }
 
 /// A change with whether it is good news.
@@ -80,12 +103,25 @@ pub(crate) struct Table {
 }
 
 /// One part of a report.
+/// A grid drawn as squares: each point's place, coloured by band.
+#[derive(Debug, Clone, PartialEq, Serialize)]
+pub(crate) struct GridImage {
+    pub(crate) title: String,
+    pub(crate) note: String,
+    /// Points a side.
+    pub(crate) size: u32,
+    /// `(row, column, label, band)`, the band `top3`, `top10`, `top20`, `none` or `error`.
+    pub(crate) cells: Vec<(u32, u32, String, &'static str)>,
+}
+
 #[derive(Debug, Clone, PartialEq, Serialize)]
 pub(crate) struct Widget {
     pub(crate) id: String,
     pub(crate) title: String,
     /// A line under the title (the period a module covers).
     pub(crate) note: Option<String>,
+    /// Sentences told first (a comparison's summary).
+    pub(crate) lines: Vec<Sentence>,
     pub(crate) tiles: Vec<Tile>,
     pub(crate) chart: Option<Chart>,
     pub(crate) bars_title: Option<String>,
@@ -93,6 +129,9 @@ pub(crate) struct Widget {
     /// The value of a full bar; the longest bar's when `None`.
     pub(crate) bars_scale: Option<f64>,
     pub(crate) tables: Vec<Table>,
+    /// Grids drawn as squares (local SEO).
+    #[serde(skip_serializing_if = "Vec::is_empty")]
+    pub(crate) grids: Vec<GridImage>,
     /// The module has nothing to show yet.
     pub(crate) empty: bool,
 }
@@ -103,12 +142,14 @@ impl Widget {
             id: id.to_owned(),
             title: text(lang, id),
             note: None,
+            lines: Vec::new(),
             tiles: Vec::new(),
             chart: None,
             bars_title: None,
             bars: Vec::new(),
             bars_scale: None,
             tables: Vec::new(),
+            grids: Vec::new(),
             empty: false,
         }
     }
@@ -126,6 +167,10 @@ impl Widget {
 pub(crate) struct ReportView {
     pub(crate) name: String,
     pub(crate) language: String,
+    /// How it looks (`clean`, `ocean`, `accent`, `elegant`).
+    pub(crate) design: String,
+    /// Its own colours over the design's.
+    pub(crate) colors: ReportColors,
     pub(crate) project: String,
     pub(crate) domain: String,
     /// First and last day, `YYYY-MM-DD`.
@@ -650,6 +695,7 @@ fn site_audit(audit: &Value, lang: &str) -> Widget {
     widget
 }
 
+#[allow(clippy::too_many_lines)] // tiles, bars, the trend and two tables
 fn ai_visibility(ai: &Value, lang: &str) -> Widget {
     let mut widget = Widget::new("ai_visibility", lang);
     let summary = ai.get("summary").unwrap_or(&Value::Null);
@@ -710,6 +756,31 @@ fn ai_visibility(ai: &Value, lang: &str) -> Widget {
             }
         })
         .collect();
+    if history.len() > 1 {
+        widget.chart = Some(Chart {
+            title: text(lang, "ai_trend"),
+            labels: history
+                .iter()
+                .enumerate()
+                .map(|(index, point)| {
+                    txt(point, "date").map_or_else(
+                        || format!("#{}", index + 1),
+                        |date| texts::date(&date, lang),
+                    )
+                })
+                .collect(),
+            series: ["mention_rate", "citation_rate", "share_of_voice"]
+                .iter()
+                .map(|key| {
+                    (
+                        text(lang, key),
+                        history.iter().map(|point| num(point, key)).collect(),
+                        *key != "mention_rate",
+                    )
+                })
+                .collect(),
+        });
+    }
     widget.tables.push(Table {
         title: text(lang, "brands"),
         columns: vec![
@@ -729,6 +800,192 @@ fn ai_visibility(ai: &Value, lang: &str) -> Widget {
                         }
                     }),
                     count_cell(num(brand, "mentions"), lang),
+                ]
+            })
+            .collect(),
+    });
+    let cited = list(ai, "top_domains");
+    if !cited.is_empty() {
+        widget.tables.push(Table {
+            title: text(lang, "top_cited_domains"),
+            columns: vec![text(lang, "domain"), text(lang, "cited_answers")],
+            rows: cited
+                .iter()
+                .take(10)
+                .map(|source| {
+                    vec![
+                        Cell::Text(txt(source, "key").unwrap_or_default()),
+                        count_cell(num(source, "answers"), lang),
+                    ]
+                })
+                .collect(),
+        });
+    }
+    widget
+}
+
+/// Grids drawn in a report at most.
+const GRIDS_SHOWN: usize = 3;
+
+/// The band of a grid point, as the page colours it.
+fn band(cell: &Value) -> &'static str {
+    if cell.get("error").is_some_and(|error| !error.is_null()) {
+        return "error";
+    }
+    match num(cell, "position") {
+        None => "none",
+        Some(position) if position <= 3.0 => "top3",
+        Some(position) if position <= 10.0 => "top10",
+        Some(_) => "top20",
+    }
+}
+
+/// The average of the keywords' figures of each run, oldest first.
+fn run_averages(trend: &[Value], field: &str) -> Vec<f64> {
+    let mut runs: Vec<(i64, f64, u32)> = Vec::new();
+    for point in trend {
+        let (Some(run), Some(value)) = (
+            point.get("run_id").and_then(Value::as_i64),
+            num(point, field),
+        ) else {
+            continue;
+        };
+        match runs.iter_mut().find(|(id, ..)| *id == run) {
+            Some(entry) => {
+                entry.1 += value;
+                entry.2 += 1;
+            }
+            None => runs.push((run, value, 1)),
+        }
+    }
+    runs.into_iter()
+        .map(|(_, sum, count)| sum / f64::from(count.max(1)))
+        .collect()
+}
+
+/// The change between the last two runs' averages.
+fn last_change(values: &[f64]) -> Option<f64> {
+    let last = values.last()?;
+    let before = values.get(values.len().checked_sub(2)?)?;
+    Some(last - before)
+}
+
+#[allow(clippy::too_many_lines)] // figures, grids and the competitors
+fn local_seo(local: &Value, lang: &str) -> Widget {
+    let mut widget = Widget::new("local", lang);
+    let grid = local.get("grid").unwrap_or(&Value::Null);
+    let Some(run) = grid.get("run").filter(|run| !run.is_null()) else {
+        return Widget::empty("local", lang);
+    };
+    let summary = grid.get("summary").unwrap_or(&Value::Null);
+    let trend = list(grid, "trend");
+    #[allow(clippy::cast_possible_truncation, clippy::cast_sign_loss)] // 3–9 points a side
+    let side = num(run, "grid").unwrap_or(5.0) as u32;
+    if let Some(title) = local
+        .pointer("/setup/business/title")
+        .and_then(Value::as_str)
+    {
+        widget.note = Some(
+            text(lang, "local_note")
+                .replace("{business}", title)
+                .replace("{n}", &side.to_string())
+                .replace(
+                    "{km}",
+                    &number(num(run, "radius_km").unwrap_or_default(), 1, lang),
+                ),
+        );
+    }
+    widget.tiles = vec![
+        tile(
+            "local_arp",
+            num(summary, "arp").map_or_else(|| "—".to_owned(), |value| number(value, 1, lang)),
+            change(last_change(&run_averages(trend, "arp")), 1, false, lang),
+            lang,
+        ),
+        tile(
+            "local_solv",
+            percent(num(summary, "solv").unwrap_or_default(), lang),
+            change(last_change(&run_averages(trend, "solv")), 1, true, lang),
+            lang,
+        ),
+        tile(
+            "local_found",
+            format!(
+                "{} / {}",
+                number(num(summary, "found").unwrap_or_default(), 0, lang),
+                number(num(summary, "points").unwrap_or_default(), 0, lang)
+            ),
+            None,
+            lang,
+        ),
+    ];
+    let ratings = local.pointer("/reviews/ratings").and_then(Value::as_array);
+    if let Some(days) = ratings
+        && let Some(last) = days.last()
+        && let Some(rating) = num(last, "rating")
+    {
+        let before = days
+            .first()
+            .filter(|_| days.len() > 1)
+            .and_then(|first| num(first, "rating"));
+        widget.tiles.push(tile(
+            "local_rating",
+            format!(
+                "{} ({})",
+                number(rating, 1, lang),
+                number(num(last, "votes").unwrap_or_default(), 0, lang)
+            ),
+            before.and_then(|before| change(Some(rating - before), 1, true, lang)),
+            lang,
+        ));
+    }
+    widget.grids = list(grid, "keywords")
+        .iter()
+        .take(GRIDS_SHOWN)
+        .map(|keyword| {
+            let figures = keyword.get("summary").unwrap_or(&Value::Null);
+            GridImage {
+                title: txt(keyword, "keyword").unwrap_or_default(),
+                note: format!(
+                    "{} {} · {} {}",
+                    text(lang, "local_arp_short"),
+                    num(figures, "arp")
+                        .map_or_else(|| "—".to_owned(), |value| number(value, 1, lang)),
+                    text(lang, "local_solv_short"),
+                    percent(num(figures, "solv").unwrap_or_default(), lang)
+                ),
+                size: side,
+                cells: list(keyword, "cells")
+                    .iter()
+                    .filter_map(|cell| {
+                        #[allow(clippy::cast_possible_truncation, clippy::cast_sign_loss)]
+                        let at = |name: &str| num(cell, name).map(|value| value as u32);
+                        let label = match band(cell) {
+                            "error" => "!".to_owned(),
+                            "none" => "20+".to_owned(),
+                            _ => number(num(cell, "position").unwrap_or_default(), 0, lang),
+                        };
+                        Some((at("row")?, at("col")?, label, band(cell)))
+                    })
+                    .collect(),
+            }
+        })
+        .collect();
+    widget.tables.push(Table {
+        title: text(lang, "local_rivals"),
+        columns: vec![
+            text(lang, "local_business"),
+            text(lang, "local_top3_points"),
+            text(lang, "position"),
+        ],
+        rows: list(grid, "rivals")
+            .iter()
+            .take(8)
+            .map(|rival| {
+                vec![
+                    Cell::Text(txt(rival, "title").unwrap_or_default()),
+                    count_cell(num(rival, "top3"), lang),
+                    decimal_cell(num(rival, "average"), lang),
                 ]
             })
             .collect(),
@@ -881,12 +1138,51 @@ pub(crate) fn build(
             ) => site_audit(audit, lang),
             ("ai_visibility", Sources { ai: Some(ai), .. }) => ai_visibility(ai, lang),
             ("backlinks", _) => backlinks(sources, lang),
+            (
+                "local",
+                Sources {
+                    local: Some(local), ..
+                },
+            ) => local_seo(local, lang),
+            (
+                "organic",
+                Sources {
+                    organic: Some(organic),
+                    ..
+                },
+            ) => research::organic(organic, lang),
+            (
+                "link_history",
+                Sources {
+                    links: Some(links), ..
+                },
+            ) => research::link_history(links, lang),
+            ("gap", Sources { gap: Some(gap), .. }) => research::gap(gap, lang),
+            (
+                "keyword_lists",
+                Sources {
+                    lists: Some(lists), ..
+                },
+            ) => research::keyword_lists(lists, lang),
+            (
+                "opportunities",
+                Sources {
+                    opportunities: Some(found),
+                    ..
+                },
+            ) => research::opportunities(found, lang),
+            ("comparison", _) => comparison::widget(id, sources.comparison.as_ref(), lang),
+            ("comparison_previous", _) => {
+                comparison::widget(id, sources.comparison_previous.as_ref(), lang)
+            }
             (other, _) => Widget::empty(other, lang),
         })
         .collect();
     ReportView {
         name: report.spec.name.clone(),
         language: report.spec.language.clone(),
+        design: report.spec.design.clone(),
+        colors: report.spec.colors.clone(),
         project: project.name.clone(),
         domain: project.domain.clone(),
         period,
@@ -896,5 +1192,7 @@ pub(crate) fn build(
     }
 }
 
+#[cfg(test)]
+mod demo;
 #[cfg(test)]
 mod tests;

@@ -304,6 +304,8 @@ fn requests_are_checked() {
         last: true,
         pull: true,
         replace: false,
+        resend: Vec::new(),
+        resend_after: 0,
     };
     assert!(hub_answer(&web, "user-1", &request, 0).is_err());
     let bad_replica = SyncRequest {
@@ -335,4 +337,82 @@ fn requests_are_checked() {
     );
     assert!(decode::<Value>(b"not zstd").is_err());
     assert!(pair.web.workspace().store().is_ok());
+}
+
+#[test]
+fn an_updated_desktop_takes_the_kinds_it_skipped_before() {
+    let pair = pair();
+    let desktop = pair.desktop.workspace();
+    let id = create(&pair.desktop, "ornek.com");
+    pair.desktop
+        .call(
+            "save_report",
+            json!({ "project_id": id, "name": "Aylık", "language": "tr", "days": 28,
+                "widgets": ["summary"], "schedule": "manual", "recipients": [] }),
+        )
+        .unwrap();
+    done(round(desktop).unwrap());
+
+    // On the web, after the desktop synced: a snapshot, and the report gets a design.
+    let web = pair.web.workspace();
+    {
+        let store = web.store().unwrap();
+        let project = store.projects().unwrap()[0].id;
+        let report = store.reports(project).unwrap().remove(0);
+        store
+            .save_report(
+                project,
+                Some(report.id),
+                &octopuson_platform::ReportSpec {
+                    design: "elegant".to_owned(),
+                    ..report.spec
+                },
+                "2026-10-23T09:00:00Z",
+            )
+            .unwrap();
+        let snapshot = store
+            .begin_snapshot(project, false, Some("Başlangıç"), "2026-10-23T09:00:00Z")
+            .unwrap();
+        store
+            .finish_snapshot(
+                snapshot,
+                &octopuson_platform::SnapshotEnd {
+                    status: "done",
+                    cost_usd: 0.3,
+                    error: None,
+                    data: &json!({ "version": 1, "domain": "ornek.com", "market": "tr-tr" }),
+                },
+                "2026-10-23T09:01:00Z",
+            )
+            .unwrap();
+        store.sync_scan(now_ms()).unwrap();
+    }
+    // A desktop of the first version took those changes without the kinds and columns it did
+    // not know: its cursor is past them, and it noted no kinds.
+    {
+        let head = web.store().unwrap().sync_head().unwrap();
+        let store = desktop.store().unwrap();
+        store
+            .set_sync_value("cursor", Some(&head.to_string()))
+            .unwrap();
+        store.set_sync_value("kinds", None).unwrap();
+    }
+    let report = done(round(desktop).unwrap());
+    assert!(report.received >= 2, "{report:?}");
+    let store = desktop.store().unwrap();
+    assert_eq!(store.reports(id).unwrap()[0].spec.design, "elegant");
+    let snapshots = store.snapshots(id).unwrap();
+    assert_eq!(snapshots.len(), 1);
+    assert_eq!(snapshots[0].label.as_deref(), Some("Başlangıç"));
+    drop(store);
+    // Taken once: the next round asks for nothing again, and nothing echoes back.
+    let again = done(round(desktop).unwrap());
+    assert_eq!((again.sent, again.received), (0, 0));
+    let hub = web.store().unwrap();
+    let project = hub.projects().unwrap()[0].id;
+    assert_eq!(
+        hub.reports(project).unwrap()[0].spec.design,
+        "elegant",
+        "the desktop's copy without the design did not overwrite the web's"
+    );
 }

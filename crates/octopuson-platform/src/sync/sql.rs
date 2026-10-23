@@ -39,8 +39,9 @@ fn conditions(kind: &Kind) -> String {
         conditions.push(filter.to_owned());
     }
     if matches!(kind.shape, Shape::Cache) {
+        // Filtered and later pages of lists stay where they were asked.
         conditions.push(format!(
-            "t.class IN {CACHE_CLASSES} AND length(t.body) <= {CACHE_MAX}"
+            "t.class IN {CACHE_CLASSES} AND length(t.body) <= {CACHE_MAX} AND coalesce(t.travels, true)"
         ));
     }
     conditions.join(" AND ")

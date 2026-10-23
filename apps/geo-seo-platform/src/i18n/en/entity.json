@@ -1,0 +1,17 @@
+{
+  "menu": "Options for {value}",
+  "keywordOverview": "Analyse keyword",
+  "keywordSerp": "See the result page",
+  "keywordIdeas": "Keyword ideas",
+  "track": "Add to rank tracking",
+  "domainOverview": "Domain overview",
+  "domainBacklinks": "See backlinks",
+  "pageBacklinks": "Backlinks of this page",
+  "addCompetitor": "Add as competitor",
+  "visit": "Open the site",
+  "copy": "Copy",
+  "copied": "Copied",
+  "copyFailed": "Could not copy",
+  "pageKeywords": "Page's keywords",
+  "contentBrief": "Create content brief"
+}

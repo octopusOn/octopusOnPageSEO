@@ -1,16 +1,20 @@
 //! Live Google result pages from the DataForSEO SERP API: who ranks for a keyword now and what
 //! else the page shows.
 
+use octopuson_serp::{
+    Device, Engine, Feature, FeatureItem, FeatureKind, Organic, SerpQuery, SerpSnapshot,
+    registrable_domain,
+};
 use serde::{Deserialize, Serialize};
 use serde_json::{Value, json};
 
-use crate::{DfsError, Market, count, items_of};
+use crate::{DfsError, Market, count, items_of, target_domain};
 
 /// Endpoint of a live organic result page.
 pub const ORGANIC: &str = "serp/google/organic/live/advanced";
 
 /// A live result page of up to ten results, US dollars.
-pub const LIVE_PAGE: f64 = 0.002;
+pub const LIVE_PAGE: f64 = crate::prices::SERP_LIVE_PAGE;
 
 /// One element of a result page.
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
@@ -124,4 +128,123 @@ pub fn organic_from_result(result: &[Value]) -> SerpPage {
     page.organic
         .sort_by_key(|item| item.rank.unwrap_or(u32::MAX));
     page
+}
+
+/// The kind of block a DataForSEO element type is, as the SERP Checker's measures read it.
+fn feature_kind(kind: &str) -> FeatureKind {
+    match kind {
+        "featured_snippet" => FeatureKind::FeaturedSnippet,
+        "people_also_ask" => FeatureKind::PeopleAlsoAsk,
+        "local_pack" | "map" => FeatureKind::LocalPack,
+        "video" | "short_videos" => FeatureKind::Videos,
+        "images" => FeatureKind::Images,
+        "ai_overview" => FeatureKind::AiOverview,
+        "related_searches" | "people_also_search" => FeatureKind::RelatedSearches,
+        "top_stories" => FeatureKind::TopStories,
+        "knowledge_graph" => FeatureKind::KnowledgePanel,
+        "shopping" | "popular_products" => FeatureKind::Shopping,
+        "paid" => FeatureKind::AdsTop,
+        _ => FeatureKind::Other,
+    }
+}
+
+/// The entries of a block: "People also ask" questions, related searches (plain strings), the
+/// snippet's page.
+fn feature_items(item: &Value) -> Vec<FeatureItem> {
+    let entry = |value: &Value| -> Option<FeatureItem> {
+        if let Some(text) = value.as_str().filter(|text| !text.trim().is_empty()) {
+            return Some(FeatureItem {
+                text: Some(text.trim().to_owned()),
+                url: None,
+                domain: None,
+            });
+        }
+        let url = text(value, "url");
+        let label = text(value, "title").or_else(|| text(value, "text"));
+        (url.is_some() || label.is_some()).then(|| FeatureItem {
+            domain: url
+                .as_deref()
+                .map(|url| registrable_domain(&target_domain(url))),
+            text: label,
+            url,
+        })
+    };
+    match item.get("items").and_then(Value::as_array) {
+        Some(items) => items.iter().filter_map(entry).collect(),
+        None => entry(item).into_iter().collect(),
+    }
+}
+
+/// A result page as the SERP Checker's measures read it: its organic results and the blocks
+/// around them, with the "People also ask" questions and related searches.
+pub fn snapshot_of(
+    result: &[Value],
+    keyword: &str,
+    market: &Market,
+    mobile: bool,
+    fetched_at: &str,
+) -> SerpSnapshot {
+    let first = result.first().unwrap_or(&Value::Null);
+    let position = |value: &Value, name: &str| {
+        value
+            .get(name)
+            .and_then(count)
+            .and_then(|n| u16::try_from(n).ok())
+    };
+    let mut organic = Vec::new();
+    let mut features = Vec::new();
+    for item in items_of(result) {
+        let kind = item.get("type").and_then(Value::as_str).unwrap_or_default();
+        if kind == "organic" {
+            let (Some(rank), Some(url)) = (position(item, "rank_group"), text(item, "url")) else {
+                continue;
+            };
+            let host = target_domain(&url);
+            organic.push(Organic {
+                position: rank,
+                absolute_position: position(item, "rank_absolute"),
+                page: 1,
+                domain: registrable_domain(&host),
+                host,
+                title: text(item, "title").unwrap_or_default(),
+                snippet: text(item, "description"),
+                displayed_url: text(item, "breadcrumb"),
+                date: None,
+                sitelinks: Vec::new(),
+                site_only: false,
+                url,
+            });
+        } else if !kind.is_empty() {
+            features.push(Feature {
+                kind: feature_kind(kind),
+                absolute_position: position(item, "rank_absolute"),
+                page: 1,
+                items: feature_items(item),
+            });
+        }
+    }
+    organic.sort_by_key(|result| result.position);
+    SerpSnapshot {
+        query: SerpQuery {
+            engine: Engine::Google,
+            keyword: keyword.split_whitespace().collect::<Vec<_>>().join(" "),
+            country: market.country.clone(),
+            language: market.language.clone(),
+            location: None,
+            device: if mobile {
+                Device::Mobile
+            } else {
+                Device::Desktop
+            },
+            depth: 10,
+        },
+        provider: crate::ID.to_owned(),
+        provider_rev: None,
+        parser_rev: None,
+        fetched_at: fetched_at.to_owned(),
+        total_results: first.get("se_results_count").and_then(count),
+        organic,
+        features,
+        warnings: Vec::new(),
+    }
 }

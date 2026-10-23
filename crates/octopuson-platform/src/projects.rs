@@ -304,6 +304,15 @@ impl PlatformStore {
         self.delete_ai_data(id)?;
         self.delete_gsc_data(id)?;
         self.delete_report_data(id)?;
+        self.delete_snapshot_data(id)?;
+        self.delete_metric_data(id)?;
+        self.delete_ad_data(id)?;
+        self.delete_link_data(id)?;
+        self.delete_local_data(id)?;
+        self.delete_content_data(id)?;
+        self.delete_vital_data(id)?;
+        self.delete_opportunity_states(id)?;
+        self.delete_alert_data(id)?;
         let removed = self
             .connection
             .execute("DELETE FROM projects WHERE id = ?", params![id])?;

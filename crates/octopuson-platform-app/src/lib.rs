@@ -12,6 +12,7 @@
 //! through the gateway ([`SourceMode`](octopuson_cloud::SourceMode)).
 
 mod cloud;
+mod content;
 pub mod fetch;
 mod google;
 pub mod jobs;
@@ -22,10 +23,13 @@ mod platform;
 mod report;
 pub mod router;
 pub mod settings;
+pub mod snapshot;
 pub mod sources;
 pub mod sync;
 
+use std::cell::Cell;
 use std::path::{Path, PathBuf};
+use std::sync::atomic::{AtomicUsize, Ordering};
 use std::sync::{Arc, Mutex};
 use std::time::{Duration, Instant};
 
@@ -135,7 +139,9 @@ impl From<DfsError> for AppError {
             DfsError::Auth(_) => Self::Auth(text),
             DfsError::Quota(_) => Self::Quota(text),
             DfsError::RateLimited { retry_after } => Self::RateLimited { retry_after },
-            DfsError::Unavailable(_) | DfsError::Transport(_) => Self::Unavailable(text),
+            DfsError::Unavailable(_) | DfsError::Transport(_) | DfsError::NotReady => {
+                Self::Unavailable(text)
+            }
             DfsError::Rejected(_) | DfsError::Invalid(_) => Self::Provider(text),
         }
     }
@@ -164,9 +170,37 @@ pub struct Workspace {
     google_web: Option<GoogleWeb>,
     google: Mutex<google::GoogleState>,
     mailer: Option<Arc<dyn mail::Mailer>>,
+    notifier: Option<Arc<dyn mail::Notifier>>,
     public_url: Option<String>,
     printer: Option<Arc<Printer>>,
     sync: sync::SyncRuntime,
+    /// Held while answers are read from the provider's queue, so two rounds never overlap.
+    collecting: Mutex<()>,
+    /// Pages and jobs waiting for the database: background work lets them go first.
+    waiting: AtomicUsize,
+}
+
+thread_local! {
+    /// This thread does background work (looking for alerts): it gives way on the database.
+    static BACKGROUND: Cell<bool> = const { Cell::new(false) };
+}
+
+/// Runs `work` as background work on this thread: its database reads give way to pages and
+/// jobs waiting for the database.
+pub(crate) fn in_background<T>(work: impl FnOnce() -> T) -> T {
+    let before = BACKGROUND.replace(true);
+    let out = work();
+    BACKGROUND.set(before);
+    out
+}
+
+/// Counts a page or job waiting for the database while it lives.
+struct Waiting<'a>(&'a AtomicUsize);
+
+impl Drop for Waiting<'_> {
+    fn drop(&mut self) {
+        self.0.fetch_sub(1, Ordering::SeqCst);
+    }
 }
 
 /// Prints an HTML page to PDF (tests stand in for the browser).
@@ -218,9 +252,12 @@ impl Workspace {
             google_web: None,
             google: Mutex::default(),
             mailer: None,
+            notifier: None,
             public_url: None,
             printer: None,
             sync: sync::SyncRuntime::default(),
+            collecting: Mutex::default(),
+            waiting: AtomicUsize::new(0),
         }
     }
 
@@ -228,6 +265,13 @@ impl Workspace {
     #[must_use]
     pub fn with_mailer(mut self, mailer: Arc<dyn mail::Mailer>) -> Self {
         self.mailer = Some(mailer);
+        self
+    }
+
+    /// Shows alerts as system notifications through `notifier` (the desktop program).
+    #[must_use]
+    pub fn with_notifier(mut self, notifier: Arc<dyn mail::Notifier>) -> Self {
+        self.notifier = Some(notifier);
         self
     }
 
@@ -292,10 +336,26 @@ impl Workspace {
     /// # Errors
     /// [`AppError::Busy`] when it stays in use; storage errors.
     pub fn store(&self) -> Result<PlatformStore, AppError> {
-        let deadline = Instant::now() + STORE_WAIT;
+        let background = BACKGROUND.get();
+        // Background work waits longer, as it lets everyone else go first.
+        let deadline = Instant::now()
+            + if background {
+                STORE_WAIT * 12
+            } else {
+                STORE_WAIT
+            };
+        let mut counted: Option<Waiting<'_>> = None;
         loop {
+            if background && self.waiting.load(Ordering::SeqCst) > 0 && Instant::now() < deadline {
+                std::thread::sleep(Duration::from_millis(10));
+                continue;
+            }
             match PlatformStore::open(&self.data_dir) {
                 Err(PlatformStoreError::Busy(_)) if Instant::now() < deadline => {
+                    if !background && counted.is_none() {
+                        self.waiting.fetch_add(1, Ordering::SeqCst);
+                        counted = Some(Waiting(&self.waiting));
+                    }
                     std::thread::sleep(Duration::from_millis(20));
                 }
                 other => return Ok(other?),
@@ -317,6 +377,14 @@ pub fn gateway() -> Result<String, AppError> {
 pub fn now() -> String {
     let micros = Timestamp::now().as_unix_micros();
     Timestamp::from_unix_micros(micros - micros.rem_euclid(1_000_000)).to_string()
+}
+
+/// The current year and month.
+pub(crate) fn this_month() -> (u32, u32) {
+    let now = now();
+    let year = now.get(0..4).and_then(|y| y.parse().ok()).unwrap_or(2026);
+    let month = now.get(5..7).and_then(|m| m.parse().ok()).unwrap_or(1);
+    (year, month)
 }
 
 /// The current month, `YYYY-MM`.

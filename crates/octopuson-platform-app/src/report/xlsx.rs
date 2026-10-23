@@ -61,11 +61,19 @@ pub(crate) fn workbook(view: &ReportView) -> Result<Vec<u8>, XlsxError> {
         sheet.write_string(2, 0, format!("{} – {}", view.period.0, view.period.1))?;
         let mut row = 4;
         for widget in &view.widgets {
-            if widget.tiles.is_empty() {
+            if widget.tiles.is_empty() && widget.lines.is_empty() {
                 continue;
             }
             sheet.write_string_with_format(row, 0, &widget.title, &bold)?;
             row += 1;
+            if let Some(note) = widget.note.as_ref().filter(|_| !widget.lines.is_empty()) {
+                sheet.write_string(row, 0, note)?;
+                row += 1;
+            }
+            for line in &widget.lines {
+                sheet.write_string(row, 0, &line.text)?;
+                row += 1;
+            }
             for tile in &widget.tiles {
                 sheet.write_string(row, 0, &tile.label)?;
                 sheet.write_string(row, 1, &tile.value)?;

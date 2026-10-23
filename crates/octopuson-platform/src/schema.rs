@@ -333,6 +333,313 @@ const MIGRATIONS: &[&str] = &[
         PRIMARY KEY (kind, key)
     );
     ",
+    // 9: snapshots: a project's whole state kept at a moment, to compare two moments, and how
+    // often they are taken.
+    "
+    CREATE TABLE snapshot_settings (
+        project_id BIGINT PRIMARY KEY,
+        schedule VARCHAR NOT NULL,
+        competitors VARCHAR NOT NULL DEFAULT '[]',
+        last_run_at VARCHAR
+    );
+    CREATE SEQUENCE snapshot_ids START 1;
+    CREATE TABLE snapshots (
+        id BIGINT PRIMARY KEY DEFAULT nextval('snapshot_ids'),
+        project_id BIGINT NOT NULL,
+        label VARCHAR,
+        kind VARCHAR NOT NULL,
+        status VARCHAR NOT NULL,
+        taken_at VARCHAR NOT NULL,
+        finished_at VARCHAR,
+        cost_usd DOUBLE NOT NULL DEFAULT 0,
+        error VARCHAR,
+        data VARCHAR,
+        uid VARCHAR
+    );
+    ",
+    // 10: a report's design (its look); none reads as the default.
+    "
+    ALTER TABLE reports ADD COLUMN design VARCHAR;
+    ",
+    // 11: a report's own colours over its design's (JSON); none keeps the design's.
+    "
+    ALTER TABLE reports ADD COLUMN colors VARCHAR;
+    ",
+    // 12: kept answers that stay on this copy (filtered or later pages of a list).
+    "
+    ALTER TABLE cache ADD COLUMN travels BOOLEAN DEFAULT true;
+    ",
+    // 13: metric history: a target's headline numbers each day they were fetched.
+    "
+    CREATE SEQUENCE metric_point_ids START 1;
+    CREATE TABLE metric_points (
+        id BIGINT PRIMARY KEY DEFAULT nextval('metric_point_ids'),
+        project_id BIGINT NOT NULL,
+        target VARCHAR NOT NULL,
+        kind VARCHAR NOT NULL,
+        market VARCHAR NOT NULL DEFAULT '',
+        day VARCHAR NOT NULL,
+        metrics VARCHAR NOT NULL,
+        taken_at VARCHAR NOT NULL,
+        uid VARCHAR
+    );
+    ",
+    // 14: ad copies a domain was seen showing, from paid-keywords answers.
+    "
+    CREATE SEQUENCE ad_copy_ids START 1;
+    CREATE TABLE ad_copies (
+        id BIGINT PRIMARY KEY DEFAULT nextval('ad_copy_ids'),
+        project_id BIGINT NOT NULL,
+        domain VARCHAR NOT NULL,
+        title VARCHAR NOT NULL,
+        description VARCHAR,
+        breadcrumb VARCHAR,
+        url VARCHAR,
+        keywords VARCHAR NOT NULL DEFAULT '[]',
+        first_seen VARCHAR NOT NULL,
+        last_seen VARCHAR NOT NULL,
+        uid VARCHAR
+    );
+    ",
+    // 15: link work: decisions on linking sites (keep, watch, disavow) and link prospects with
+    // their outreach state; audits may check links to other sites.
+    "
+    CREATE SEQUENCE link_decision_ids START 1;
+    CREATE TABLE link_decisions (
+        id BIGINT PRIMARY KEY DEFAULT nextval('link_decision_ids'),
+        project_id BIGINT NOT NULL,
+        domain VARCHAR NOT NULL,
+        decision VARCHAR NOT NULL,
+        note VARCHAR,
+        decided_at VARCHAR NOT NULL,
+        uid VARCHAR
+    );
+    CREATE SEQUENCE link_prospect_ids START 1;
+    CREATE TABLE link_prospects (
+        id BIGINT PRIMARY KEY DEFAULT nextval('link_prospect_ids'),
+        project_id BIGINT NOT NULL,
+        domain VARCHAR NOT NULL,
+        url VARCHAR,
+        source VARCHAR NOT NULL,
+        status VARCHAR NOT NULL,
+        note VARCHAR,
+        added_at VARCHAR NOT NULL,
+        updated_at VARCHAR NOT NULL,
+        uid VARCHAR
+    );
+    ALTER TABLE audit_settings ADD COLUMN check_outbound BOOLEAN DEFAULT false;
+    ",
+    // 16: rank checks waiting in the standard queue: paid, their answers read back by id. Only
+    // the copy that posted them can read them, so they stay here.
+    "
+    CREATE SEQUENCE rank_task_ids START 1;
+    CREATE TABLE rank_tasks (
+        id BIGINT PRIMARY KEY DEFAULT nextval('rank_task_ids'),
+        run_id BIGINT NOT NULL,
+        project_id BIGINT NOT NULL,
+        keyword_id BIGINT NOT NULL,
+        tracker_id BIGINT NOT NULL,
+        engine VARCHAR NOT NULL,
+        task_id VARCHAR NOT NULL,
+        via VARCHAR NOT NULL,
+        posted_at VARCHAR NOT NULL,
+        tries INTEGER NOT NULL DEFAULT 0,
+        next_try_at BIGINT NOT NULL
+    );
+    ",
+    // 17: local SEO: the business a project tracks on Google Maps and how its grid is checked,
+    // every grid run with what each point showed, its reviews, its rating day by day, and the
+    // tasks waiting in the provider's queue (kept on the copy that posted them).
+    "
+    CREATE TABLE local_settings (
+        project_id BIGINT PRIMARY KEY,
+        business VARCHAR,
+        keywords VARCHAR NOT NULL DEFAULT '[]',
+        grid INTEGER NOT NULL DEFAULT 5,
+        radius_km DOUBLE NOT NULL DEFAULT 2,
+        schedule VARCHAR NOT NULL DEFAULT 'manual',
+        last_run_at VARCHAR
+    );
+    CREATE SEQUENCE local_run_ids START 1;
+    CREATE TABLE local_runs (
+        id BIGINT PRIMARY KEY DEFAULT nextval('local_run_ids'),
+        project_id BIGINT NOT NULL,
+        scheduled BOOLEAN NOT NULL,
+        status VARCHAR NOT NULL,
+        total INTEGER NOT NULL DEFAULT 0,
+        checked INTEGER NOT NULL DEFAULT 0,
+        failed INTEGER NOT NULL DEFAULT 0,
+        cost_usd DOUBLE NOT NULL DEFAULT 0,
+        error VARCHAR,
+        started_at VARCHAR NOT NULL,
+        finished_at VARCHAR,
+        grid INTEGER NOT NULL,
+        radius_km DOUBLE NOT NULL,
+        lat DOUBLE NOT NULL,
+        lng DOUBLE NOT NULL,
+        uid VARCHAR
+    );
+    CREATE TABLE local_points (
+        run_id BIGINT NOT NULL,
+        project_id BIGINT NOT NULL,
+        keyword VARCHAR NOT NULL,
+        grid_row INTEGER NOT NULL,
+        grid_col INTEGER NOT NULL,
+        lat DOUBLE NOT NULL,
+        lng DOUBLE NOT NULL,
+        position INTEGER,
+        top VARCHAR NOT NULL DEFAULT '[]',
+        error VARCHAR,
+        checked_at VARCHAR NOT NULL
+    );
+    CREATE SEQUENCE local_task_ids START 1;
+    CREATE TABLE local_tasks (
+        id BIGINT PRIMARY KEY DEFAULT nextval('local_task_ids'),
+        project_id BIGINT NOT NULL,
+        kind VARCHAR NOT NULL,
+        run_id BIGINT,
+        keyword VARCHAR,
+        grid_row INTEGER,
+        grid_col INTEGER,
+        lat DOUBLE,
+        lng DOUBLE,
+        task_id VARCHAR NOT NULL,
+        via VARCHAR NOT NULL,
+        posted_at VARCHAR NOT NULL,
+        tries INTEGER NOT NULL DEFAULT 0,
+        next_try_at BIGINT NOT NULL
+    );
+    CREATE SEQUENCE local_review_ids START 1;
+    CREATE TABLE local_reviews (
+        id BIGINT PRIMARY KEY DEFAULT nextval('local_review_ids'),
+        project_id BIGINT NOT NULL,
+        review_id VARCHAR NOT NULL,
+        rating INTEGER,
+        text VARCHAR,
+        author VARCHAR,
+        author_url VARCHAR,
+        url VARCHAR,
+        published_at VARCHAR,
+        owner_answer VARCHAR,
+        answered_at VARCHAR,
+        photos INTEGER NOT NULL DEFAULT 0,
+        local_guide BOOLEAN NOT NULL DEFAULT false,
+        first_seen VARCHAR NOT NULL,
+        uid VARCHAR
+    );
+    CREATE SEQUENCE local_profile_ids START 1;
+    CREATE TABLE local_profiles (
+        id BIGINT PRIMARY KEY DEFAULT nextval('local_profile_ids'),
+        project_id BIGINT NOT NULL,
+        day VARCHAR NOT NULL,
+        rating DOUBLE,
+        votes BIGINT,
+        profile VARCHAR,
+        taken_at VARCHAR NOT NULL,
+        uid VARCHAR
+    );
+    ",
+    // 18: content briefs: what to write for a keyword, with the result page and ranking pages
+    // they were made from, and the pages and drafts scored against them.
+    "
+    CREATE SEQUENCE content_brief_ids START 1;
+    CREATE TABLE content_briefs (
+        id BIGINT PRIMARY KEY DEFAULT nextval('content_brief_ids'),
+        project_id BIGINT NOT NULL,
+        keyword VARCHAR NOT NULL,
+        country VARCHAR NOT NULL,
+        language VARCHAR NOT NULL,
+        mobile BOOLEAN NOT NULL DEFAULT false,
+        status VARCHAR NOT NULL,
+        brief VARCHAR,
+        source VARCHAR,
+        ai_text VARCHAR,
+        ai_model VARCHAR,
+        cost_usd DOUBLE NOT NULL DEFAULT 0,
+        error VARCHAR,
+        created_at VARCHAR NOT NULL,
+        updated_at VARCHAR NOT NULL,
+        uid VARCHAR
+    );
+    CREATE SEQUENCE content_score_ids START 1;
+    CREATE TABLE content_scores (
+        id BIGINT PRIMARY KEY DEFAULT nextval('content_score_ids'),
+        brief_id BIGINT NOT NULL,
+        project_id BIGINT NOT NULL,
+        kind VARCHAR NOT NULL,
+        url VARCHAR,
+        title VARCHAR,
+        description VARCHAR,
+        body VARCHAR,
+        score DOUBLE NOT NULL,
+        result VARCHAR NOT NULL,
+        suggestions VARCHAR,
+        scored_at VARCHAR NOT NULL,
+        uid VARCHAR
+    );
+    ",
+    // 19: Core Web Vitals checked day by day (a site's real-user data with its weekly history,
+    // pages' PageSpeed runs), and what a Search Console period is compared with.
+    "
+    CREATE SEQUENCE vital_check_ids START 1;
+    CREATE TABLE vital_checks (
+        id BIGINT PRIMARY KEY DEFAULT nextval('vital_check_ids'),
+        project_id BIGINT NOT NULL,
+        target VARCHAR NOT NULL,
+        scope VARCHAR NOT NULL,
+        device VARCHAR NOT NULL,
+        day VARCHAR NOT NULL,
+        field VARCHAR,
+        lab VARCHAR,
+        history VARCHAR,
+        checked_at VARCHAR NOT NULL,
+        uid VARCHAR
+    );
+    ALTER TABLE gsc_settings ADD COLUMN compare VARCHAR DEFAULT 'previous';
+    ",
+    // 20: what the user decided about an opportunity (done, ignored, snoozed until a day); an
+    // opportunity without a row is open.
+    "
+    CREATE TABLE opportunity_states (
+        project_id BIGINT NOT NULL,
+        key VARCHAR NOT NULL,
+        state VARCHAR NOT NULL,
+        until VARCHAR,
+        changed_at VARCHAR NOT NULL,
+        uid VARCHAR
+    );
+    ",
+    // 21: alerts: a project's alerting (rules, e-mails) and the alerts found, each kept once by
+    // its key; when this copy last looked, mailed or notified is kept here only.
+    "
+    CREATE TABLE alert_settings (
+        project_id BIGINT PRIMARY KEY,
+        enabled BOOLEAN NOT NULL DEFAULT true,
+        rules VARCHAR NOT NULL DEFAULT '{}',
+        email VARCHAR NOT NULL DEFAULT 'off',
+        recipients VARCHAR NOT NULL DEFAULT '[]',
+        lang VARCHAR NOT NULL DEFAULT '',
+        last_digest_at VARCHAR,
+        links_last_run VARCHAR,
+        evaluated_at VARCHAR
+    );
+    CREATE SEQUENCE alert_ids START 1;
+    CREATE TABLE alerts (
+        id BIGINT PRIMARY KEY DEFAULT nextval('alert_ids'),
+        project_id BIGINT NOT NULL,
+        key VARCHAR NOT NULL,
+        kind VARCHAR NOT NULL,
+        severity VARCHAR NOT NULL,
+        page VARCHAR NOT NULL,
+        params VARCHAR NOT NULL DEFAULT '{}',
+        detail VARCHAR NOT NULL DEFAULT '{}',
+        created_at VARCHAR NOT NULL,
+        read_at VARCHAR,
+        mailed_at VARCHAR,
+        notified_at VARCHAR,
+        uid VARCHAR
+    );
+    ",
 ];
 
 /// Applies the migrations the database does not have yet.
